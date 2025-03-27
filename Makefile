@@ -6,7 +6,7 @@
 #    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/19 16:21:48 by luinasci          #+#    #+#              #
-#    Updated: 2025/03/24 14:12:15 by luinasci         ###   ########.fr        #
+#    Updated: 2025/03/26 18:55:39 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,11 +19,14 @@ SRCS		= $(addprefix $(SRC_PATH), \
 			  builtin.c \
 			  input.c \
 			  main.c \
+			  parser.c \
+			  signals.c \
 			  )
 
 UTILS_PATH	= utils/
-UTILS_SRCS		= $(addprefix $(UTILS_PATH), \
-				)
+UTILS_SRCS	= $(addprefix $(UTILS_PATH), \
+			  utils.c \
+			  )
 
 OBJS		= $(SRCS:.c=.o) $(UTILS_SRCS:.c=.o)
 CC			= gcc

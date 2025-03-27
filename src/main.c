@@ -3,19 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/03/17 22:06:13 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/03/27 18:56:38 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+extern char **environ; // Add this for environment access
+
 void free_args(char **args)
 {
 	int i;
-	
+
 	if (!args)
 		return;
 	i = 0;
@@ -27,80 +29,81 @@ void free_args(char **args)
 	free(args);
 }
 
-int	main(void)
+int main(void)
 {
-	char	*input;
-	char	**args;
-	int 	pid;
-	char 	*path;
+	char *input;
+	char **tokens;
+	pid_t pid;
+	char *path;
+	t_parse parser;
 
+	setup_parent_signals();
 	while (1)
 	{
-		input = readline("$_mini_shell_> ");
-		if (!input)
+		input = readline("$minishell> ");
+		if (!input) // Handle Ctrl+D
 		{
-			printf("exit\n");
+			ft_putstr_fd("exit\n", STDOUT_FILENO);
 			break;
 		}
 		add_history(input);
-		args = ft_split(input, 32);
-		if (!args)
+
+		// Parse input into tokens
+		init_parser(&parser, input);
+		tokens = parse_args(&parser);
+		//debug print
+
+		if (!tokens || !tokens[0]) // Handle empty input/parsing errors
 		{
+			free(input);
+			free_args(tokens);
+			continue;
+		}
+
+		if (is_builtin(tokens)) // Use tokens instead of args
+		{
+			// Execute builtin and cleanup
+			free_args(tokens);
 			free(input);
 			continue;
 		}
-		
-		if (args[0] == NULL)
+
+		pid = fork();
+		if (pid == -1)
 		{
-			free_args(args);
+			perror("fork");
+			free_args(tokens);
 			free(input);
 			continue;
 		}
-		
-		if (is_builtin(args))
+		else if (pid == 0) // Child process
 		{
-			// A função builtin deve lidar com a limpeza dos argumentos
-			free(input);
-			continue;
-		}
-		else
-		{
-			pid = fork();
-			if (pid == -1)
+			setup_child_signals();
+			path = get_cmd_path(tokens[0]); // Use tokens[0]
+			if (!path)
 			{
-				perror("fork");
-				free_args(args);
+				ft_putstr_fd("minishell: ", STDERR_FILENO);
+				ft_putstr_fd(tokens[0], STDERR_FILENO);
+				ft_putstr_fd(": command not found\n", STDERR_FILENO);
+				free_args(tokens);
 				free(input);
-				continue;
+				exit(CMD_NOT_FOUND);
 			}
-			else if (pid == 0)
+
+			if (execve(path, tokens, environ) == -1) // Use environ
 			{
-				// Processo filho
-				path = get_cmd_path(args[0]);
-				if (!path)
-				{
-					printf("Command not found: %s\n", args[0]);
-					free_args(args);
-					free(input);
-					exit(EXIT_FAILURE);
-				}
-				// Executa o comando
-				if (execve(path, args, NULL) == -1)
-				{
-					perror("Error");
-					free(path);
-					free_args(args);
-					free(input);
-					exit(EXIT_FAILURE);
-				}
-			}
-			else
-			{
-				// Processo pai
-				waitpid(pid, NULL, 0);
-				free_args(args);
+				perror("minishell");
+				free(path);
+				free_args(tokens);
 				free(input);
+				exit(EXIT_FAILURE);
 			}
+		}
+		else // Parent process
+		{
+			waitpid(pid, NULL, 0);
+			free_args(tokens);
+			free(input);
 		}
 	}
 	return (0);

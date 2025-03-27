@@ -3,31 +3,31 @@
 /*                                                        :::      ::::::::   */
 /*   builtin.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/12 18:24:27 by jcologne          #+#    #+#             */
-/*   Updated: 2025/03/13 15:52:15 by jcologne         ###   ########.fr       */
+/*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
+/*   Updated: 2025/03/26 18:52:13 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	is_builtin(char **args)
+int	is_builtin(char **tokens)
 {
-	if (ft_strncmp(args[0], "cd", 3) == 0)
-		return (exec_cd(args));
-	if (ft_strncmp(args[0], "echo", 5) == 0)
-		return (exec_echo(args));
-	/*if (ft_strncmp(args[0], "pwd") == 0)
-		return (exec_pwd(args));
-	if (ft_strncmp(args[0], "export") == 0)
-		return (exec_export(args));
-	if (ft_strncmp(args[0], "unset") == 0)
+	if (ft_strncmp(tokens[0], "cd", 3) == 0)
+		return (exec_cd(tokens));
+	if (ft_strncmp(tokens[0], "echo", 5) == 0)
+		return (exec_echo(tokens));
+	/*if (ft_strncmp(tokens[0], "pwd") == 0)
+		return (exec_pwd(tokens));
+	if (ft_strncmp(tokens[0], "export") == 0)
+		return (exec_export(tokens));
+	if (ft_strncmp(tokens[0], "unset") == 0)
 		return (exec_unset(args));
-	if (ft_strncmp(args[0], "env") == 0)
-		return (exec_env(args));*/
-	if (ft_strncmp(args[0], "exit", 5) == 0)
-		return (exec_exit(args));
+	if (ft_strncmp(tokens[0], "env") == 0)
+		return (exec_env(tokens));*/
+	if (ft_strncmp(tokens[0], "exit", 5) == 0)
+		return (exec_exit(tokens));
 	return (0);
 }
 
