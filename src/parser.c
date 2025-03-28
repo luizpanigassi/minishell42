@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/28 16:17:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 17:33:13 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ static void handle_quotes(t_parse *p, char quote)
 		return;
 	}
 
-	p->token_value = ft_substr(p->input, start, p->pos - start + 1);
+	p->token_value = ft_substr(p->input, start + 1, p->pos - start - 1);
 	p->token_type = T_WORD;
 	next_char(p); // Skip closing quote
 }
@@ -62,6 +62,7 @@ static void handle_word(t_parse *p)
 	p->token_type = T_WORD;
 }
 
+// Updated handle_special function
 static void handle_special(t_parse *p)
 {
 	if (p->curr_char == '|')
@@ -85,7 +86,21 @@ static void handle_special(t_parse *p)
 			p->token_value = ft_strdup(">");
 		}
 	}
-	// Add similar handling for < and <<
+	else if (p->curr_char == '<')
+	{
+		next_char(p);
+		if (p->curr_char == '<')
+		{
+			p->token_type = T_HEREDOC;
+			p->token_value = ft_strdup("<<");
+			next_char(p);
+		}
+		else
+		{
+			p->token_type = T_REDIR_IN;
+			p->token_value = ft_strdup("<");
+		}
+	}
 }
 
 void next_token(t_parse *p)
@@ -110,31 +125,25 @@ t_cmd *parse_args(t_parse *p)
 {
 	t_list *args = NULL;
 	t_redir *redirs = NULL;
+	t_redir **redir_tail = &redirs; // For correct redirection order
 
-	next_token(p);
-	while (p->token_type != T_EOF)
+	while (p->token_type != T_EOF && p->token_type != T_PIPE)
 	{
 		if (p->token_type == T_WORD)
 		{
 			ft_lstadd_back(&args, ft_lstnew(ft_strdup(p->token_value)));
 		}
 		else if (is_redirection(p->token_type))
-		{ // Check if token is a redirection
-			t_redir *redir = malloc(sizeof(t_redir));
-			redir->type = p->token_type;
-			next_token(p); // Move to filename token
-			redir->filename = ft_strdup(p->token_value);
-			redir->next = redirs;
-			redirs = redir;
-		}
-		else if (p->token_type == T_HEREDOC)
 		{
 			t_redir *redir = malloc(sizeof(t_redir));
-			redir->type = T_HEREDOC;
-			next_token(p);
-			redir->filename = ft_strdup(p->token_value); // Delimiter
-			redir->next = redirs;
-			redirs = redir;
+			redir->type = p->token_type;
+			next_token(p); // Get filename
+			redir->filename = ft_strdup(p->token_value);
+			redir->next = NULL;
+
+			// Append to end of list
+			*redir_tail = redir;
+			redir_tail = &redir->next;
 		}
 		next_token(p);
 	}
@@ -142,6 +151,7 @@ t_cmd *parse_args(t_parse *p)
 	t_cmd *cmd = malloc(sizeof(t_cmd));
 	cmd->args = list_to_array(args);
 	cmd->redirections = redirs;
+	cmd->next = NULL;
 	ft_lstclear(&args, free);
 	return cmd;
 }
@@ -170,4 +180,29 @@ int is_redirection(t_token type)
 {
 	return (type == T_REDIR_IN || type == T_REDIR_OUT ||
 			type == T_APPEND || type == T_HEREDOC);
+}
+
+t_cmd *parse_pipeline(t_parse *p)
+{
+	t_cmd *head = NULL;
+	t_cmd **curr = &head;
+
+	next_token(p);
+
+	while (1)
+	{
+		t_cmd *cmd = parse_args(p);
+		if (!cmd)
+			break;
+
+		*curr = cmd;
+		curr = &cmd->next;
+
+		if (p->token_type != T_PIPE)
+			break;
+
+		next_token(p); // Consume the pipe
+	}
+
+	return head;
 }

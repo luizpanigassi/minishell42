@@ -58,8 +58,9 @@ typedef struct s_redir {
 }	t_redir;
 
 typedef struct s_cmd {
-	char	**args; // Command arguments (e.g., ["ls", "-l"])
-	t_redir	*redirections; // List of redirections
+	char			**args; // Command arguments (e.g., ["ls", "-l"])
+	t_redir			*redirections; // List of redirections
+	struct s_cmd	*next; // For pipe
 }	t_cmd;
 
 // INPUT
@@ -71,6 +72,7 @@ int		is_builtin(char **args);
 int		exec_cd(char **args);
 int		exec_exit(char **args);
 int		exec_echo(char **args);
+int		exec_builtin(char **args);
 
 // SIGNALS
 void	handle_sigint(int sig);
@@ -83,6 +85,7 @@ void	next_token(t_parse *p);
 t_cmd	*parse_args(t_parse *p);
 int		create_heredoc(const char *delimiter);
 int		is_redirection(t_token type);
+t_cmd	*parse_pipeline(t_parse *p);
 
 // UTILS
 void	ft_free_array(char **array);
