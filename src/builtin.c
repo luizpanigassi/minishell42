@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/26 18:52:13 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 14:51:55 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,9 @@ int exec_cd(char **args)
 
 int	exec_exit(char **args)
 {
-	printf("%s\n", args[0]);
-	exit(0);
-	return (1);
+	(void)args;
+	printf("Exiting minishell, goodbye!");
+	return (2);
 }
 
 int exec_echo(char **args)

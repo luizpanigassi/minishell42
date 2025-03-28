@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/26 18:58:09 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 16:18:50 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,4 +74,37 @@ char **list_to_array(t_list *lst)
 	}
 	arr[i] = NULL;
 	return (arr);
+}
+
+void free_cmd(t_cmd *cmd)
+{
+	t_redir *redir;
+	t_redir *tmp;
+
+	if (!cmd)
+		return;
+
+	// Free arguments
+	ft_free_array(cmd->args);
+
+	// Free redirections
+	redir = cmd->redirections;
+	while (redir)
+	{
+		tmp = redir->next;
+		free(redir->filename);
+		free(redir);
+		redir = tmp;
+	}
+	free(cmd);
+}
+
+int	ft_strcmp(const char *s1, const char *s2)
+{
+	while (*s1 && *s1 == *s2)
+	{
+		s1++;
+		s2++;
+	}
+	return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }

@@ -1,13 +1,13 @@
 /* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/11 17:18:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/03/27 18:13:06 by luinasci         ###   ########.fr       */
-/*                                                                            */
+/*																			*/
+/*														:::	  ::::::::   */
+/*   minishell.h										:+:	  :+:	:+:   */
+/*													+:+ +:+		 +:+	 */
+/*   By: luinasci <luinasci@student.42.fr>		  +#+  +:+	   +#+		*/
+/*												+#+#+#+#+#+   +#+		   */
+/*   Created: 2025/03/11 17:18:18 by jcologne		  #+#	#+#			 */
+/*   Updated: 2025/03/27 18:13:06 by luinasci		 ###   ########.fr	   */
+/*																			*/
 /* ************************************************************************** */
 
 #ifndef MINISHELL_H
@@ -51,6 +51,17 @@ typedef struct s_parse
 	char	*token_value;
 }	t_parse;
 
+typedef struct s_redir {
+	t_token			type;// T_REDIR_IN, T_REDIR_OUT, etc.
+	char			*filename;// Target file
+	struct s_redir	*next;// For multiple redirections
+}	t_redir;
+
+typedef struct s_cmd {
+	char	**args; // Command arguments (e.g., ["ls", "-l"])
+	t_redir	*redirections; // List of redirections
+}	t_cmd;
+
 // INPUT
 void	handle_error(char *message);
 char	*get_cmd_path(char *cmd);
@@ -69,10 +80,14 @@ void	setup_child_signals(void);
 // PARSING
 void	init_parser(t_parse *p, char *input);
 void	next_token(t_parse *p);
-char	**parse_args(t_parse *p);
+t_cmd	*parse_args(t_parse *p);
+int		create_heredoc(const char *delimiter);
+int		is_redirection(t_token type);
 
 // UTILS
 void	ft_free_array(char **array);
+void	free_cmd(t_cmd *cmd);
+int		ft_strcmp(const char *s1, const char *s2);
 
 // Helper functions for parsing
 int		ft_isspace(int c);

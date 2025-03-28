@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 15:36:05 by luinasci          #+#    #+#             */
-/*   Updated: 2025/01/09 15:50:37 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 16:09:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,6 +83,8 @@ void			ft_putstr_fd(char *s, int fd);
 char			**ft_split(char const *s, char c);
 
 char			*ft_strchr(const char *s, int c);
+
+int				ft_strcmp(const char *s1, const char *s2);
 
 char			*ft_strdup(const char *src);
 

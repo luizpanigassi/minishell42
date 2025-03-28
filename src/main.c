@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/03/27 18:56:38 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 16:01:53 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,38 +32,42 @@ void free_args(char **args)
 int main(void)
 {
 	char *input;
-	char **tokens;
+	t_cmd *cmd;
 	pid_t pid;
-	char *path;
 	t_parse parser;
+	int builtin_ret;
 
 	setup_parent_signals();
 	while (1)
 	{
 		input = readline("$minishell> ");
-		if (!input) // Handle Ctrl+D
+		if (!input)
 		{
 			ft_putstr_fd("exit\n", STDOUT_FILENO);
 			break;
 		}
 		add_history(input);
 
-		// Parse input into tokens
 		init_parser(&parser, input);
-		tokens = parse_args(&parser);
-		//debug print
+		cmd = parse_args(&parser);
 
-		if (!tokens || !tokens[0]) // Handle empty input/parsing errors
+		if (!cmd || !cmd->args[0])
 		{
 			free(input);
-			free_args(tokens);
+			free_cmd(cmd);
 			continue;
 		}
 
-		if (is_builtin(tokens)) // Use tokens instead of args
+		builtin_ret = is_builtin(cmd->args); // Pass cmd->args
+		if (builtin_ret)
 		{
-			// Execute builtin and cleanup
-			free_args(tokens);
+			if (builtin_ret == 2) // Exit command
+			{
+				free_cmd(cmd);
+				free(input);
+				exit(0);
+			}
+			free_cmd(cmd);
 			free(input);
 			continue;
 		}
@@ -72,37 +76,57 @@ int main(void)
 		if (pid == -1)
 		{
 			perror("fork");
-			free_args(tokens);
+			free_cmd(cmd);
 			free(input);
 			continue;
 		}
-		else if (pid == 0) // Child process
+		else if (pid == 0) // Child
 		{
 			setup_child_signals();
-			path = get_cmd_path(tokens[0]); // Use tokens[0]
+			t_redir *redir = cmd->redirections;
+			while (redir)
+			{
+				int fd;
+				if (redir->type == T_REDIR_OUT)
+				{
+					fd = open(redir->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+					dup2(fd, STDOUT_FILENO);
+					close(fd);
+				}
+				else if (redir->type == T_APPEND)
+				{
+					fd = open(redir->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+					dup2(fd, STDOUT_FILENO);
+					close(fd);
+				}
+				else if (redir->type == T_REDIR_IN)
+				{
+					fd = open(redir->filename, O_RDONLY);
+					dup2(fd, STDIN_FILENO);
+					close(fd);
+				}
+				else if (redir->type == T_HEREDOC)
+				{
+					int tmp_fd = create_heredoc(redir->filename);
+					dup2(tmp_fd, STDIN_FILENO);
+					close(tmp_fd);
+				}
+				redir = redir->next;
+			}
+			// Execute command
+			char *path = get_cmd_path(cmd->args[0]);
 			if (!path)
 			{
-				ft_putstr_fd("minishell: ", STDERR_FILENO);
-				ft_putstr_fd(tokens[0], STDERR_FILENO);
-				ft_putstr_fd(": command not found\n", STDERR_FILENO);
-				free_args(tokens);
-				free(input);
+				ft_putstr_fd("minishell: command not found\n", STDERR_FILENO);
 				exit(CMD_NOT_FOUND);
 			}
-
-			if (execve(path, tokens, environ) == -1) // Use environ
-			{
-				perror("minishell");
-				free(path);
-				free_args(tokens);
-				free(input);
-				exit(EXIT_FAILURE);
-			}
+			execve(path, cmd->args, environ);
+			exit(EXIT_FAILURE); // If execve fails
 		}
-		else // Parent process
+		else // Parent
 		{
 			waitpid(pid, NULL, 0);
-			free_args(tokens);
+			free_cmd(cmd);
 			free(input);
 		}
 	}

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/27 18:55:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/03/28 16:17:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,15 +49,16 @@ static void handle_quotes(t_parse *p, char quote)
 static void handle_word(t_parse *p)
 {
 	size_t start = p->pos;
+	char *sub;
 
 	while (p->curr_char && !ft_isspace(p->curr_char) &&
 		   !is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}
-
-	// Extract substring and duplicate it
-	p->token_value = ft_strdup(ft_substr(p->input, start, p->pos - start));
+	sub = ft_substr(p->input, start, p->pos - start);
+	p->token_value = ft_strdup(sub);
+	free(sub); // Free the temporary substring
 	p->token_type = T_WORD;
 }
 
@@ -105,25 +106,68 @@ void next_token(t_parse *p)
 		handle_word(p);
 }
 
-char **parse_args(t_parse *p)
+t_cmd *parse_args(t_parse *p)
 {
 	t_list *args = NULL;
+	t_redir *redirs = NULL;
 
-	// PROCESS FIRST TOKEN
 	next_token(p);
-
 	while (p->token_type != T_EOF)
 	{
 		if (p->token_type == T_WORD)
 		{
-			char *token_copy = ft_strdup(p->token_value);
-			ft_lstadd_back(&args, ft_lstnew(token_copy));
+			ft_lstadd_back(&args, ft_lstnew(ft_strdup(p->token_value)));
 		}
-		// Move to next token
+		else if (is_redirection(p->token_type))
+		{ // Check if token is a redirection
+			t_redir *redir = malloc(sizeof(t_redir));
+			redir->type = p->token_type;
+			next_token(p); // Move to filename token
+			redir->filename = ft_strdup(p->token_value);
+			redir->next = redirs;
+			redirs = redir;
+		}
+		else if (p->token_type == T_HEREDOC)
+		{
+			t_redir *redir = malloc(sizeof(t_redir));
+			redir->type = T_HEREDOC;
+			next_token(p);
+			redir->filename = ft_strdup(p->token_value); // Delimiter
+			redir->next = redirs;
+			redirs = redir;
+		}
 		next_token(p);
 	}
 
-	char **result = list_to_array(args);
+	t_cmd *cmd = malloc(sizeof(t_cmd));
+	cmd->args = list_to_array(args);
+	cmd->redirections = redirs;
 	ft_lstclear(&args, free);
-	return result;
+	return cmd;
+}
+
+int create_heredoc(const char *delimiter)
+{
+	char *line;
+	int tmp_fd = open(".heredoc.tmp", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+	while (1)
+	{
+		line = readline("> ");
+		if (!line || ft_strcmp(line, delimiter) == 0)
+			break;
+		write(tmp_fd, line, ft_strlen(line));
+		write(tmp_fd, "\n", 1);
+		free(line);
+	}
+	close(tmp_fd);
+	tmp_fd = open(".heredoc.tmp", O_RDONLY);
+	unlink(".heredoc.tmp"); // Delete temp file after use
+	return tmp_fd;
+}
+
+int is_redirection(t_token type)
+{
+	return (type == T_REDIR_IN || type == T_REDIR_OUT ||
+			type == T_APPEND || type == T_HEREDOC);
 }
