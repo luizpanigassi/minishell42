@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/28 16:18:50 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/02 16:25:33 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,7 +99,7 @@ void free_cmd(t_cmd *cmd)
 	free(cmd);
 }
 
-int	ft_strcmp(const char *s1, const char *s2)
+int ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
 	{
@@ -107,4 +107,50 @@ int	ft_strcmp(const char *s1, const char *s2)
 		s2++;
 	}
 	return (*(unsigned char *)s1 - *(unsigned char *)s2);
+}
+
+// In utils.c
+char **ft_array_append(char **array, char *new_element)
+{
+	int count;
+	char **new_array;
+
+	count = 0;
+	while (array && array[count])
+		count++;
+
+	new_array = malloc(sizeof(char *) * (count + 2));
+	if (!new_array)
+		return (NULL);
+
+	int i = -1;
+	while (++i < count)
+		new_array[i] = array[i];
+
+	new_array[count] = new_element;
+	new_array[count + 1] = NULL;
+
+	free(array);
+	return (new_array);
+}
+
+int ft_isnumber(const char *str)
+{
+	int i;
+
+	if (!str || !*str) // Handle NULL or empty string
+		return (0);
+	i = 0;
+	// Allow optional leading +/-
+	if (str[i] == '+' || str[i] == '-')
+		i++;
+	// Check remaining characters are digits
+	while (str[i])
+	{
+		if (!ft_isdigit(str[i]))
+			return (0);
+		i++;
+	}
+	// Must have at least one digit (after optional sign)
+	return (i > 0 && (str[0] == '+' || str[0] == '-') ? i > 1 : i > 0);
 }

@@ -25,6 +25,9 @@
 # include <signal.h>
 # include <readline/readline.h>
 # include <readline/history.h>
+# include <dirent.h>
+# include <limits.h>
+# include <string.h>
 
 # define CMD_NOT_FOUND 127
 # define PERM_DENIED 126
@@ -63,6 +66,8 @@ typedef struct s_cmd {
 	struct s_cmd	*next; // For pipe
 }	t_cmd;
 
+extern volatile sig_atomic_t	g_exit_status;
+
 // INPUT
 void	handle_error(char *message);
 char	*get_cmd_path(char *cmd);
@@ -73,6 +78,12 @@ int		exec_cd(char **args);
 int		exec_exit(char **args);
 int		exec_echo(char **args);
 int		exec_builtin(char **args);
+int		exec_env(char **args);
+int		exec_pwd(char **args);
+int		exec_export(char **args);
+int		exec_unset(char **args);
+char	**ft_copy_env(char **env);
+void	update_env_var(const char *var, const char *value);
 
 // SIGNALS
 void	handle_sigint(int sig);
@@ -91,11 +102,19 @@ t_cmd	*parse_pipeline(t_parse *p);
 void	ft_free_array(char **array);
 void	free_cmd(t_cmd *cmd);
 int		ft_strcmp(const char *s1, const char *s2);
+char	**ft_array_append(char **array, char *new_element);
+int		ft_isnumber(const char *str);
 
 // Helper functions for parsing
 int		ft_isspace(int c);
 void	next_char(t_parse *p);
 int		is_special_char(char c);
 char	**list_to_array(t_list *lst);
+
+int	handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
+
+//Exit status
+void	set_exit_status(int status);
+int		get_exit_status(void);
 
 #endif

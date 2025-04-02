@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:28:19 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/28 17:53:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/02 17:19:03 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 void handle_sigint(int sig)
 {
 	(void)sig;
+	set_exit_status(130); // Set exit status for Ctrl-C
 	write(1, "\n", 1);
 	rl_replace_line("", 0);
 	rl_on_new_line();

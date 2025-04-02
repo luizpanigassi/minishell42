@@ -6,13 +6,13 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/03/28 18:33:30 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/02 18:15:09 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-extern char **environ;
+volatile sig_atomic_t g_exit_status = 0;
 
 void free_pipeline(t_cmd *pipeline)
 {
@@ -45,91 +45,44 @@ void free_pipeline(t_cmd *pipeline)
 void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
 	pid_t pid;
-	char *path;
-	int result;
+	extern char **environ;
 
-	// 🚨 Only handle built-ins without redirections/pipes in the parent
-	if (is_builtin(cmd->args) && cmd->next == NULL && cmd->redirections == NULL)
-	{
-		// Execute built-in directly in parent (e.g., "exit", "cd")
-		result = exec_builtin(cmd->args);
-		if (result == 2) // "exit" command
-		{
-			printf("Exiting minishell, goodbye!\n");
-			exit(0);
-		}
-		return;
-	}
-
-	// Fork for all other cases (external commands or built-ins with redirections/pipes)
+	// Always fork for pipeline commands
 	pid = fork();
 	if (pid == 0)
 	{
+		// Child process
 		setup_child_signals();
+		handle_redirections(pipe_in, pipe_out, cmd->redirections);
 
-		// Handle pipe redirections
-		if (pipe_in != STDIN_FILENO)
-		{
-			dup2(pipe_in, STDIN_FILENO);
-			close(pipe_in);
-		}
-		if (pipe_out != STDOUT_FILENO)
-		{
-			dup2(pipe_out, STDOUT_FILENO);
-			close(pipe_out);
-		}
-
-		// Process file redirections
-		t_redir *redir = cmd->redirections;
-		while (redir)
-		{
-			int fd;
-			if (redir->type == T_REDIR_OUT)
-				fd = open(redir->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-			else if (redir->type == T_APPEND)
-				fd = open(redir->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-			else if (redir->type == T_REDIR_IN)
-				fd = open(redir->filename, O_RDONLY);
-			else if (redir->type == T_HEREDOC)
-				fd = create_heredoc(redir->filename);
-
-			if (fd == -1)
-			{
-				perror("minishell: open");
-				exit(EXIT_FAILURE);
-			}
-
-			if (redir->type == T_REDIR_IN || redir->type == T_HEREDOC)
-				dup2(fd, STDIN_FILENO);
-			else
-				dup2(fd, STDOUT_FILENO);
-			close(fd);
-			redir = redir->next;
-		}
-
-		// Execute built-in in child (e.g., "echo" with redirections)
 		if (is_builtin(cmd->args))
 		{
-			result = exec_builtin(cmd->args);
-			exit(result);
+			exec_builtin(cmd->args);
+			exit(g_exit_status); // Make sure to exit after builtin
 		}
-
-		// External command
-		path = get_cmd_path(cmd->args[0]);
-		if (!path)
+		else
 		{
-			ft_putstr_fd("minishell: ", STDERR_FILENO);
-			ft_putstr_fd(cmd->args[0], STDERR_FILENO);
-			ft_putstr_fd(": command not found\n", STDERR_FILENO);
-			exit(CMD_NOT_FOUND);
+			char *cmd_path = get_cmd_path(cmd->args[0]);
+			if (!cmd_path)
+			{
+				ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
+				ft_putstr_fd(cmd->args[0], STDERR_FILENO);
+				ft_putstr_fd("\n", STDERR_FILENO);
+				exit(CMD_NOT_FOUND);
+			}
+
+			// Execute the command with the current environment
+			execve(cmd_path, cmd->args, environ);
+
+			// If execve returns, it failed
+			perror("minishell");
+			free(cmd_path);
+			exit(EXIT_FAILURE);
 		}
-		execve(path, cmd->args, environ);
-		perror("minishell");
-		exit(EXIT_FAILURE);
 	}
 	else if (pid < 0)
 	{
-		perror("minishell: fork");
+		perror("fork");
 	}
 }
 
@@ -138,23 +91,59 @@ int execute_pipeline(t_cmd *pipeline)
 	int prev_pipe[2] = {-1, -1};
 	int next_pipe[2];
 	t_cmd *current = pipeline;
+	pid_t last_pid = -1;
 	int status;
+	extern char **environ;
 
 	while (current)
 	{
-		// Create pipe if there's a next command
 		if (current->next && pipe(next_pipe) < 0)
 		{
-			perror("pipe");
-			return -1;
+			perror("minishell: pipe");
+			return (-1);
 		}
 
-		// Execute current command
-		execute_command(current,
-						prev_pipe[0],
-						current->next ? next_pipe[1] : STDOUT_FILENO);
+		pid_t pid = fork();
+		if (pid == 0) // Child process
+		{
+			setup_child_signals();
+			handle_redirections(
+				prev_pipe[0],					   // Input from previous command
+				current->next ? next_pipe[1] : -1, // Output to next command
+				current->redirections			   // File redirections
+			);
 
-		// Close previous pipe ends
+			// Close pipe ends in child
+			if (prev_pipe[0] != -1)
+				close(prev_pipe[0]);
+			if (current->next)
+			{
+				close(next_pipe[0]);
+				close(next_pipe[1]);
+			}
+
+			if (is_builtin(current->args))
+			{
+				int result = exec_builtin(current->args);
+				exit(result);
+			}
+			else
+			{
+				char *path = get_cmd_path(current->args[0]);
+				if (!path)
+				{
+					ft_putstr_fd("minishell: ", STDERR_FILENO);
+					ft_putstr_fd(current->args[0], STDERR_FILENO);
+					ft_putstr_fd(": command not found\n", STDERR_FILENO);
+					exit(CMD_NOT_FOUND);
+				}
+				execve(path, current->args, environ);
+				perror("minishell");
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		// Parent continues
 		if (prev_pipe[0] != -1)
 			close(prev_pipe[0]);
 		close(prev_pipe[1]);
@@ -166,14 +155,72 @@ int execute_pipeline(t_cmd *pipeline)
 			prev_pipe[1] = next_pipe[1];
 		}
 
+		if (!current->next)
+			last_pid = pid;
 		current = current->next;
 	}
 
-	// Wait for all children
-	while (waitpid(-1, &status, 0) > 0)
+	// Wait for last command
+	if (last_pid != -1)
+	{
+		waitpid(last_pid, &status, 0);
+		g_exit_status = WEXITSTATUS(status);
+	}
+
+	// Cleanup remaining processes
+	while (waitpid(-1, NULL, WNOHANG) > 0)
 		;
 
-	return WEXITSTATUS(status);
+	return (g_exit_status);
+}
+
+int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
+{
+	// Handle pipe redirections
+	if (pipe_in != STDIN_FILENO && pipe_in != -1)
+	{
+		if (dup2(pipe_in, STDIN_FILENO) == -1)
+			return (perror("minishell"), -1);
+		close(pipe_in);
+	}
+	if (pipe_out != STDOUT_FILENO && pipe_out != -1)
+	{
+		if (dup2(pipe_out, STDOUT_FILENO) == -1)
+			return (perror("minishell"), -1);
+		close(pipe_out);
+	}
+
+	// Handle file redirections
+	t_redir *current = redirections;
+	while (current)
+	{
+		int fd = -1;
+		if (current->type == T_HEREDOC)
+			fd = create_heredoc(current->filename);
+		else if (current->type == T_REDIR_IN)
+			fd = open(current->filename, O_RDONLY);
+		else if (current->type == T_REDIR_OUT)
+			fd = open(current->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		else if (current->type == T_APPEND)
+			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+		if (fd == -1)
+			return (perror("minishell"), -1);
+
+		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
+		{
+			if (dup2(fd, STDIN_FILENO) == -1)
+				return (close(fd), perror("minishell"), -1);
+		}
+		else
+		{
+			if (dup2(fd, STDOUT_FILENO) == -1)
+				return (close(fd), perror("minishell"), -1);
+		}
+		close(fd);
+		current = current->next;
+	}
+	return (0);
 }
 
 int main(void)
@@ -184,6 +231,7 @@ int main(void)
 	setup_parent_signals();
 	while (1)
 	{
+		setup_parent_signals();
 		input = readline("minishell> ");
 		if (!input)
 		{
@@ -211,14 +259,41 @@ int main(void)
 		}
 
 		// 🚨 Handle "exit" directly in the parent process
-		if (is_builtin(pipeline->args) && ft_strcmp(pipeline->args[0], "exit") == 0)
+		if (pipeline && !pipeline->next && is_builtin(pipeline->args))
 		{
-			int result = exec_builtin(pipeline->args);
-			if (result == 2) // Exit code
+			int saved_stdin = dup(STDIN_FILENO);
+			int saved_stdout = dup(STDOUT_FILENO);
+			int saved_stderr = dup(STDERR_FILENO);
+
+			// Apply redirections (no pipes: -1, -1)
+			if (handle_redirections(-1, -1, pipeline->redirections) != 0)
+			{
+				set_exit_status(1); // Redirection error
+				close(saved_stdin);
+				close(saved_stdout);
+				close(saved_stderr);
+			}
+			else
+			{
+				int result = exec_builtin(pipeline->args);
+				set_exit_status(result);
+
+				// Restore original descriptors
+				dup2(saved_stdin, STDIN_FILENO);
+				dup2(saved_stdout, STDOUT_FILENO);
+				dup2(saved_stderr, STDERR_FILENO);
+			}
+
+			// Close saved descriptors
+			close(saved_stdin);
+			close(saved_stdout);
+			close(saved_stderr);
+
+			if (ft_strcmp(pipeline->args[0], "exit") == 0)
 			{
 				free(input);
 				free_pipeline(pipeline);
-				exit(0); // Exit parent process
+				exit(get_exit_status());
 			}
 		}
 		else
@@ -229,5 +304,7 @@ int main(void)
 		free(input);
 		free_pipeline(pipeline);
 	}
+	rl_clear_history(); // Clear history entries
+	rl_reset_terminal(NULL);
 	return 0;
 }
