@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/02 16:25:33 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/03 18:03:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,31 +109,6 @@ int ft_strcmp(const char *s1, const char *s2)
 	return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }
 
-// In utils.c
-char **ft_array_append(char **array, char *new_element)
-{
-	int count;
-	char **new_array;
-
-	count = 0;
-	while (array && array[count])
-		count++;
-
-	new_array = malloc(sizeof(char *) * (count + 2));
-	if (!new_array)
-		return (NULL);
-
-	int i = -1;
-	while (++i < count)
-		new_array[i] = array[i];
-
-	new_array[count] = new_element;
-	new_array[count + 1] = NULL;
-
-	free(array);
-	return (new_array);
-}
-
 int ft_isnumber(const char *str)
 {
 	int i;
@@ -153,4 +128,80 @@ int ft_isnumber(const char *str)
 	}
 	// Must have at least one digit (after optional sign)
 	return (i > 0 && (str[0] == '+' || str[0] == '-') ? i > 1 : i > 0);
+}
+
+int is_valid_var_name(const char *name)
+{
+	int i;
+
+	if (!name || !name[0] || ft_isdigit(name[0]))
+		return (0);
+
+	i = 0;
+	while (name[i])
+	{
+		if (!ft_isalnum(name[i]) && name[i] != '_')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+void print_export_declarations(void)
+{
+	extern char **environ;
+	int i = 0;
+
+	while (environ[i])
+	{
+		char *eq = ft_strchr(environ[i], '=');
+		if (eq)
+		{
+			*eq = '\0';
+			printf("declare -x %s=\"%s\"\n", environ[i], eq + 1);
+			*eq = '=';
+		}
+		else
+			printf("declare -x %s\n", environ[i]);
+		i++;
+	}
+}
+
+// In your utils.c
+size_t ft_strlen_size(const char *str)
+{
+	size_t len = 0;
+	while (str[len])
+		len++;
+	return (len);
+}
+
+// Joins three strings (create "VAR=value")
+char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
+{
+	char *tmp = ft_strjoin(s1, s2);
+	char *result = ft_strjoin(tmp, s3);
+	free(tmp);
+	return result;
+}
+
+// Appends to array (used for environ)
+char **ft_array_append(char **array, char *new_element)
+{
+	int count = 0;
+	while (array && array[count])
+		count++;
+
+	char **new_array = malloc(sizeof(char *) * (count + 2));
+	if (!new_array)
+		return NULL;
+
+	int i = -1;
+	while (++i < count)
+		new_array[i] = array[i];
+	new_array[count] = new_element;
+	new_array[count + 1] = NULL;
+
+	free(array);
+	return new_array;
 }

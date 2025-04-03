@@ -1,5 +1,4 @@
 header
-
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
@@ -17,7 +16,6 @@ header
 # include <readline/history.h>
 # include <dirent.h>
 # include <limits.h>
-# include <string.h>
 
 # define CMD_NOT_FOUND 127
 # define PERM_DENIED 126
@@ -101,13 +99,14 @@ void	next_char(t_parse *p);
 int		is_special_char(char c);
 char	**list_to_array(t_list *lst);
 
-void	handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
+int	handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 
 //Exit status
 void	set_exit_status(int status);
 int		get_exit_status(void);
 
 #endif
+
 
 builtin.c
 
@@ -386,7 +385,6 @@ int get_exit_status(void)
 {
 	return (g_exit_status);
 }
-
 input.c
 
 #include "minishell.h"
@@ -616,17 +614,19 @@ int execute_pipeline(t_cmd *pipeline)
 	return (g_exit_status);
 }
 
-void handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
+int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
-	// Handle pipe redirections first
-	if (pipe_in != STDIN_FILENO)
+	// Handle pipe redirections
+	if (pipe_in != STDIN_FILENO && pipe_in != -1)
 	{
-		dup2(pipe_in, STDIN_FILENO);
+		if (dup2(pipe_in, STDIN_FILENO) == -1)
+			return (perror("minishell"), -1);
 		close(pipe_in);
 	}
-	if (pipe_out != STDOUT_FILENO)
+	if (pipe_out != STDOUT_FILENO && pipe_out != -1)
 	{
-		dup2(pipe_out, STDOUT_FILENO);
+		if (dup2(pipe_out, STDOUT_FILENO) == -1)
+			return (perror("minishell"), -1);
 		close(pipe_out);
 	}
 
@@ -634,7 +634,7 @@ void handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	t_redir *current = redirections;
 	while (current)
 	{
-		int fd;
+		int fd = -1;
 		if (current->type == T_HEREDOC)
 			fd = create_heredoc(current->filename);
 		else if (current->type == T_REDIR_IN)
@@ -645,18 +645,22 @@ void handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
 
 		if (fd == -1)
-		{
-			perror("minishell");
-			exit(EXIT_FAILURE);
-		}
+			return (perror("minishell"), -1);
 
 		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
-			dup2(fd, STDIN_FILENO);
+		{
+			if (dup2(fd, STDIN_FILENO) == -1)
+				return (close(fd), perror("minishell"), -1);
+		}
 		else
-			dup2(fd, STDOUT_FILENO);
+		{
+			if (dup2(fd, STDOUT_FILENO) == -1)
+				return (close(fd), perror("minishell"), -1);
+		}
 		close(fd);
 		current = current->next;
 	}
+	return (0);
 }
 
 int main(void)
@@ -695,14 +699,41 @@ int main(void)
 		}
 
 		// 🚨 Handle "exit" directly in the parent process
-		if (is_builtin(pipeline->args) && ft_strcmp(pipeline->args[0], "exit") == 0)
+		if (pipeline && !pipeline->next && is_builtin(pipeline->args))
 		{
-			int result = exec_builtin(pipeline->args);
-			if (result == 2) // Exit code
+			int saved_stdin = dup(STDIN_FILENO);
+			int saved_stdout = dup(STDOUT_FILENO);
+			int saved_stderr = dup(STDERR_FILENO);
+
+			// Apply redirections (no pipes: -1, -1)
+			if (handle_redirections(-1, -1, pipeline->redirections) != 0)
+			{
+				set_exit_status(1); // Redirection error
+				close(saved_stdin);
+				close(saved_stdout);
+				close(saved_stderr);
+			}
+			else
+			{
+				int result = exec_builtin(pipeline->args);
+				set_exit_status(result);
+
+				// Restore original descriptors
+				dup2(saved_stdin, STDIN_FILENO);
+				dup2(saved_stdout, STDOUT_FILENO);
+				dup2(saved_stderr, STDERR_FILENO);
+			}
+
+			// Close saved descriptors
+			close(saved_stdin);
+			close(saved_stdout);
+			close(saved_stderr);
+
+			if (ft_strcmp(pipeline->args[0], "exit") == 0)
 			{
 				free(input);
 				free_pipeline(pipeline);
-				exit(0); // Exit parent process
+				exit(get_exit_status());
 			}
 		}
 		else

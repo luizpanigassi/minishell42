@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/02 16:24:58 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/03 18:01:57 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,14 +95,21 @@ int exec_exit(char **args)
 {
 	int status = 0;
 
+	if (args[1] && args[2])
+	{
+		ft_putstr_fd("minishell: exit error: too many arguments\n", STDERR_FILENO);
+		return (1); // Return error code 1 (shell does NOT exit)
+	}
+
 	if (args[1])
 	{
 		if (ft_isnumber(args[1]))
 			status = ft_atoi(args[1]);
 		else
 		{
-			ft_putstr_fd("minishell: exit: numeric argument required\n", STDERR_FILENO);
+			ft_putstr_fd("minishell: exit error: numeric argument required\n", STDERR_FILENO);
 			status = 2;
+			exit(status);
 		}
 	}
 	printf("Exiting minishell, goodbye!\n");
@@ -166,108 +173,168 @@ int exec_pwd(char **args)
 int exec_export(char **args)
 {
 	extern char **environ;
-	int i;
-	int ret;
-	char *eq_pos;
 
 	if (!args[1])
-		return (exec_env(args)); // Show all variables when no arguments
-
-	ret = 0;
-	i = 0;
-	while (args[++i])
 	{
-		eq_pos = ft_strchr(args[i], '=');
-		if (!eq_pos)
+		print_export_declarations();
+		return (0);
+	}
+
+	int ret = 0;
+	int i = 1;
+	while (args[i])
+	{
+		char *eq_pos = ft_strchr(args[i], '=');
+		char *var_name = NULL;
+		char *value = NULL;
+
+		if (eq_pos)
+		{
+			var_name = ft_substr(args[i], 0, eq_pos - args[i]);
+			value = ft_strdup(eq_pos + 1);
+			// Strip surrounding quotes if present
+			if (value && value[0] == '"' && value[ft_strlen_size(value) - 1] == '"')
+			{
+				char *tmp = ft_substr(value, 1, ft_strlen_size(value) - 2);
+				free(value);
+				value = tmp;
+			}
+		}
+		else
+			var_name = ft_strdup(args[i]);
+
+		if (!is_valid_var_name(var_name))
 		{
 			ft_putstr_fd("minishell: export: `", STDERR_FILENO);
 			ft_putstr_fd(args[i], STDERR_FILENO);
 			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
 			ret = 1;
+			free(var_name); // Free only on error
+			free(value);	// Free only on error
+			i++;
 			continue;
 		}
-		*eq_pos = '\0';
-		update_env_var(args[i], eq_pos + 1);
-		*eq_pos = '=';
+
+		if (eq_pos)
+			update_env_var(var_name, value); // Ownership transferred
+		else
+			ensure_var_exported(var_name); // Ownership transferred
+		i++;
 	}
-	g_exit_status = ret;
 	return (ret);
 }
 
-char **ft_copy_env(char **env)
+// builtin.c
+char **ft_copy_env(char **original)
 {
-	char **new_env;
-	int count;
-	int i;
-
-	count = 0;
-	while (env[count])
+	int count = 0;
+	while (original[count])
 		count++;
-	new_env = malloc(sizeof(char *) * (count + 1));
-	if (!new_env)
+
+	char **copy = malloc(sizeof(char *) * (count + 1));
+	if (!copy)
 		return (NULL);
-	i = -1;
-	while (++i < count)
-		new_env[i] = ft_strdup(env[i]);
-	new_env[count] = NULL;
-	return (new_env);
+
+	int i = 0;
+	while (original[i])
+	{
+		copy[i] = ft_strdup(original[i]);
+		i++;
+	}
+	copy[count] = NULL;
+	return (copy);
 }
 
 int exec_unset(char **args)
 {
 	extern char **environ;
-	int i = 1;
 
 	if (!args[1])
-		return 0;
+		return (0);
 
+	int ret = 0;
+	int i = 1;
 	while (args[i])
 	{
-		int j = 0;
-		while (environ[j])
+		if (!is_valid_var_name(args[i]))
 		{
-			if (ft_strncmp(environ[j], args[i], ft_strlen(args[i])) == 0 &&
-				environ[j][ft_strlen(args[i])] == '=')
+			ft_putstr_fd("minishell: unset: `", STDERR_FILENO);
+			ft_putstr_fd(args[i], STDERR_FILENO);
+			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
+			ret = 1;
+			i++;
+			continue;
+		}
+
+		char **env_ptr = environ;
+		while (*env_ptr)
+		{
+			char *eq = ft_strchr(*env_ptr, '=');
+			size_t var_len = eq ? eq - *env_ptr : ft_strlen(*env_ptr);
+
+			if (ft_strncmp(*env_ptr, args[i], var_len) == 0 && var_len == ft_strlen_size(args[i]))
 			{
-				free(environ[j]);
-				// Shift remaining elements
-				while (environ[j])
+				free(*env_ptr);
+				char **ptr = env_ptr;
+				while (*ptr)
 				{
-					environ[j] = environ[j + 1];
-					j++;
+					*ptr = *(ptr + 1);
+					ptr++;
 				}
 				break;
 			}
-			j++;
+			env_ptr++;
 		}
 		i++;
 	}
-	return 0;
+	return (ret);
 }
 
-// builtin.c
-void update_env_var(const char *var, const char *value)
+void update_env_var(char *var, char *value)
 {
-	char *tmp;
-	char *entry;
-	int i;
 	extern char **environ;
+	char *new_entry;
+	char **env_ptr = environ;
 
-	tmp = ft_strjoin(var, "=");
-	entry = ft_strjoin(tmp, value);
-	free(tmp);
+	// 1. Create new entry (e.g., "VAR=value" or "VAR=")
+	new_entry = (value) ? ft_strjoin3(var, "=", value) : ft_strjoin(var, "=");
 
-	i = -1;
-	while (environ[++i])
+	// 2. Find and replace existing entry
+	while (*env_ptr)
 	{
-		if (ft_strncmp(environ[i], var, ft_strlen(var)) == 0 && environ[i][ft_strlen(var)] == '=')
+		char *eq = ft_strchr(*env_ptr, '=');
+		if (eq && ft_strncmp(*env_ptr, var, eq - *env_ptr) == 0)
 		{
-			free(environ[i]);
-			environ[i] = entry;
+			free(*env_ptr);
+			*env_ptr = new_entry;
+			free(var);
+			free(value);
 			return;
 		}
+		env_ptr++;
 	}
 
-	// Add new entry by extending environ
-	environ = ft_array_append(environ, entry);
+	// 3. Add new entry
+	environ = ft_array_append(environ, new_entry);
+	free(var);
+	free(value);
+}
+
+void ensure_var_exported(char *var_name)
+{
+	extern char **environ;
+	char **env_ptr = environ;
+	int exists = 0;
+
+	while (*env_ptr && !exists)
+	{
+		char *eq = ft_strchr(*env_ptr, '=');
+		if (eq && ft_strncmp(*env_ptr, var_name, eq - *env_ptr) == 0)
+			exists = 1;
+		env_ptr++;
+	}
+	if (!exists)
+		update_env_var(var_name, NULL);
+	else
+		free(var_name); // Free here since update_env_var no longer owns it
 }

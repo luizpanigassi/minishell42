@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/02 18:15:09 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/03 17:23:52 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,7 +227,11 @@ int main(void)
 {
 	char *input;
 	t_cmd *pipeline;
+	extern char **environ;
+	char **env_copy;
 
+	env_copy = ft_copy_env(environ);
+	environ = env_copy;
 	setup_parent_signals();
 	while (1)
 	{
@@ -293,7 +297,10 @@ int main(void)
 			{
 				free(input);
 				free_pipeline(pipeline);
-				exit(get_exit_status());
+				if (get_exit_status() == 1)
+					continue;
+				else
+					exit(get_exit_status());
 			}
 		}
 		else

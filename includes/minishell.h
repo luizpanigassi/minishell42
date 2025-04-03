@@ -1,14 +1,15 @@
 /* ************************************************************************** */
-/*																			*/
-/*														:::	  ::::::::   */
-/*   minishell.h										:+:	  :+:	:+:   */
-/*													+:+ +:+		 +:+	 */
-/*   By: luinasci <luinasci@student.42.fr>		  +#+  +:+	   +#+		*/
-/*												+#+#+#+#+#+   +#+		   */
-/*   Created: 2025/03/11 17:18:18 by jcologne		  #+#	#+#			 */
-/*   Updated: 2025/03/27 18:13:06 by luinasci		 ###   ########.fr	   */
-/*																			*/
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   minishell.h                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
+/*   Updated: 2025/04/03 18:15:06 by luinasci         ###   ########.fr       */
+/*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
@@ -27,7 +28,6 @@
 # include <readline/history.h>
 # include <dirent.h>
 # include <limits.h>
-# include <string.h>
 
 # define CMD_NOT_FOUND 127
 # define PERM_DENIED 126
@@ -83,7 +83,9 @@ int		exec_pwd(char **args);
 int		exec_export(char **args);
 int		exec_unset(char **args);
 char	**ft_copy_env(char **env);
-void	update_env_var(const char *var, const char *value);
+void 	update_env_var(char *var, char *value);
+void	ensure_var_exported(char *var_name);
+
 
 // SIGNALS
 void	handle_sigint(int sig);
@@ -104,14 +106,19 @@ void	free_cmd(t_cmd *cmd);
 int		ft_strcmp(const char *s1, const char *s2);
 char	**ft_array_append(char **array, char *new_element);
 int		ft_isnumber(const char *str);
+int		is_valid_var_name(const char *name);
+void	print_export_declarations(void);
+size_t	ft_strlen_size(const char *s);
+char	**ft_array_append(char **array, char *new_element);
+char	*ft_strjoin3(const char *s1, const char *s2, const char *s3);
+
 
 // Helper functions for parsing
 int		ft_isspace(int c);
 void	next_char(t_parse *p);
 int		is_special_char(char c);
 char	**list_to_array(t_list *lst);
-
-int	handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
+int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 
 //Exit status
 void	set_exit_status(int status);
