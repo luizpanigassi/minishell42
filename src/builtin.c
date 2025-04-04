@@ -14,6 +14,11 @@
 
 extern volatile sig_atomic_t g_exit_status;
 
+/*
+** Checks if a command is a builtin
+** @param tokens Array of command tokens
+** @return 1 if builtin, 0 otherwise
+*/
 int is_builtin(char **tokens)
 {
 	const char *builtins[] = {"echo", "cd", "pwd", "export",
@@ -31,6 +36,11 @@ int is_builtin(char **tokens)
 	return (0);
 }
 
+/*
+** Executes the appropriate builtin function based on command
+** @param args Command arguments
+** @return Exit status of the builtin command
+*/
 int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
@@ -50,6 +60,11 @@ int exec_builtin(char **args)
 	return (0);
 }
 
+/*
+** Changes the current directory
+** @param args Command arguments (args[1] is the target directory)
+** @return 0 on success, 1 on failure
+*/
 int exec_cd(char **args)
 {
 	char *oldpwd = getcwd(NULL, 0);
@@ -91,6 +106,11 @@ int exec_cd(char **args)
 	return (0);
 }
 
+/*
+** Exits the shell with optional status code
+** @param args Command arguments (args[1] is optional exit status)
+** @return Does not return on success, returns 1 if too many arguments
+*/
 int exec_exit(char **args)
 {
 	int status = 0;
@@ -116,6 +136,11 @@ int exec_exit(char **args)
 	exit(status);
 }
 
+/*
+** Prints arguments to stdout with optional newline suppression
+** @param args Command arguments (-n flag suppresses newline)
+** @return Always returns 0
+*/
 int exec_echo(char **args) // use -n
 {
 	int i;
@@ -139,6 +164,11 @@ int exec_echo(char **args) // use -n
 	return (0);
 }
 
+/*
+** Prints the current environment variables
+** @param args Ignored
+** @return Always returns 0
+*/
 int exec_env(char **args)
 {
 	extern char **environ;
@@ -151,6 +181,11 @@ int exec_env(char **args)
 	return (0);
 }
 
+/*
+** Prints the current working directory
+** @param args Ignored
+** @return 0 on success, 1 on failure
+*/
 int exec_pwd(char **args)
 {
 	char *cwd;
@@ -170,6 +205,11 @@ int exec_pwd(char **args)
 	}
 }
 
+/*
+** Handles the export command for setting environment variables
+** @param args Command arguments (variable=value pairs)
+** @return 0 on success, 1 if invalid variable name
+*/
 int exec_export(char **args)
 {
 	extern char **environ;
@@ -224,7 +264,11 @@ int exec_export(char **args)
 	return (ret);
 }
 
-// builtin.c
+/*
+** Creates a copy of the environment variables array
+** @param original Original environment array
+** @return New allocated copy of the environment
+*/
 char **ft_copy_env(char **original)
 {
 	int count = 0;
@@ -245,6 +289,11 @@ char **ft_copy_env(char **original)
 	return (copy);
 }
 
+/*
+** Removes environment variables
+** @param args Command arguments (variable names to unset)
+** @return 0 on success, 1 if invalid variable name
+*/
 int exec_unset(char **args)
 {
 	extern char **environ;
@@ -290,6 +339,11 @@ int exec_unset(char **args)
 	return (ret);
 }
 
+/*
+** Updates or adds an environment variable
+** @param var Variable name
+** @param value Variable value (can be NULL)
+*/
 void update_env_var(char *var, char *value)
 {
 	extern char **environ;
@@ -320,6 +374,10 @@ void update_env_var(char *var, char *value)
 	free(value);
 }
 
+/*
+** Ensures a variable exists in the environment (without value if not present)
+** @param var_name Variable name to check/export
+*/
 void ensure_var_exported(char *var_name)
 {
 	extern char **environ;

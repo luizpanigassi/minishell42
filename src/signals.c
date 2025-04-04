@@ -12,6 +12,10 @@
 
 #include "minishell.h"
 
+/*
+** SIGINT handler (Ctrl-C)
+** @param sig Signal number
+*/
 void handle_sigint(int sig)
 {
 	(void)sig;
@@ -22,6 +26,9 @@ void handle_sigint(int sig)
 	rl_redisplay();
 }
 
+/*
+** Sets up signal handlers for parent process (shell)
+*/
 void setup_parent_signals(void)
 {
 	struct sigaction sa_int;
@@ -40,6 +47,9 @@ void setup_parent_signals(void)
 	sigaction(SIGQUIT, &sa_quit, NULL);
 }
 
+/*
+** Sets up default signal handlers for child processes
+*/
 void setup_child_signals(void)
 {
 	struct sigaction sa_default;

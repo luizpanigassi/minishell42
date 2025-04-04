@@ -12,6 +12,10 @@
 
 #include "minishell.h"
 
+/*
+** Frees an array of strings
+** @param args Array to free
+*/
 void ft_free_array(char **args)
 {
 	int i;
@@ -24,11 +28,20 @@ void ft_free_array(char **args)
 	free(args);
 }
 
+/*
+** Checks if character is whitespace
+** @param c Character to check
+** @return 1 if whitespace, 0 otherwise
+*/
 int ft_isspace(int c)
 {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
 }
 
+/*
+** Advances to next character in parser input
+** @param p Parser structure
+*/
 void next_char(t_parse *p)
 {
 	if (p->input[p->pos])
@@ -42,11 +55,21 @@ void next_char(t_parse *p)
 	}
 }
 
+/*
+** Checks if character is special shell character
+** @param c Character to check
+** @return 1 if special, 0 otherwise
+*/
 int is_special_char(char c)
 {
 	return (c == '|' || c == '>' || c == '<' || c == ';');
 }
 
+/*
+** Converts a linked list to string array
+** @param lst Linked list to convert
+** @return New allocated string array
+*/
 char **list_to_array(t_list *lst)
 {
 	char **arr;
@@ -76,6 +99,10 @@ char **list_to_array(t_list *lst)
 	return (arr);
 }
 
+/*
+** Frees a command structure
+** @param cmd Command to free
+*/
 void free_cmd(t_cmd *cmd)
 {
 	t_redir *redir;
@@ -99,6 +126,12 @@ void free_cmd(t_cmd *cmd)
 	free(cmd);
 }
 
+/*
+** String comparison
+** @param s1 First string
+** @param s2 Second string
+** @return Difference between first differing characters
+*/
 int ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
@@ -109,6 +142,11 @@ int ft_strcmp(const char *s1, const char *s2)
 	return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }
 
+/*
+** Checks if string is numeric
+** @param str String to check
+** @return 1 if numeric, 0 otherwise
+*/
 int ft_isnumber(const char *str)
 {
 	int i;
@@ -130,6 +168,11 @@ int ft_isnumber(const char *str)
 	return (i > 0 && (str[0] == '+' || str[0] == '-') ? i > 1 : i > 0);
 }
 
+/*
+** Checks if string is valid variable name
+** @param name String to check
+** @return 1 if valid, 0 otherwise
+*/
 int is_valid_var_name(const char *name)
 {
 	int i;
@@ -147,6 +190,9 @@ int is_valid_var_name(const char *name)
 	return (1);
 }
 
+/*
+** Prints environment variables in export format
+*/
 void print_export_declarations(void)
 {
 	extern char **environ;
@@ -167,7 +213,11 @@ void print_export_declarations(void)
 	}
 }
 
-// In your utils.c
+/*
+** Safe strlen that returns size_t
+** @param str String to measure
+** @return Length of string
+*/
 size_t ft_strlen_size(const char *str)
 {
 	size_t len = 0;
@@ -176,7 +226,13 @@ size_t ft_strlen_size(const char *str)
 	return (len);
 }
 
-// Joins three strings (create "VAR=value")
+/*
+** Joins three strings together
+** @param s1 First string
+** @param s2 Second string
+** @param s3 Third string
+** @return New concatenated string
+*/
 char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
 {
 	char *tmp = ft_strjoin(s1, s2);
@@ -185,7 +241,12 @@ char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
 	return result;
 }
 
-// Appends to array (used for environ)
+/*
+** Appends element to string array
+** @param array Original array
+** @param new_element Element to append
+** @return New array with added element
+*/
 char **ft_array_append(char **array, char *new_element)
 {
 	int count = 0;

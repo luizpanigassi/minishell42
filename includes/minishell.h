@@ -66,6 +66,10 @@ typedef struct s_cmd {
 	struct s_cmd	*next; // For pipe
 }	t_cmd;
 
+/*
+** Global variable to store the exit status of commands
+** volatile sig_atomic_t ensures safe access in signal handlers
+*/
 extern volatile sig_atomic_t	g_exit_status;
 
 // INPUT

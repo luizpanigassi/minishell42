@@ -12,12 +12,21 @@
 
 #include "minishell.h"
 
+/*
+** Prints error message and exits
+** @param message Error message to display
+*/
 void handle_error(char *message)
 {
 	perror(message);
 	exit(EXIT_FAILURE);
 }
 
+/*
+** Finds the full path of a command using PATH environment variable
+** @param cmd Command name to locate
+** @return Full path if found, NULL otherwise
+*/
 char *get_cmd_path(char *cmd)
 {
 	char **paths;

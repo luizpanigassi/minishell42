@@ -12,11 +12,19 @@
 
 #include "minishell.h"
 
+/*
+** Sets the global exit status
+** @param status Exit status to set
+*/
 void set_exit_status(int status)
 {
 	g_exit_status = status;
 }
 
+/*
+** Gets the current global exit status
+** @return Current exit status
+*/
 int get_exit_status(void)
 {
 	return (g_exit_status);

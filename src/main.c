@@ -14,6 +14,10 @@
 
 volatile sig_atomic_t g_exit_status = 0;
 
+/*
+** Frees memory allocated for a command pipeline
+** @param pipeline Command pipeline to free
+*/
 void free_pipeline(t_cmd *pipeline)
 {
 	t_cmd *current;
@@ -42,6 +46,12 @@ void free_pipeline(t_cmd *pipeline)
 	}
 }
 
+/*
+** Executes a single command with optional I/O redirection
+** @param cmd Command structure to execute
+** @param pipe_in Input file descriptor
+** @param pipe_out Output file descriptor
+*/
 void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
 	pid_t pid;
@@ -86,6 +96,11 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 	}
 }
 
+/*
+** Executes a pipeline of commands with proper piping
+** @param pipeline Command pipeline to execute
+** @return Exit status of the last command in pipeline
+*/
 int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
@@ -174,6 +189,13 @@ int execute_pipeline(t_cmd *pipeline)
 	return (g_exit_status);
 }
 
+/*
+** Sets up file descriptors for I/O redirection
+** @param pipe_in Input file descriptor
+** @param pipe_out Output file descriptor
+** @param redirections List of redirection specifications
+** @return 0 on success, -1 on error
+*/
 int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
 	// Handle pipe redirections
@@ -223,6 +245,10 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	return (0);
 }
 
+/*
+** Main shell loop
+** @return Exit status of shell
+*/
 int main(void)
 {
 	char *input;

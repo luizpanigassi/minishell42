@@ -12,6 +12,11 @@
 
 #include "minishell.h"
 
+/*
+** Initializes the parser structure
+** @param p Parser structure to initialize
+** @param input Input string to parse
+*/
 void init_parser(t_parse *p, char *input)
 {
 	p->input = input;
@@ -21,12 +26,21 @@ void init_parser(t_parse *p, char *input)
 	p->token_value = NULL;
 }
 
+/*
+** Skips whitespace characters in input
+** @param p Parser structure
+*/
 static void skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
 }
 
+/*
+** Handles quoted strings in input
+** @param p Parser structure
+** @param quote Type of quote (' or ")
+*/
 static void handle_quotes(t_parse *p, char quote)
 {
 	size_t start = p->pos;
@@ -46,6 +60,10 @@ static void handle_quotes(t_parse *p, char quote)
 	next_char(p); // Skip closing quote
 }
 
+/*
+** Handles regular words in input
+** @param p Parser structure
+*/
 static void handle_word(t_parse *p)
 {
 	size_t start = p->pos;
@@ -62,7 +80,10 @@ static void handle_word(t_parse *p)
 	p->token_type = T_WORD;
 }
 
-// Updated handle_special function
+/*
+** Handles special characters (|, >, <, etc.)
+** @param p Parser structure
+*/
 static void handle_special(t_parse *p)
 {
 	if (p->curr_char == '|')
@@ -103,6 +124,10 @@ static void handle_special(t_parse *p)
 	}
 }
 
+/*
+** Gets the next token from input
+** @param p Parser structure
+*/
 void next_token(t_parse *p)
 {
 	skip_whitespace(p);
@@ -121,6 +146,11 @@ void next_token(t_parse *p)
 		handle_word(p);
 }
 
+/*
+** Parses command arguments and redirections
+** @param p Parser structure
+** @return Command structure with arguments and redirections
+*/
 t_cmd *parse_args(t_parse *p)
 {
 	t_list *args = NULL;
@@ -156,6 +186,11 @@ t_cmd *parse_args(t_parse *p)
 	return cmd;
 }
 
+/*
+** Creates a temporary heredoc file
+** @param delimiter Heredoc delimiter string
+** @return File descriptor of the heredoc temp file
+*/
 int create_heredoc(const char *delimiter)
 {
 	char *line;
@@ -176,12 +211,22 @@ int create_heredoc(const char *delimiter)
 	return tmp_fd;
 }
 
+/*
+** Checks if a token type is a redirection
+** @param type Token type to check
+** @return 1 if redirection, 0 otherwise
+*/
 int is_redirection(t_token type)
 {
 	return (type == T_REDIR_IN || type == T_REDIR_OUT ||
 			type == T_APPEND || type == T_HEREDOC);
 }
 
+/*
+** Parses a pipeline of commands
+** @param p Parser structure
+** @return Linked list of command structures
+*/
 t_cmd *parse_pipeline(t_parse *p)
 {
 	t_cmd *head = NULL;
