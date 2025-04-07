@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:25:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:53:41 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ static void handle_word(t_parse *p)
 	char *sub;
 
 	while (p->curr_char && !ft_isspace(p->curr_char) &&
-		   !is_special_char(p->curr_char))
+			!is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:24:43 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:53:05 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ void next_char(t_parse *p)
 */
 int is_special_char(char c)
 {
-	return (c == '|' || c == '>' || c == '<' || c == ';');
+	return (c == '|' || c == '>' || c == '<');
 }
 
 /*
@@ -293,14 +293,14 @@ char *ft_strjoin_free(char *s1, const char *s2)
 	return result;
 }
 
-
 /**
  * @brief Appends a character to a string, freeing the original string.
  *
  * @param str The original string (will be freed). Can be NULL.
  * @param c The character to append.
  * @return char* New string containing `str` + `c`. NULL on allocation failure.
- */char *ft_strjoin_char(char *str, char c)
+ */
+char *ft_strjoin_char(char *str, char c)
 {
 	char *new_str;
 	size_t len;
@@ -321,4 +321,15 @@ char *ft_strjoin_free(char *s1, const char *s2)
 
 	free(str);
 	return (new_str);
+}
+
+size_t ft_cmd_size(t_cmd *pipeline)
+{
+	size_t count = 0;
+	while (pipeline)
+	{
+		count++;
+		pipeline = pipeline->next;
+	}
+	return (count);
 }

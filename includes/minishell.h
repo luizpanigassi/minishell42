@@ -6,10 +6,9 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:17:20 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:45:29 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
@@ -83,7 +82,7 @@ extern volatile sig_atomic_t	g_exit_status;
 void	handle_error(char *message);
 char	*get_cmd_path(char *cmd);
 char	*expand_variables(const char *input);
-
+void	exec_external_command(t_cmd *cmd);
 
 // BUILTIN
 int		is_builtin(char **args);
@@ -126,7 +125,8 @@ char	**ft_array_append(char **array, char *new_element);
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3);
 void	free_arg(void *arg);
 char	*ft_strjoin_free(char *s1, const char *s2);
-char *ft_strjoin_char(char *str, char c);
+char	*ft_strjoin_char(char *str, char c);
+size_t	ft_cmd_size(t_cmd *pipeline);
 
 // Helper functions for parsing
 int		ft_isspace(int c);

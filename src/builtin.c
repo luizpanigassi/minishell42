@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 16:18:08 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:39:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,6 +136,7 @@ int	exec_exit(char **args)
 		}
 	}
 	printf("Exiting minishell, goodbye!\n");
+	rl_clear_history();
 	exit(status);
 }
 

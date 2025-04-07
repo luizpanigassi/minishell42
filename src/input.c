@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:24:29 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:43:57 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,4 +127,23 @@ char *expand_variables(const char *input)
 		}
 	}
 	return result;
+}
+
+void exec_external_command(t_cmd *cmd)
+{
+	extern char **environ;
+
+	char *path = get_cmd_path(cmd->args[0]);
+	if (!path)
+	{
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		ft_putstr_fd(cmd->args[0], STDERR_FILENO);
+		ft_putstr_fd(": command not found\n", STDERR_FILENO);
+		exit(CMD_NOT_FOUND);
+	}
+
+	execve(path, cmd->args, environ);
+	perror("minishell");
+	free(path);
+	exit(EXIT_FAILURE);
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/03 17:23:52 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:44:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,30 +105,37 @@ int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
 	int next_pipe[2];
-	t_cmd *current = pipeline;
-	pid_t last_pid = -1;
+	pid_t *child_pids;
+	int cmd_count = ft_cmd_size(pipeline);
 	int status;
-	extern char **environ;
+	int i = 0;
 
+	if (cmd_count == 0)
+		return (1);
+
+	child_pids = malloc(sizeof(pid_t) * cmd_count);
+	if (!child_pids)
+		return (1);
+
+	t_cmd *current = pipeline;
 	while (current)
 	{
 		if (current->next && pipe(next_pipe) < 0)
 		{
 			perror("minishell: pipe");
-			return (-1);
+			free(child_pids);
+			return (1);
 		}
 
 		pid_t pid = fork();
 		if (pid == 0) // Child process
 		{
 			setup_child_signals();
-			handle_redirections(
-				prev_pipe[0],					   // Input from previous command
-				current->next ? next_pipe[1] : -1, // Output to next command
-				current->redirections			   // File redirections
-			);
+			handle_redirections(prev_pipe[0],
+								(current->next ? next_pipe[1] : -1),
+								current->redirections);
 
-			// Close pipe ends in child
+			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			if (current->next)
@@ -138,55 +145,46 @@ int execute_pipeline(t_cmd *pipeline)
 			}
 
 			if (is_builtin(current->args))
-			{
-				int result = exec_builtin(current->args);
-				exit(result);
-			}
+				exit(exec_builtin(current->args));
 			else
+				exec_external_command(current);
+		}
+		else if (pid > 0) // Parent process
+		{
+			child_pids[i++] = pid;
+			// Close unused pipe ends
+			if (prev_pipe[0] != -1)
+				close(prev_pipe[0]);
+			close(prev_pipe[1]);
+
+			// Prepare for next iteration
+			if (current->next)
 			{
-				char *path = get_cmd_path(current->args[0]);
-				if (!path)
-				{
-					ft_putstr_fd("minishell: ", STDERR_FILENO);
-					ft_putstr_fd(current->args[0], STDERR_FILENO);
-					ft_putstr_fd(": command not found\n", STDERR_FILENO);
-					exit(CMD_NOT_FOUND);
-				}
-				execve(path, current->args, environ);
-				perror("minishell");
-				exit(EXIT_FAILURE);
+				prev_pipe[0] = next_pipe[0];
+				prev_pipe[1] = next_pipe[1];
 			}
 		}
-
-		// Parent continues
-		if (prev_pipe[0] != -1)
-			close(prev_pipe[0]);
-		close(prev_pipe[1]);
-
-		// Prepare for next iteration
-		if (current->next)
+		else // Fork failed
 		{
-			prev_pipe[0] = next_pipe[0];
-			prev_pipe[1] = next_pipe[1];
+			perror("minishell: fork");
+			free(child_pids);
+			return (1);
 		}
-
-		if (!current->next)
-			last_pid = pid;
 		current = current->next;
 	}
 
-	// Wait for last command
-	if (last_pid != -1)
+	// Wait for all children and get last command's status
+	int last_status = 0;
+	for (int j = 0; j < cmd_count; j++)
 	{
-		waitpid(last_pid, &status, 0);
-		g_exit_status = WEXITSTATUS(status);
+		waitpid(child_pids[j], &status, 0);
+		if (WIFEXITED(status) && j == cmd_count - 1)
+			last_status = WEXITSTATUS(status);
 	}
 
-	// Cleanup remaining processes
-	while (waitpid(-1, NULL, WNOHANG) > 0)
-		;
-
-	return (g_exit_status);
+	free(child_pids);
+	set_exit_status(last_status);
+	return (last_status);
 }
 
 /*
