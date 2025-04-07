@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/07 17:44:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:03:34 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,10 @@
 
 volatile sig_atomic_t g_exit_status = 0;
 
-/*
-** Frees memory allocated for a command pipeline
-** @param pipeline Command pipeline to free
-*/
+/**
+ * @brief Frees a command pipeline and associated resources.
+ * @param pipeline Linked list of command structures.
+ */
 void free_pipeline(t_cmd *pipeline)
 {
 	t_cmd *current;
@@ -46,12 +46,12 @@ void free_pipeline(t_cmd *pipeline)
 	}
 }
 
-/*
-** Executes a single command with optional I/O redirection
-** @param cmd Command structure to execute
-** @param pipe_in Input file descriptor
-** @param pipe_out Output file descriptor
-*/
+/**
+ * @brief Executes a single command with I/O redirection.
+ * @param cmd Command structure to execute.
+ * @param pipe_in Input file descriptor (or -1).
+ * @param pipe_out Output file descriptor (or -1).
+ */
 void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
 	pid_t pid;

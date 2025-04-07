@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:43:57 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:03:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,12 @@ void handle_error(char *message)
 	exit(EXIT_FAILURE);
 }
 
-/*
-** Finds the full path of a command using PATH environment variable
-** @param cmd Command name to locate
-** @return Full path if found, NULL otherwise
-*/
+/**
+ * @brief Locates the full path of a command using PATH.
+ * @param cmd Command name (e.g., "ls").
+ * @return Allocated full path (e.g., "/bin/ls") or NULL if not found.
+ * Caller must free the returned string.
+ */
 char *get_cmd_path(char *cmd)
 {
 	char **paths;
@@ -129,6 +130,11 @@ char *expand_variables(const char *input)
 	return result;
 }
 
+/**
+ * @brief Executes an external command in a child process.
+ * @param cmd Command structure with arguments and redirections.
+ * @note Terminates the process on completion or error.
+ */
 void exec_external_command(t_cmd *cmd)
 {
 	extern char **environ;

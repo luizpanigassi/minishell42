@@ -6,16 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:28:19 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:38:00 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:04:31 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** SIGINT handler (Ctrl-C)
-** @param sig Signal number
-*/
+/**
+ * @brief Handles SIGINT (Ctrl+C) in interactive mode.
+ * Prints a new prompt and resets input buffer.
+ * @param sig Signal number (unused).
+ */
 void handle_sigint(int sig)
 {
 	(void)sig;
@@ -42,9 +43,10 @@ void setup_parent_signals(void)
 	sigaction(SIGQUIT, &sa, NULL);
 }
 
-/*
-** Sets up default signal handlers for child processes
-*/
+/**
+ * @brief Configures child processes to use default signal handlers.
+ * SIGINT and SIGQUIT will terminate children normally.
+ */
 void setup_child_signals(void)
 {
 	struct sigaction sa_default;

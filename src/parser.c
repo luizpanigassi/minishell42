@@ -6,17 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:53:41 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:04:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Initializes the parser structure
-** @param p Parser structure to initialize
-** @param input Input string to parse
-*/
+/**
+ * @brief Initializes the parser state for new input.
+ * @param p Parser structure to initialize.
+ * @param input Input string to parse.
+ */
 void init_parser(t_parse *p, char *input)
 {
 	p->input = input;
@@ -197,11 +197,12 @@ t_cmd *parse_args(t_parse *p)
 	return cmd;
 }
 
-/*
-** Creates a temporary heredoc file
-** @param delimiter Heredoc delimiter string
-** @return File descriptor of the heredoc temp file
-*/
+/**
+ * @brief Creates a temporary heredoc file.
+ * @param delimiter Heredoc termination string.
+ * @return File descriptor of the heredoc temp file.
+ * @note Automatically deletes the temp file after opening.
+ */
 int create_heredoc(const char *delimiter)
 {
 	char *line;

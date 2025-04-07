@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:39:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:02:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,11 +209,11 @@ int exec_pwd(char **args)
 	}
 }
 
-/*
-** Handles the export command for setting environment variables
-** @param args Command arguments (variable=value pairs)
-** @return 0 on success, 1 if invalid variable name
-*/
+/**
+ * @brief Executes the 'export' builtin to set environment variables.
+ * @param args Array of arguments (e.g., ["export", "VAR=value"]).
+ * @return 0 on success, 1 if any invalid variable name is encountered.
+ */
 int exec_export(char **args)
 {
 	extern char **environ;
@@ -293,11 +293,11 @@ char **ft_copy_env(char **original)
 	return (copy);
 }
 
-/*
-** Removes environment variables
-** @param args Command arguments (variable names to unset)
-** @return 0 on success, 1 if invalid variable name
-*/
+/**
+ * @brief Executes the 'unset' builtin to remove environment variables.
+ * @param args Array of arguments (e.g., ["unset", "VAR"]).
+ * @return 0 on success, 1 if any invalid variable name is encountered.
+ */
 int exec_unset(char **args)
 {
 	extern char **environ;

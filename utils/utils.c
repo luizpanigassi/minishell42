@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:53:05 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:06:10 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -241,12 +241,12 @@ char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
 	return result;
 }
 
-/*
-** Appends element to string array
-** @param array Original array
-** @param new_element Element to append
-** @return New array with added element
-*/
+/**
+ * @brief Appends an element to a NULL-terminated string array.
+ * @param array Original array (freed after operation).
+ * @param new_element Element to add.
+ * @return New array with added element.
+ */
 char **ft_array_append(char **array, char *new_element)
 {
 	int count = 0;
@@ -294,11 +294,10 @@ char *ft_strjoin_free(char *s1, const char *s2)
 }
 
 /**
- * @brief Appends a character to a string, freeing the original string.
- *
- * @param str The original string (will be freed). Can be NULL.
- * @param c The character to append.
- * @return char* New string containing `str` + `c`. NULL on allocation failure.
+ * @brief Safely appends a character to a string.
+ * @param str Original string (freed after appending).
+ * @param c Character to append.
+ * @return New allocated string with appended character.
  */
 char *ft_strjoin_char(char *str, char c)
 {
@@ -323,6 +322,14 @@ char *ft_strjoin_char(char *str, char c)
 	return (new_str);
 }
 
+/**
+ * @brief Counts the number of commands in a pipeline.
+ *
+ * @param pipeline Head of the command pipeline (linked list of t_cmd).
+ * @return size_t Number of commands in the pipeline. Returns 0 if pipeline is NULL.
+ *
+ * @note Traverses the linked list of commands until reaching NULL.
+ */
 size_t ft_cmd_size(t_cmd *pipeline)
 {
 	size_t count = 0;
