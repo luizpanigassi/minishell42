@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:02:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:09:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -343,11 +343,12 @@ int exec_unset(char **args)
 	return (ret);
 }
 
-/*
-** Updates or adds an environment variable
-** @param var Variable name
-** @param value Variable value (can be NULL)
-*/
+/* Environment variable operations */
+/**
+ * @brief Updates or adds an environment variable.
+ * @param var Variable name (ownership transferred).
+ * @param value Variable value (ownership transferred).
+ */
 void update_env_var(char *var, char *value)
 {
 	extern char **environ;

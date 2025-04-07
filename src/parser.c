@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:04:02 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:16:17 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ static void handle_word(t_parse *p)
 	char *sub;
 
 	while (p->curr_char && !ft_isspace(p->curr_char) &&
-			!is_special_char(p->curr_char))
+		   !is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}
@@ -164,37 +164,67 @@ void next_token(t_parse *p)
 */
 t_cmd *parse_args(t_parse *p)
 {
-	t_list *args = NULL;
-	t_redir *redirs = NULL;
-	t_arg *arg;
+	t_list *args = NULL;			// List to collect command arguments (t_arg structs)
+	t_redir *redirs = NULL;			// List of redirection specifications
+	t_redir **redir_tail = &redirs; // Pointer to end of redir list for appending
+	t_arg *arg;						// Temporary argument storage
 
+	// Process tokens until pipeline or end of input
 	while (p->token_type != T_EOF && p->token_type != T_PIPE)
 	{
+		// Handle words and quoted strings
 		if (p->token_type == T_WORD ||
 			p->token_type == T_SINGLE_QUOTED ||
 			p->token_type == T_DOUBLE_QUOTED)
 		{
+			// Allocate and populate argument structure
 			arg = malloc(sizeof(t_arg));
-			arg->value = ft_strdup(p->token_value);
-			arg->type = p->token_type;
-			ft_lstadd_back(&args, ft_lstnew(arg));
+			if (!arg)
+				return (NULL);
+			arg->value = ft_strdup(p->token_value); // Copy token value
+			arg->type = p->token_type;				// Store quoting type
+			ft_lstadd_back(&args, ft_lstnew(arg));	// Add to arguments list
 		}
+		// Handle redirection operators
 		else if (is_redirection(p->token_type))
 		{
-			// Redirection handling (unchanged)
+			t_redir *redir = malloc(sizeof(t_redir));
+			if (!redir)
+			{
+				ft_lstclear(&args, free_arg);
+				return (NULL);
+			}
+
+			// Set redirection type and get filename from next token
+			redir->type = p->token_type;
+			next_token(p);								 // Move to filename token
+			redir->filename = ft_strdup(p->token_value); // Store filename
+			redir->next = NULL;
+
+			// Append to redirection list
+			*redir_tail = redir;
+			redir_tail = &redir->next;
 		}
-		next_token(p);
+		next_token(p); // Advance to next token
 	}
 
-	// Convert to command arguments with expansion
+	// Build command structure
 	t_cmd *cmd = malloc(sizeof(t_cmd));
-	cmd->args = build_expanded_args(args); // New function
-	cmd->redirections = redirs;
-	cmd->next = NULL;
+	if (!cmd)
+	{
+		ft_lstclear(&args, free_arg);
+		return (NULL);
+	}
+
+	// Convert argument list to expanded string array
+	cmd->args = build_expanded_args(args);
+	cmd->redirections = redirs; // Attach redirections
+	cmd->next = NULL;			// Initialize pipeline pointer
 
 	// Cleanup temporary structures
-	ft_lstclear(&args, free_arg);
-	return cmd;
+	ft_lstclear(&args, free_arg); // Free argument list and t_arg structs
+
+	return (cmd);
 }
 
 /**

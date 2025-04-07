@@ -332,11 +332,11 @@ int exec_pwd(char **args)
 	}
 }
 
-/*
-** Handles the export command for setting environment variables
-** @param args Command arguments (variable=value pairs)
-** @return 0 on success, 1 if invalid variable name
-*/
+/**
+ * @brief Executes the 'export' builtin to set environment variables.
+ * @param args Array of arguments (e.g., ["export", "VAR=value"]).
+ * @return 0 on success, 1 if any invalid variable name is encountered.
+ */
 int exec_export(char **args)
 {
 	extern char **environ;
@@ -416,11 +416,11 @@ char **ft_copy_env(char **original)
 	return (copy);
 }
 
-/*
-** Removes environment variables
-** @param args Command arguments (variable names to unset)
-** @return 0 on success, 1 if invalid variable name
-*/
+/**
+ * @brief Executes the 'unset' builtin to remove environment variables.
+ * @param args Array of arguments (e.g., ["unset", "VAR"]).
+ * @return 0 on success, 1 if any invalid variable name is encountered.
+ */
 int exec_unset(char **args)
 {
 	extern char **environ;
@@ -466,11 +466,12 @@ int exec_unset(char **args)
 	return (ret);
 }
 
-/*
-** Updates or adds an environment variable
-** @param var Variable name
-** @param value Variable value (can be NULL)
-*/
+/* Environment variable operations */
+/**
+ * @brief Updates or adds an environment variable.
+ * @param var Variable name (ownership transferred).
+ * @param value Variable value (ownership transferred).
+ */
 void update_env_var(char *var, char *value)
 {
 	extern char **environ;
@@ -524,29 +525,29 @@ void ensure_var_exported(char *var_name)
 		free(var_name); // Free here since update_env_var no longer owns it
 }
 
-exit_status.c:
+exit_status:
 
 #include "minishell.h"
 
-/*
-** Sets the global exit status
-** @param status Exit status to set
-*/
+/**
+ * @brief Updates the global exit status variable.
+ * @param status Exit code to store (0-255).
+ */
 void set_exit_status(int status)
 {
 	g_exit_status = status;
 }
 
-/*
-** Gets the current global exit status
-** @return Current exit status
-*/
+/**
+ * @brief Retrieves the global exit status.
+ * @return Last exit status of foreground commands.
+ */
 int get_exit_status(void)
 {
 	return (g_exit_status);
 }
 
-input.c:
+input.c
 
 #include "minishell.h"
 
@@ -560,11 +561,12 @@ void handle_error(char *message)
 	exit(EXIT_FAILURE);
 }
 
-/*
-** Finds the full path of a command using PATH environment variable
-** @param cmd Command name to locate
-** @return Full path if found, NULL otherwise
-*/
+/**
+ * @brief Locates the full path of a command using PATH.
+ * @param cmd Command name (e.g., "ls").
+ * @return Allocated full path (e.g., "/bin/ls") or NULL if not found.
+ * Caller must free the returned string.
+ */
 char *get_cmd_path(char *cmd)
 {
 	char **paths;
@@ -667,6 +669,11 @@ char *expand_variables(const char *input)
 	return result;
 }
 
+/**
+ * @brief Executes an external command in a child process.
+ * @param cmd Command structure with arguments and redirections.
+ * @note Terminates the process on completion or error.
+ */
 void exec_external_command(t_cmd *cmd)
 {
 	extern char **environ;
@@ -692,10 +699,10 @@ main.c
 
 volatile sig_atomic_t g_exit_status = 0;
 
-/*
-** Frees memory allocated for a command pipeline
-** @param pipeline Command pipeline to free
-*/
+/**
+ * @brief Frees a command pipeline and associated resources.
+ * @param pipeline Linked list of command structures.
+ */
 void free_pipeline(t_cmd *pipeline)
 {
 	t_cmd *current;
@@ -724,12 +731,12 @@ void free_pipeline(t_cmd *pipeline)
 	}
 }
 
-/*
-** Executes a single command with optional I/O redirection
-** @param cmd Command structure to execute
-** @param pipe_in Input file descriptor
-** @param pipe_out Output file descriptor
-*/
+/**
+ * @brief Executes a single command with I/O redirection.
+ * @param cmd Command structure to execute.
+ * @param pipe_in Input file descriptor (or -1).
+ * @param pipe_out Output file descriptor (or -1).
+ */
 void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
 	pid_t pid;
@@ -1018,15 +1025,15 @@ int main(void)
 	return 0;
 }
 
-parser.c:
+parser.c
 
 #include "minishell.h"
 
-/*
-** Initializes the parser structure
-** @param p Parser structure to initialize
-** @param input Input string to parse
-*/
+/**
+ * @brief Initializes the parser state for new input.
+ * @param p Parser structure to initialize.
+ * @param input Input string to parse.
+ */
 void init_parser(t_parse *p, char *input)
 {
 	p->input = input;
@@ -1091,7 +1098,7 @@ static void handle_word(t_parse *p)
 	char *sub;
 
 	while (p->curr_char && !ft_isspace(p->curr_char) &&
-		   !is_special_char(p->curr_char))
+			!is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}
@@ -1207,11 +1214,12 @@ t_cmd *parse_args(t_parse *p)
 	return cmd;
 }
 
-/*
-** Creates a temporary heredoc file
-** @param delimiter Heredoc delimiter string
-** @return File descriptor of the heredoc temp file
-*/
+/**
+ * @brief Creates a temporary heredoc file.
+ * @param delimiter Heredoc termination string.
+ * @return File descriptor of the heredoc temp file.
+ * @note Automatically deletes the temp file after opening.
+ */
 int create_heredoc(const char *delimiter)
 {
 	char *line;
@@ -1303,14 +1311,15 @@ char **build_expanded_args(t_list *args)
 	return arr;
 }
 
-signals.c
+signals.c:
 
 #include "minishell.h"
 
-/*
-** SIGINT handler (Ctrl-C)
-** @param sig Signal number
-*/
+/**
+ * @brief Handles SIGINT (Ctrl+C) in interactive mode.
+ * Prints a new prompt and resets input buffer.
+ * @param sig Signal number (unused).
+ */
 void handle_sigint(int sig)
 {
 	(void)sig;
@@ -1337,9 +1346,10 @@ void setup_parent_signals(void)
 	sigaction(SIGQUIT, &sa, NULL);
 }
 
-/*
-** Sets up default signal handlers for child processes
-*/
+/**
+ * @brief Configures child processes to use default signal handlers.
+ * SIGINT and SIGQUIT will terminate children normally.
+ */
 void setup_child_signals(void)
 {
 	struct sigaction sa_default;
@@ -1353,7 +1363,7 @@ void setup_child_signals(void)
 	signal(SIGQUIT, SIG_DFL);
 }
 
-utils.c
+utils.c:
 
 #include "minishell.h"
 
@@ -1407,7 +1417,7 @@ void next_char(t_parse *p)
 */
 int is_special_char(char c)
 {
-	return (c == '|' || c == '>' || c == '<' || c == ';');
+	return (c == '|' || c == '>' || c == '<');
 }
 
 /*
@@ -1586,12 +1596,12 @@ char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
 	return result;
 }
 
-/*
-** Appends element to string array
-** @param array Original array
-** @param new_element Element to append
-** @return New array with added element
-*/
+/**
+ * @brief Appends an element to a NULL-terminated string array.
+ * @param array Original array (freed after operation).
+ * @param new_element Element to add.
+ * @return New array with added element.
+ */
 char **ft_array_append(char **array, char *new_element)
 {
 	int count = 0;
@@ -1639,11 +1649,10 @@ char *ft_strjoin_free(char *s1, const char *s2)
 }
 
 /**
- * @brief Appends a character to a string, freeing the original string.
- *
- * @param str The original string (will be freed). Can be NULL.
- * @param c The character to append.
- * @return char* New string containing `str` + `c`. NULL on allocation failure.
+ * @brief Safely appends a character to a string.
+ * @param str Original string (freed after appending).
+ * @param c Character to append.
+ * @return New allocated string with appended character.
  */
 char *ft_strjoin_char(char *str, char c)
 {
@@ -1668,6 +1677,14 @@ char *ft_strjoin_char(char *str, char c)
 	return (new_str);
 }
 
+/**
+ * @brief Counts the number of commands in a pipeline.
+ *
+ * @param pipeline Head of the command pipeline (linked list of t_cmd).
+ * @return size_t Number of commands in the pipeline. Returns 0 if pipeline is NULL.
+ *
+ * @note Traverses the linked list of commands until reaching NULL.
+ */
 size_t ft_cmd_size(t_cmd *pipeline)
 {
 	size_t count = 0;
