@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:06:10 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:31:34 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -339,4 +339,16 @@ size_t ft_cmd_size(t_cmd *pipeline)
 		pipeline = pipeline->next;
 	}
 	return (count);
+}
+
+void free_redirections(t_redir *redirs)
+{
+	t_redir *tmp;
+	while (redirs)
+	{
+		tmp = redirs->next;
+		free(redirs->filename);
+		free(redirs);
+		redirs = tmp;
+	}
 }

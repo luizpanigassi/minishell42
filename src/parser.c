@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:16:17 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:30:11 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,6 +142,8 @@ static void handle_special(t_parse *p)
 void next_token(t_parse *p)
 {
 	skip_whitespace(p);
+	free(p->token_value);
+	p->token_value = NULL;
 
 	if (!p->curr_char)
 	{
@@ -195,10 +197,31 @@ t_cmd *parse_args(t_parse *p)
 				return (NULL);
 			}
 
-			// Set redirection type and get filename from next token
 			redir->type = p->token_type;
-			next_token(p);								 // Move to filename token
-			redir->filename = ft_strdup(p->token_value); // Store filename
+			next_token(p); // Move to filename token
+
+			// Check if filename is valid (word or quoted)
+			if (p->token_type != T_WORD &&
+				p->token_type != T_SINGLE_QUOTED &&
+				p->token_type != T_DOUBLE_QUOTED)
+			{
+				// Syntax error: print message and clean up
+				ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
+				if (p->token_type == T_EOF)
+					ft_putstr_fd("newline", STDERR_FILENO);
+				else if (p->token_value)
+					ft_putstr_fd(p->token_value, STDERR_FILENO);
+				else
+					ft_putstr_fd(" ", STDERR_FILENO); // Fallback
+				ft_putstr_fd("'\n", STDERR_FILENO);
+
+				free(redir);
+				ft_lstclear(&args, free_arg);
+				free_redirections(redirs); // Free existing redirections
+				return (NULL);
+			}
+
+			redir->filename = ft_strdup(p->token_value);
 			redir->next = NULL;
 
 			// Append to redirection list

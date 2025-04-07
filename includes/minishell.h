@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:45:29 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:31:10 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,6 +127,7 @@ void	free_arg(void *arg);
 char	*ft_strjoin_free(char *s1, const char *s2);
 char	*ft_strjoin_char(char *str, char c);
 size_t	ft_cmd_size(t_cmd *pipeline);
+void	free_redirections(t_redir *redirs);
 
 // Helper functions for parsing
 int		ft_isspace(int c);
