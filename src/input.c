@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:13:39 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:24:29 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,18 @@ char *get_cmd_path(char *cmd)
 	return (NULL);
 }
 
+/**
+ * @brief Expands environment variables and `$?` in a string.
+ *
+ * @param input The input string to process.
+ * @return char* New string with variables expanded. Must be freed by the caller.
+ *
+ * @note Expansion rules:
+ * - `$VAR` → Replaced with environment variable value.
+ * - `$?` → Replaced with the last exit status.
+ * - Single-quoted strings suppress expansion.
+ * - Double-quoted strings allow `$VAR` and `$?` expansion.
+ */
 char *expand_variables(const char *input)
 {
 	char *result = ft_strdup("");

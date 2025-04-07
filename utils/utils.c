@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:17:23 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:24:43 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -267,6 +267,11 @@ char **ft_array_append(char **array, char *new_element)
 	return new_array;
 }
 
+/**
+ * @brief Frees a t_arg structure and its contents.
+ *
+ * @param arg_ptr Pointer to a t_arg structure.
+ */
 void free_arg(void *arg)
 {
 	t_arg *a = (t_arg *)arg;
@@ -274,6 +279,13 @@ void free_arg(void *arg)
 	free(a);
 }
 
+/**
+ * @brief Concatenates two strings and frees the first string.
+ *
+ * @param s1 First string (will be freed). Can be NULL.
+ * @param s2 Second string (not freed). Can be NULL.
+ * @return char* New string containing `s1` + `s2`. NULL on allocation failure.
+ */
 char *ft_strjoin_free(char *s1, const char *s2)
 {
 	char *result = ft_strjoin(s1, s2);
@@ -281,7 +293,14 @@ char *ft_strjoin_free(char *s1, const char *s2)
 	return result;
 }
 
-char *ft_strjoin_char(char *str, char c)
+
+/**
+ * @brief Appends a character to a string, freeing the original string.
+ *
+ * @param str The original string (will be freed). Can be NULL.
+ * @param c The character to append.
+ * @return char* New string containing `str` + `c`. NULL on allocation failure.
+ */char *ft_strjoin_char(char *str, char c)
 {
 	char *new_str;
 	size_t len;

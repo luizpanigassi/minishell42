@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 17:18:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:25:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,6 +263,12 @@ t_cmd *parse_pipeline(t_parse *p)
 	return head;
 }
 
+/**
+ * @brief Converts a list of t_arg structs to an array of expanded strings.
+ *
+ * @param args Linked list of t_arg structs.
+ * @return char** Array of expanded arguments. Must be freed with ft_free_array.
+ */
 char **build_expanded_args(t_list *args)
 {
 	int count = ft_lstsize(args);
