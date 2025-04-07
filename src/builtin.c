@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:09:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 19:03:53 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -236,13 +236,6 @@ int exec_export(char **args)
 		{
 			var_name = ft_substr(args[i], 0, eq_pos - args[i]);
 			value = ft_strdup(eq_pos + 1);
-			// Strip surrounding quotes if present
-			if (value && value[0] == '"' && value[ft_strlen_size(value) - 1] == '"')
-			{
-				char *tmp = ft_substr(value, 1, ft_strlen_size(value) - 2);
-				free(value);
-				value = tmp;
-			}
 		}
 		else
 			var_name = ft_strdup(args[i]);

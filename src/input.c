@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:03:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 18:57:20 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,14 @@ char *get_cmd_path(char *cmd)
 	// Handle absolute paths and commands with path specified
 	if (ft_strchr(cmd, '/') != NULL)
 	{
-		if (access(cmd, X_OK) == 0)
-			return (ft_strdup(cmd));
-		return (NULL);
+		if (access(cmd, F_OK) == -1)
+			return NULL; // Not found
+		if (access(cmd, X_OK) == -1)
+		{
+			g_exit_status = PERM_DENIED; // Set global error
+			return NULL;
+		}
+		return ft_strdup(cmd);
 	}
 	// Get PATH environment variable
 	char *path_env = getenv("PATH");

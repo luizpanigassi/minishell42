@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/07 18:03:34 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 19:11:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,16 +152,20 @@ int execute_pipeline(t_cmd *pipeline)
 		else if (pid > 0) // Parent process
 		{
 			child_pids[i++] = pid;
-			// Close unused pipe ends
+			// Close parent's copy of pipe ends
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			close(prev_pipe[1]);
 
-			// Prepare for next iteration
 			if (current->next)
 			{
 				prev_pipe[0] = next_pipe[0];
 				prev_pipe[1] = next_pipe[1];
+			}
+			else
+			{
+				prev_pipe[0] = -1;
+				prev_pipe[1] = -1;
 			}
 		}
 		else // Fork failed
@@ -177,7 +181,11 @@ int execute_pipeline(t_cmd *pipeline)
 	int last_status = 0;
 	for (int j = 0; j < cmd_count; j++)
 	{
-		waitpid(child_pids[j], &status, 0);
+		while (waitpid(child_pids[j], &status, 0) == -1)
+		{
+			if (errno != EINTR)
+				break; // Handle real error
+		}
 		if (WIFEXITED(status) && j == cmd_count - 1)
 			last_status = WEXITSTATUS(status);
 	}
@@ -283,6 +291,7 @@ int main(void)
 		{
 			free(input);
 			free_pipeline(pipeline);
+			setup_parent_signals();
 			continue;
 		}
 
@@ -334,6 +343,7 @@ int main(void)
 
 		free(input);
 		free_pipeline(pipeline);
+		setup_parent_signals();
 	}
 	rl_clear_history(); // Clear history entries
 	rl_reset_terminal(NULL);

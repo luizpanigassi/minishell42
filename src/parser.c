@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:30:11 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 19:12:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,8 +47,12 @@ static void handle_quotes(t_parse *p, char quote)
 	char *content;
 
 	next_char(p); // Skip opening quote
-	while (p->curr_char && p->curr_char != quote)
+	while (p->curr_char && (p->curr_char != quote || (p->input[p->pos - 1] == '\\')))
+	{
+		if (p->curr_char == '\\' && quote == '"')
+			next_char(p); // Skip escape char if inside double quotes
 		next_char(p);
+	}
 
 	if (!p->curr_char)
 	{
@@ -80,9 +84,12 @@ static void handle_word(t_parse *p)
 	size_t start = p->pos;
 	char *sub;
 
-	while (p->curr_char && !ft_isspace(p->curr_char) &&
-		   !is_special_char(p->curr_char))
+	while (p->curr_char &&
+			(!ft_isspace(p->curr_char) || (p->input[p->pos - 1] == '\\')) &&
+			!is_special_char(p->curr_char))
 	{
+		if (p->curr_char == '\\' && p->input[p->pos + 1])
+			next_char(p); // Skip backslash
 		next_char(p);
 	}
 	sub = ft_substr(p->input, start, p->pos - start);
