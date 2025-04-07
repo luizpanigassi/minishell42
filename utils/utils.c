@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/03 18:03:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:17:23 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -265,4 +265,41 @@ char **ft_array_append(char **array, char *new_element)
 
 	free(array);
 	return new_array;
+}
+
+void free_arg(void *arg)
+{
+	t_arg *a = (t_arg *)arg;
+	free(a->value);
+	free(a);
+}
+
+char *ft_strjoin_free(char *s1, const char *s2)
+{
+	char *result = ft_strjoin(s1, s2);
+	free(s1);
+	return result;
+}
+
+char *ft_strjoin_char(char *str, char c)
+{
+	char *new_str;
+	size_t len;
+
+	if (!str)
+		len = 0;
+	else
+		len = ft_strlen(str);
+
+	new_str = malloc(len + 2); // Existing chars + new char + null terminator
+	if (!new_str)
+		return (NULL);
+
+	if (str)
+		ft_memcpy(new_str, str, len);
+	new_str[len] = c;
+	new_str[len + 1] = '\0';
+
+	free(str);
+	return (new_str);
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/03/27 18:20:55 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:13:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,17 +37,17 @@ char *get_cmd_path(char *cmd)
 	// Handle absolute paths and commands with path specified
 	if (ft_strchr(cmd, '/') != NULL)
 	{
-		if(access(cmd, X_OK) == 0)
+		if (access(cmd, X_OK) == 0)
 			return (ft_strdup(cmd));
 		return (NULL);
 	}
 	// Get PATH environment variable
 	char *path_env = getenv("PATH");
-	if(!path_env)
+	if (!path_env)
 		return (NULL);
 	// Split PATH into individual directories
 	paths = ft_split(path_env, ':');
-	if(!paths)
+	if (!paths)
 		return (NULL);
 
 	i = -1;
@@ -74,8 +74,45 @@ char *get_cmd_path(char *cmd)
 			ft_free_array(paths);
 			return (full_path);
 		}
-		free (full_path);
+		free(full_path);
 	}
 	ft_free_array(paths);
 	return (NULL);
+}
+
+char *expand_variables(const char *input)
+{
+	char *result = ft_strdup("");
+	size_t i = 0;
+
+	while (input[i])
+	{
+		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1]) || input[i + 1] == '_'))
+		{
+			i++; // Skip $
+			if (input[i] == '?')
+			{
+				char *exit_status = ft_itoa(get_exit_status());
+				result = ft_strjoin_free(result, exit_status);
+				free(exit_status);
+				i++;
+			}
+			else
+			{
+				size_t start = i;
+				while (input[i] && (ft_isalnum(input[i]) || input[i] == '_'))
+					i++;
+				char *var_name = ft_substr(input, start, i - start);
+				char *var_value = getenv(var_name);
+				if (var_value)
+					result = ft_strjoin_free(result, var_value);
+				free(var_name);
+			}
+		}
+		else
+		{
+			result = ft_strjoin_char(result, input[i++]);
+		}
+	}
+	return result;
 }

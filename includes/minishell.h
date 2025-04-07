@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/03 18:15:06 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 17:17:20 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,8 @@
 typedef enum e_token
 {
 	T_WORD,
+	T_SINGLE_QUOTED,
+	T_DOUBLE_QUOTED,
 	T_PIPE,
 	T_REDIR_OUT,
 	T_REDIR_IN,
@@ -66,6 +68,11 @@ typedef struct s_cmd {
 	struct s_cmd	*next; // For pipe
 }	t_cmd;
 
+typedef struct s_arg {
+	char	*value;
+	t_token	type;
+}	t_arg;
+
 /*
 ** Global variable to store the exit status of commands
 ** volatile sig_atomic_t ensures safe access in signal handlers
@@ -75,6 +82,8 @@ extern volatile sig_atomic_t	g_exit_status;
 // INPUT
 void	handle_error(char *message);
 char	*get_cmd_path(char *cmd);
+char	*expand_variables(const char *input);
+
 
 // BUILTIN
 int		is_builtin(char **args);
@@ -87,9 +96,9 @@ int		exec_pwd(char **args);
 int		exec_export(char **args);
 int		exec_unset(char **args);
 char	**ft_copy_env(char **env);
-void 	update_env_var(char *var, char *value);
+void	update_env_var(char *var, char *value);
 void	ensure_var_exported(char *var_name);
-
+char	**build_expanded_args(t_list *args);
 
 // SIGNALS
 void	handle_sigint(int sig);
@@ -115,7 +124,9 @@ void	print_export_declarations(void);
 size_t	ft_strlen_size(const char *s);
 char	**ft_array_append(char **array, char *new_element);
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3);
-
+void	free_arg(void *arg);
+char	*ft_strjoin_free(char *s1, const char *s2);
+char *ft_strjoin_char(char *str, char c);
 
 // Helper functions for parsing
 int		ft_isspace(int c);

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/03 18:01:57 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/07 16:18:08 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,11 @@ extern volatile sig_atomic_t g_exit_status;
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int is_builtin(char **tokens)
+int	is_builtin(char **tokens)
 {
-	const char *builtins[] = {"echo", "cd", "pwd", "export",
-							  "unset", "env", "exit", NULL};
-	int i;
+	const char	*builtins[] = {"echo", "cd", "pwd", "export",
+		"unset", "env", "exit", NULL};
+	int			i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -41,7 +41,7 @@ int is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int exec_builtin(char **args)
+int	exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -65,12 +65,14 @@ int exec_builtin(char **args)
 ** @param args Command arguments (args[1] is the target directory)
 ** @return 0 on success, 1 on failure
 */
-int exec_cd(char **args)
+int	exec_cd(char **args)
 {
-	char *oldpwd = getcwd(NULL, 0);
-	char *path = NULL;
-	char *newpwd;
+	char	*oldpwd;
+	char	*path;
+	char	*newpwd;
 
+	oldpwd = getcwd(NULL, 0);
+	path = NULL;
 	if (!oldpwd)
 		return (perror("cd"), 1);
 
@@ -111,10 +113,11 @@ int exec_cd(char **args)
 ** @param args Command arguments (args[1] is optional exit status)
 ** @return Does not return on success, returns 1 if too many arguments
 */
-int exec_exit(char **args)
+int	exec_exit(char **args)
 {
-	int status = 0;
+	int	status;
 
+	status = 0;
 	if (args[1] && args[2])
 	{
 		ft_putstr_fd("minishell: exit error: too many arguments\n", STDERR_FILENO);

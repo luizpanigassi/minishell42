@@ -1,6 +1,8 @@
 {
 	"files.associations": {
 		"minishell.h": "c",
-		"text": "cpp"
+		"text": "cpp",
+		"unistd.h": "c",
+		"dirent.h": "c"
 	}
 }
