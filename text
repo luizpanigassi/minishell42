@@ -1,4 +1,4 @@
-header:
+header
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
@@ -131,7 +131,6 @@ void	set_exit_status(int status);
 int		get_exit_status(void);
 
 #endif
-
 
 builtin.c
 
@@ -1380,6 +1379,8 @@ char **build_expanded_args(t_list *args)
 	arr[i] = NULL;
 	return arr;
 }
+
+signals.c
 
 #include "minishell.h"
 

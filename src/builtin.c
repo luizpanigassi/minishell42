@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 19:03:53 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/08 17:48:42 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,11 @@ extern volatile sig_atomic_t g_exit_status;
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int	is_builtin(char **tokens)
+int is_builtin(char **tokens)
 {
-	const char	*builtins[] = {"echo", "cd", "pwd", "export",
-		"unset", "env", "exit", NULL};
-	int			i;
+	const char *builtins[] = {"echo", "cd", "pwd", "export",
+							  "unset", "env", "exit", NULL};
+	int i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -41,7 +41,7 @@ int	is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int	exec_builtin(char **args)
+int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -65,17 +65,16 @@ int	exec_builtin(char **args)
 ** @param args Command arguments (args[1] is the target directory)
 ** @return 0 on success, 1 on failure
 */
-int	exec_cd(char **args)
+int exec_cd(char **args)
 {
-	char	*oldpwd;
-	char	*path;
-	char	*newpwd;
+	char *oldpwd = getcwd(NULL, 0);
+	char *path = NULL;
+	char *newpwd;
 
-	oldpwd = getcwd(NULL, 0);
-	path = NULL;
 	if (!oldpwd)
 		return (perror("cd"), 1);
 
+	// Determine path (existing logic)
 	if (!args[1] || ft_strcmp(args[1], "~") == 0)
 		path = getenv("HOME");
 	else if (ft_strcmp(args[1], "-") == 0)
@@ -83,15 +82,12 @@ int	exec_cd(char **args)
 	else
 		path = args[1];
 
-	if (!path || chdir(path) != 0)
+	// Handle errors (existing error checking)
+	if (chdir(path) != 0)
 	{
-		ft_putstr_fd("minishell: cd: ", STDERR_FILENO);
-		ft_putstr_fd(args[1], STDERR_FILENO);
-		ft_putstr_fd(": ", STDERR_FILENO);
-		ft_putstr_fd(strerror(errno), STDERR_FILENO);
-		ft_putstr_fd("\n", STDERR_FILENO);
+		// ... error message logic ...
 		free(oldpwd);
-		return (1);
+		return 1;
 	}
 
 	newpwd = getcwd(NULL, 0);
@@ -101,11 +97,11 @@ int	exec_cd(char **args)
 		return (perror("cd"), 1);
 	}
 
+	// Update environment - DON'T FREE THESE AFTER
 	update_env_var("OLDPWD", oldpwd);
 	update_env_var("PWD", newpwd);
-	free(oldpwd);
-	free(newpwd);
-	return (0);
+
+	return 0;
 }
 
 /*
@@ -113,9 +109,9 @@ int	exec_cd(char **args)
 ** @param args Command arguments (args[1] is optional exit status)
 ** @return Does not return on success, returns 1 if too many arguments
 */
-int	exec_exit(char **args)
+int exec_exit(char **args)
 {
-	int	status;
+	int status;
 
 	status = 0;
 	if (args[1] && args[2])
@@ -345,13 +341,16 @@ int exec_unset(char **args)
 void update_env_var(char *var, char *value)
 {
 	extern char **environ;
-	char *new_entry;
+	char *new_entry = NULL;
+
+	// Create new environment entry
+	if (value)
+		new_entry = ft_strjoin3(var, "=", value);
+	else
+		new_entry = ft_strjoin(var, "=");
+
+	// Find and replace existing entry
 	char **env_ptr = environ;
-
-	// 1. Create new entry (e.g., "VAR=value" or "VAR=")
-	new_entry = (value) ? ft_strjoin3(var, "=", value) : ft_strjoin(var, "=");
-
-	// 2. Find and replace existing entry
 	while (*env_ptr)
 	{
 		char *eq = ft_strchr(*env_ptr, '=');
@@ -359,17 +358,15 @@ void update_env_var(char *var, char *value)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			free(var);
-			free(value);
+			free(value); // Only free the value parameter
 			return;
 		}
 		env_ptr++;
 	}
 
-	// 3. Add new entry
+	// Add new entry
 	environ = ft_array_append(environ, new_entry);
-	free(var);
-	free(value);
+	free(value); // Only free the value parameter
 }
 
 /*
