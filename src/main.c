@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/07 19:11:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/08 18:19:17 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,18 +104,17 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
-	int next_pipe[2];
+	int next_pipe[2] = {-1, -1};
 	pid_t *child_pids;
 	int cmd_count = ft_cmd_size(pipeline);
 	int status;
 	int i = 0;
 
 	if (cmd_count == 0)
-		return (1);
-
+		return 1;
 	child_pids = malloc(sizeof(pid_t) * cmd_count);
 	if (!child_pids)
-		return (1);
+		return 1;
 
 	t_cmd *current = pipeline;
 	while (current)
@@ -124,13 +123,14 @@ int execute_pipeline(t_cmd *pipeline)
 		{
 			perror("minishell: pipe");
 			free(child_pids);
-			return (1);
+			return 1;
 		}
 
 		pid_t pid = fork();
-		if (pid == 0) // Child process
+		if (pid == 0) // Child
 		{
 			setup_child_signals();
+			// Handle pipe redirections
 			handle_redirections(prev_pipe[0],
 								(current->next ? next_pipe[1] : -1),
 								current->redirections);
@@ -138,61 +138,73 @@ int execute_pipeline(t_cmd *pipeline)
 			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
-			if (current->next)
-			{
+			if (prev_pipe[1] != -1)
+				close(prev_pipe[1]);
+			if (next_pipe[0] != -1)
 				close(next_pipe[0]);
+			if (next_pipe[1] != -1)
 				close(next_pipe[1]);
-			}
 
 			if (is_builtin(current->args))
 				exit(exec_builtin(current->args));
 			else
 				exec_external_command(current);
 		}
-		else if (pid > 0) // Parent process
+		else if (pid > 0) // Parent
 		{
 			child_pids[i++] = pid;
-			// Close parent's copy of pipe ends
+			// Close previous pipe ends
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
-			close(prev_pipe[1]);
+			if (prev_pipe[1] != -1)
+				close(prev_pipe[1]);
 
-			if (current->next)
-			{
-				prev_pipe[0] = next_pipe[0];
-				prev_pipe[1] = next_pipe[1];
-			}
-			else
-			{
-				prev_pipe[0] = -1;
-				prev_pipe[1] = -1;
-			}
+			// Move to next pipe
+			prev_pipe[0] = next_pipe[0];
+			prev_pipe[1] = next_pipe[1];
+			next_pipe[0] = -1;
+			next_pipe[1] = -1;
 		}
 		else // Fork failed
 		{
 			perror("minishell: fork");
 			free(child_pids);
-			return (1);
+			return 1;
 		}
 		current = current->next;
 	}
 
-	// Wait for all children and get last command's status
+	// Close any remaining pipe ends
+	if (prev_pipe[0] != -1)
+		close(prev_pipe[0]);
+	if (prev_pipe[1] != -1)
+		close(prev_pipe[1]);
+
+	// Wait for all children with EINTR handling
 	int last_status = 0;
-	for (int j = 0; j < cmd_count; j++)
+	int child_count = 0;
+	while (child_count < cmd_count)
 	{
-		while (waitpid(child_pids[j], &status, 0) == -1)
+		int wpid = waitpid(-1, &status, 0);
+		if (wpid == -1)
 		{
-			if (errno != EINTR)
-				break; // Handle real error
+			if (errno == ECHILD)
+				break;
+			if (errno == EINTR)
+				continue;
+			perror("minishell: waitpid");
+			break;
 		}
-		if (WIFEXITED(status) && j == cmd_count - 1)
+		child_count++;
+
+		// Update status for last command
+		if (WIFEXITED(status) && child_count == cmd_count)
 			last_status = WEXITSTATUS(status);
 	}
 
 	free(child_pids);
 	set_exit_status(last_status);
-	return (last_status);
+	return last_status;
 }
 
 /*
@@ -204,14 +216,14 @@ int execute_pipeline(t_cmd *pipeline)
 */
 int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
-	// Handle pipe redirections
-	if (pipe_in != STDIN_FILENO && pipe_in != -1)
+	// Handle pipe redirections first
+	if (pipe_in != -1)
 	{
 		if (dup2(pipe_in, STDIN_FILENO) == -1)
 			return (perror("minishell"), -1);
 		close(pipe_in);
 	}
-	if (pipe_out != STDOUT_FILENO && pipe_out != -1)
+	if (pipe_out != -1)
 	{
 		if (dup2(pipe_out, STDOUT_FILENO) == -1)
 			return (perror("minishell"), -1);

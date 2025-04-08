@@ -6,7 +6,7 @@
 #    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/02 17:22:53 by luinasci         ###   ########.fr        #
+#    Updated: 2025/04/08 18:21:53 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -65,7 +65,6 @@ $(NAME):	 $(OBJS) $(LIBFT_LIB)
 	 @echo "██║╚██╔╝██║██║██║╚██╗██║██║╚════██║██╔══██║██╔══╝  ██║	  ██║	  "
 	 @echo "██║ ╚═╝ ██║██║██║ ╚████║██║███████║██║  ██║███████╗███████╗███████╗"
 	 @echo "╚═╝	  ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
-	 @echo Just type ./minishell and enjoy!
 	 @echo "$(RESET)"
 
 $(LIBFT_LIB):
@@ -88,6 +87,10 @@ fclean:	  clean
 	 @$(RM) $(NAME)
 	 @make -C $(LIBFT_DIR) fclean --no-print-directory
 	 @echo "$(RED)$(CHECK_MARK) Everything is spotless!$(RESET)"
+
+run:	all
+	@echo Have fun!
+	./$(NAME)
 
 re:			fclean all
 
