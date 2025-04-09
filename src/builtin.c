@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/08 17:48:42 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 15:12:51 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -264,21 +264,29 @@ int exec_export(char **args)
 */
 char **ft_copy_env(char **original)
 {
-	int count = 0;
-	while (original[count])
-		count++;
+	char **copy;
+	int i;
 
-	char **copy = malloc(sizeof(char *) * (count + 1));
+	if (!original)
+		return (NULL);
+	i = 0;
+	while (original[i])
+		i++;
+	copy = malloc(sizeof(char *) * (i + 1));
 	if (!copy)
 		return (NULL);
-
-	int i = 0;
+	i = 0;
 	while (original[i])
 	{
 		copy[i] = ft_strdup(original[i]);
+		if (!copy[i]) // Handle allocation failure
+		{
+			ft_free_array(copy); // Free previously allocated memory
+			return (NULL);
+		}
 		i++;
 	}
-	copy[count] = NULL;
+	copy[i] = NULL;
 	return (copy);
 }
 

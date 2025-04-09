@@ -132,6 +132,7 @@ int		get_exit_status(void);
 
 #endif
 
+
 builtin.c
 
 #include "minishell.h"
@@ -689,7 +690,6 @@ void exec_external_command(t_cmd *cmd)
 	exit(EXIT_FAILURE);
 }
 
-
 main.c
 
 #include "minishell.h"
@@ -786,18 +786,17 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
-	int next_pipe[2];
+	int next_pipe[2] = {-1, -1};
 	pid_t *child_pids;
 	int cmd_count = ft_cmd_size(pipeline);
 	int status;
 	int i = 0;
 
 	if (cmd_count == 0)
-		return (1);
-
+		return 1;
 	child_pids = malloc(sizeof(pid_t) * cmd_count);
 	if (!child_pids)
-		return (1);
+		return 1;
 
 	t_cmd *current = pipeline;
 	while (current)
@@ -806,11 +805,11 @@ int execute_pipeline(t_cmd *pipeline)
 		{
 			perror("minishell: pipe");
 			free(child_pids);
-			return (1);
+			return 1;
 		}
 
 		pid_t pid = fork();
-		if (pid == 0) // Child process
+		if (pid == 0) // Child
 		{
 			setup_child_signals();
 			// Handle pipe redirections
@@ -821,77 +820,73 @@ int execute_pipeline(t_cmd *pipeline)
 			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
-			if (current->next)
-			{
+			if (prev_pipe[1] != -1)
+				close(prev_pipe[1]);
+			if (next_pipe[0] != -1)
 				close(next_pipe[0]);
+			if (next_pipe[1] != -1)
 				close(next_pipe[1]);
-			}
 
 			if (is_builtin(current->args))
 				exit(exec_builtin(current->args));
 			else
 				exec_external_command(current);
 		}
-		else if (pid > 0) // Parent process
+		else if (pid > 0) // Parent
 		{
 			child_pids[i++] = pid;
-			// Close parent's copy of unused pipe ends
+			// Close previous pipe ends
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
-			close(prev_pipe[1]);
+			if (prev_pipe[1] != -1)
+				close(prev_pipe[1]);
 
-			if (current->next)
-			{
-				prev_pipe[0] = next_pipe[0];
-				prev_pipe[1] = next_pipe[1];
-			}
-			else
-			{
-				prev_pipe[0] = -1;
-				prev_pipe[1] = -1;
-			}
+			// Move to next pipe
+			prev_pipe[0] = next_pipe[0];
+			prev_pipe[1] = next_pipe[1];
+			next_pipe[0] = -1;
+			next_pipe[1] = -1;
 		}
 		else // Fork failed
 		{
 			perror("minishell: fork");
 			free(child_pids);
-			return (1);
+			return 1;
 		}
 		current = current->next;
 	}
 
-	// Close any remaining pipe ends in parent
+	// Close any remaining pipe ends
 	if (prev_pipe[0] != -1)
 		close(prev_pipe[0]);
 	if (prev_pipe[1] != -1)
 		close(prev_pipe[1]);
 
-	// Wait for all children
+	// Wait for all children with EINTR handling
 	int last_status = 0;
-	int wpid;
-	while ((wpid = waitpid(-1, &status, 0)) > 0)
+	int child_count = 0;
+	while (child_count < cmd_count)
 	{
+		int wpid = waitpid(-1, &status, 0);
 		if (wpid == -1)
 		{
 			if (errno == ECHILD)
-				break; // No more children
-			continue;
+				break;
+			if (errno == EINTR)
+				continue;
+			perror("minishell: waitpid");
+			break;
 		}
+		child_count++;
 
-		// Update status only for last command
-		if (WIFEXITED(status))
-		{
-			for (int j = 0; j < cmd_count; j++)
-			{
-				if (child_pids[j] == wpid && j == cmd_count - 1)
-					last_status = WEXITSTATUS(status);
-			}
-		}
+		// Update status for last command
+		if (WIFEXITED(status) && child_count == cmd_count)
+			last_status = WEXITSTATUS(status);
 	}
 
 	free(child_pids);
 	set_exit_status(last_status);
-	return (last_status);
+	return last_status;
 }
 
 /*
@@ -903,14 +898,14 @@ int execute_pipeline(t_cmd *pipeline)
 */
 int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
-	// Handle pipe redirections
-	if (pipe_in != STDIN_FILENO && pipe_in != -1)
+	// Handle pipe redirections first
+	if (pipe_in != -1)
 	{
 		if (dup2(pipe_in, STDIN_FILENO) == -1)
 			return (perror("minishell"), -1);
 		close(pipe_in);
 	}
-	if (pipe_out != STDOUT_FILENO && pipe_out != -1)
+	if (pipe_out != -1)
 	{
 		if (dup2(pipe_out, STDOUT_FILENO) == -1)
 			return (perror("minishell"), -1);
@@ -1395,7 +1390,6 @@ char **build_expanded_args(t_list *args)
 	return arr;
 }
 
-
 signals.c
 
 #include "minishell.h"
@@ -1447,7 +1441,6 @@ void setup_child_signals(void)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 }
-
 
 utils.c
 

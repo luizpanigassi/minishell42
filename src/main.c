@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/08 18:19:17 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 15:15:58 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -273,18 +273,24 @@ int main(void)
 	t_cmd *pipeline;
 	extern char **environ;
 	char **env_copy;
+	char **original_environ; // Save the original environ pointer
 
+	original_environ = environ; // Save the original environ
 	env_copy = ft_copy_env(environ);
-	environ = env_copy;
+	environ = env_copy; // Replace environ with the copy
 	setup_parent_signals();
+
 	while (1)
 	{
-		setup_parent_signals();
 		input = readline("minishell> ");
-		if (!input)
+		if (!input) // Handle Ctrl+D
 		{
-			ft_putstr_fd("exit\n", STDOUT_FILENO);
-			break;
+			environ = original_environ; // Restore original environ
+			free_env_copy(env_copy);	// Free the environment copy
+			rl_clear_history();
+			rl_reset_terminal(NULL);
+			write(STDOUT_FILENO, "exit\n", 5);
+			return (0);
 		}
 
 		if (ft_strlen(input) > 0)
@@ -307,7 +313,7 @@ int main(void)
 			continue;
 		}
 
-		// 🚨 Handle "exit" directly in the parent process
+		// Handle "exit" directly in the parent process
 		if (pipeline && !pipeline->next && is_builtin(pipeline->args))
 		{
 			int saved_stdin = dup(STDIN_FILENO);
@@ -345,7 +351,11 @@ int main(void)
 				if (get_exit_status() == 1)
 					continue;
 				else
+				{
+					environ = original_environ; // Restore original environ
+					free_env_copy(env_copy);	// Free the environment copy
 					exit(get_exit_status());
+				}
 			}
 		}
 		else
@@ -357,7 +367,10 @@ int main(void)
 		free_pipeline(pipeline);
 		setup_parent_signals();
 	}
-	rl_clear_history(); // Clear history entries
+
+	environ = original_environ; // Restore original environ before exiting
+	free_env_copy(env_copy);	// Free the environment copy
+	rl_clear_history();			// Clear history entries
 	rl_reset_terminal(NULL);
 	return 0;
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:31:34 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 15:10:06 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -351,4 +351,15 @@ void free_redirections(t_redir *redirs)
 		free(redirs);
 		redirs = tmp;
 	}
+}
+
+/**
+ * @brief Frees a copy of the environment variables.
+ * @param env_copy The environment copy to free.
+ */
+void free_env_copy(char **env_copy)
+{
+	if (!env_copy)
+		return;
+	ft_free_array(env_copy); // Reuse your existing ft_free_array function
 }
