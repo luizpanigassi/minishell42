@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 18:09:32 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:50:47 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,19 +82,13 @@ static void handle_quotes(t_parse *p, char quote)
 static void handle_word(t_parse *p)
 {
 	size_t start = p->pos;
-	char *sub;
-
-	while (p->curr_char &&
-		   (!ft_isspace(p->curr_char) || (p->input[p->pos - 1] == '\\')) &&
-		   !is_special_char(p->curr_char))
+	while (p->curr_char && !ft_isspace(p->curr_char) && !is_special_char(p->curr_char))
 	{
-		if (p->curr_char == '\\' && p->input[p->pos + 1])
-			next_char(p); // Skip backslash
 		next_char(p);
 	}
-	sub = ft_substr(p->input, start, p->pos - start);
+	char *sub = ft_substr(p->input, start, p->pos - start);
 	p->token_value = ft_strdup(sub);
-	free(sub); // Free the temporary substring
+	free(sub);
 	p->token_type = T_WORD;
 }
 
@@ -173,26 +167,18 @@ void next_token(t_parse *p)
 */
 t_cmd *parse_args(t_parse *p)
 {
-	t_list *args = NULL;			// List to collect command arguments (t_arg structs)
-	t_redir *redirs = NULL;			// List of redirection specifications
-	t_redir **redir_tail = &redirs; // Pointer to end of redir list for appending
-	t_arg *arg;						// Temporary argument storage
+	t_list *args = NULL;
+	t_redir *redirs = NULL;
+	t_redir **redir_tail = &redirs;
 
-	// Process tokens until pipeline or end of input
-	while (p->token_type != T_EOF && p->token_type != T_PIPE)
+	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
 	{
-		// Handle words and quoted strings
-		if (p->token_type == T_WORD ||
-			p->token_type == T_SINGLE_QUOTED ||
-			p->token_type == T_DOUBLE_QUOTED)
+		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
 		{
-			// Allocate and populate argument structure
-			arg = malloc(sizeof(t_arg));
-			if (!arg)
-				return (NULL);
-			arg->value = ft_strdup(p->token_value); // Copy token value
-			arg->type = p->token_type;				// Store quoting type
-			ft_lstadd_back(&args, ft_lstnew(arg));	// Add to arguments list
+			t_arg *arg = malloc(sizeof(t_arg));
+			arg->value = ft_strdup(p->token_value);
+			arg->type = p->token_type;
+			ft_lstadd_back(&args, ft_lstnew(arg));
 		}
 		// Handle redirection operators
 		else if (is_redirection(p->token_type))
@@ -253,13 +239,6 @@ t_cmd *parse_args(t_parse *p)
 
 	// Cleanup temporary structures
 	ft_lstclear(&args, free_arg); // Free argument list and t_arg structs
-	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
-	{
-		syntax_error(p->token_value);
-		ft_lstclear(&args, free_arg);
-		free_redirections(redirs);
-		return NULL;
-	}
 	return (cmd);
 }
 
@@ -357,7 +336,7 @@ t_cmd *parse_pipeline(t_parse *p)
 
 	next_token(p);
 
-	// Check for leading pipe/semicolon
+	// Check for leading pipe/semicolon (invalid)
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value);
@@ -378,7 +357,7 @@ t_cmd *parse_pipeline(t_parse *p)
 
 		next_token(p);
 
-		// Check for pipe followed by invalid token (|, ;, EOF)
+		// Check if pipe is followed by valid command (not |, ;, EOF)
 		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
 		{
 			syntax_error(p->token_value);
