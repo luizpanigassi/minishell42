@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 15:12:51 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:15:54 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,7 +192,13 @@ int exec_pwd(char **args)
 
 	(void)args;
 	cwd = getcwd(NULL, 0); // Let getcwd allocate memory
-	if (cwd)
+	if (args[1])
+	{
+		ft_putstr_fd("minishell: pwd: too many arguments\n", STDERR_FILENO);
+		free(cwd);
+		return (1);
+	}
+	if (cwd && args[1] == NULL)
 	{
 		printf("%s\n", cwd);
 		free(cwd);
