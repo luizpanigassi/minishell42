@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/09 15:15:58 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:03:57 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -270,14 +270,11 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 int main(void)
 {
 	char *input;
-	t_cmd *pipeline;
 	extern char **environ;
 	char **env_copy;
-	char **original_environ; // Save the original environ pointer
-
-	original_environ = environ; // Save the original environ
+	char **original_environ = environ;
 	env_copy = ft_copy_env(environ);
-	environ = env_copy; // Replace environ with the copy
+	environ = env_copy;
 	setup_parent_signals();
 
 	while (1)
@@ -285,12 +282,11 @@ int main(void)
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			environ = original_environ; // Restore original environ
-			free_env_copy(env_copy);	// Free the environment copy
+			environ = original_environ;
+			free_env_copy(env_copy);
 			rl_clear_history();
-			rl_reset_terminal(NULL);
 			write(STDOUT_FILENO, "exit\n", 5);
-			return (0);
+			return (get_exit_status());
 		}
 
 		if (ft_strlen(input) > 0)
@@ -301,76 +297,91 @@ int main(void)
 			continue;
 		}
 
-		t_parse parser;
-		init_parser(&parser, input);
-		pipeline = parse_pipeline(&parser);
+		char **commands = ft_split(input, ';');
+		free(input);
+		int syntax_error_flag = 0;
+		int i = 0;
 
-		if (!pipeline || !pipeline->args)
+		while (commands && commands[i] && !syntax_error_flag)
 		{
-			free(input);
-			free_pipeline(pipeline);
-			setup_parent_signals();
-			continue;
-		}
-
-		// Handle "exit" directly in the parent process
-		if (pipeline && !pipeline->next && is_builtin(pipeline->args))
-		{
-			int saved_stdin = dup(STDIN_FILENO);
-			int saved_stdout = dup(STDOUT_FILENO);
-			int saved_stderr = dup(STDERR_FILENO);
-
-			// Apply redirections (no pipes: -1, -1)
-			if (handle_redirections(-1, -1, pipeline->redirections) != 0)
+			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
+			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
-				set_exit_status(1); // Redirection error
+				syntax_error(";");
+				free(trimmed_cmd);
+				syntax_error_flag = 1;
+				i++;
+				continue;
+			}
+
+			t_parse parser;
+			init_parser(&parser, trimmed_cmd);
+			t_cmd *pipeline = parse_pipeline(&parser);
+			free(trimmed_cmd);
+
+			if (!pipeline)
+			{
+				syntax_error_flag = 1;
+				i++;
+				continue;
+			}
+
+			// Handle builtins in parent process (e.g., exit, cd)
+			if (!pipeline->next && is_builtin(pipeline->args))
+			{
+				int saved_stdin = dup(STDIN_FILENO);
+				int saved_stdout = dup(STDOUT_FILENO);
+				int saved_stderr = dup(STDERR_FILENO);
+
+				if (handle_redirections(-1, -1, pipeline->redirections) != 0)
+					set_exit_status(1);
+				else
+				{
+					int result = exec_builtin(pipeline->args);
+					set_exit_status(result);
+					dup2(saved_stdin, STDIN_FILENO);
+					dup2(saved_stdout, STDOUT_FILENO);
+					dup2(saved_stderr, STDERR_FILENO);
+				}
 				close(saved_stdin);
 				close(saved_stdout);
 				close(saved_stderr);
+
+				if (ft_strcmp(pipeline->args[0], "exit") == 0 && get_exit_status() != 1)
+				{
+					free_pipeline(pipeline);
+					break; // Exit loop to terminate shell
+				}
 			}
 			else
 			{
-				int result = exec_builtin(pipeline->args);
-				set_exit_status(result);
-
-				// Restore original descriptors
-				dup2(saved_stdin, STDIN_FILENO);
-				dup2(saved_stdout, STDOUT_FILENO);
-				dup2(saved_stderr, STDERR_FILENO);
+				execute_pipeline(pipeline);
 			}
 
-			// Close saved descriptors
-			close(saved_stdin);
-			close(saved_stdout);
-			close(saved_stderr);
-
-			if (ft_strcmp(pipeline->args[0], "exit") == 0)
-			{
-				free(input);
-				free_pipeline(pipeline);
-				if (get_exit_status() == 1)
-					continue;
-				else
-				{
-					environ = original_environ; // Restore original environ
-					free_env_copy(env_copy);	// Free the environment copy
-					exit(get_exit_status());
-				}
-			}
+			free_pipeline(pipeline);
+			i++;
 		}
-		else
+
+		// Free commands array
+		if (commands)
 		{
-			execute_pipeline(pipeline);
+			char **ptr = commands;
+			while (*ptr)
+			{
+				free(*ptr);
+				ptr++;
+			}
+			free(commands);
 		}
 
-		free(input);
-		free_pipeline(pipeline);
+		if (syntax_error_flag)
+			set_exit_status(SYNTAX_ERROR);
+
 		setup_parent_signals();
 	}
 
-	environ = original_environ; // Restore original environ before exiting
-	free_env_copy(env_copy);	// Free the environment copy
-	rl_clear_history();			// Clear history entries
-	rl_reset_terminal(NULL);
-	return 0;
+	environ = original_environ;
+	free_env_copy(env_copy);
+	rl_clear_history();
+	return (get_exit_status());
 }

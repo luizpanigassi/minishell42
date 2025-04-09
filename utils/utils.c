@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 15:10:06 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:02:49 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -362,4 +362,15 @@ void free_env_copy(char **env_copy)
 	if (!env_copy)
 		return;
 	ft_free_array(env_copy); // Reuse your existing ft_free_array function
+}
+
+void syntax_error(char *token)
+{
+	ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
+	if (!token || *token == '\0')
+		ft_putstr_fd("newline", STDERR_FILENO);
+	else
+		ft_putstr_fd(token, STDERR_FILENO);
+	ft_putstr_fd("'\n", STDERR_FILENO);
+	set_exit_status(SYNTAX_ERROR);
 }

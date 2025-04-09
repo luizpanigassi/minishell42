@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 19:12:39 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:09:32 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,8 +85,8 @@ static void handle_word(t_parse *p)
 	char *sub;
 
 	while (p->curr_char &&
-			(!ft_isspace(p->curr_char) || (p->input[p->pos - 1] == '\\')) &&
-			!is_special_char(p->curr_char))
+		   (!ft_isspace(p->curr_char) || (p->input[p->pos - 1] == '\\')) &&
+		   !is_special_char(p->curr_char))
 	{
 		if (p->curr_char == '\\' && p->input[p->pos + 1])
 			next_char(p); // Skip backslash
@@ -160,10 +160,10 @@ void next_token(t_parse *p)
 
 	if (p->curr_char == '\'' || p->curr_char == '"')
 		handle_quotes(p, p->curr_char);
-	else if (is_special_char(p->curr_char))
+	else if (p->curr_char == '|' || p->curr_char == ';' || p->curr_char == '>' || p->curr_char == '<')
 		handle_special(p);
 	else
-		handle_word(p);
+		handle_word(p); // Ensures words don’t include unquoted special chars
 }
 
 /*
@@ -253,7 +253,13 @@ t_cmd *parse_args(t_parse *p)
 
 	// Cleanup temporary structures
 	ft_lstclear(&args, free_arg); // Free argument list and t_arg structs
-
+	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+	{
+		syntax_error(p->token_value);
+		ft_lstclear(&args, free_arg);
+		free_redirections(redirs);
+		return NULL;
+	}
 	return (cmd);
 }
 
@@ -265,22 +271,67 @@ t_cmd *parse_args(t_parse *p)
  */
 int create_heredoc(const char *delimiter)
 {
-	char *line;
-	int tmp_fd = open(".heredoc.tmp", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	int pipefd[2];
+	pid_t pid;
+	int status;
 
-	while (1)
+	if (pipe(pipefd)) // Create a pipe
+		return (-1);
+
+	pid = fork();
+	if (pid == -1)
 	{
-		line = readline("> ");
-		if (!line || ft_strcmp(line, delimiter) == 0)
-			break;
-		write(tmp_fd, line, ft_strlen(line));
-		write(tmp_fd, "\n", 1);
-		free(line);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return (-1);
 	}
-	close(tmp_fd);
-	tmp_fd = open(".heredoc.tmp", O_RDONLY);
-	unlink(".heredoc.tmp"); // Delete temp file after use
-	return tmp_fd;
+
+	if (pid == 0)
+	{ // Child process
+		char *line;
+		close(pipefd[0]); // Close unused read end
+
+		// Reset signals to default/ignore for heredoc context
+		signal(SIGINT, SIG_DFL);  // Allow Ctrl-C to terminate child
+		signal(SIGQUIT, SIG_IGN); // Ignore Ctrl-slash
+
+		while (1)
+		{
+			line = readline("> ");
+			if (!line)
+			{ // EOF (Ctrl-D) or error
+				break;
+			}
+			if (ft_strcmp(line, delimiter) == 0)
+			{ // Found delimiter
+				free(line);
+				break;
+			}
+			write(pipefd[1], line, strlen(line)); // Write line to pipe
+			write(pipefd[1], "\n", 1);
+			free(line);
+		}
+		close(pipefd[1]);
+		exit(0); // Child exits normally
+	}
+	else
+	{					  // Parent process
+		close(pipefd[1]); // Close unused write end
+
+		// Wait for child to finish
+		waitpid(pid, &status, 0);
+
+		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+		{
+			// Heredoc interrupted by Ctrl-C
+			close(pipefd[0]);
+			ft_putstr_fd("\n", STDOUT_FILENO); // Mimic bash behavior
+			set_exit_status(130);			   // Set $? = 130 (SIGINT exit code)
+			return (-1);
+		}
+
+		return (pipefd[0]); // Return read end of pipe
+	}
 }
 
 /*
@@ -306,6 +357,13 @@ t_cmd *parse_pipeline(t_parse *p)
 
 	next_token(p);
 
+	// Check for leading pipe/semicolon
+	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+	{
+		syntax_error(p->token_value);
+		return NULL;
+	}
+
 	while (1)
 	{
 		t_cmd *cmd = parse_args(p);
@@ -318,9 +376,16 @@ t_cmd *parse_pipeline(t_parse *p)
 		if (p->token_type != T_PIPE)
 			break;
 
-		next_token(p); // Consume the pipe
-	}
+		next_token(p);
 
+		// Check for pipe followed by invalid token (|, ;, EOF)
+		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
+		{
+			syntax_error(p->token_value);
+			free_cmd(head);
+			return NULL;
+		}
+	}
 	return head;
 }
 

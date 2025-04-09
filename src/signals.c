@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:28:19 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:04:31 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 17:23:33 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ void setup_parent_signals(void)
 
 	sa.sa_handler = handle_sigint; // Custom SIGINT handler
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
+	sa.sa_flags = 0;
 	sigaction(SIGINT, &sa, NULL);
 
 	sa.sa_handler = SIG_IGN; // Ignore SIGQUIT in parent

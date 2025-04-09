@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 15:13:40 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/09 17:59:52 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,8 @@ typedef enum e_token
 	T_REDIR_IN,
 	T_APPEND,
 	T_HEREDOC,
-	T_EOF
+	T_EOF,
+	T_SEMICOLON
 }	t_token;
 
 typedef struct s_parse
@@ -129,6 +130,7 @@ char	*ft_strjoin_char(char *str, char c);
 size_t	ft_cmd_size(t_cmd *pipeline);
 void	free_redirections(t_redir *redirs);
 void	free_env_copy(char **env_copy);
+void	syntax_error(char *token);
 
 // Helper functions for parsing
 int		ft_isspace(int c);
