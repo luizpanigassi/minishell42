@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/09 18:03:57 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/10 19:31:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -245,8 +245,11 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
 
 		if (fd == -1)
-			return (perror("minishell"), -1);
-
+		{
+			perror("minishell");
+			set_exit_status(1); // Set status before exit
+			exit(EXIT_FAILURE); // Exit child immediately
+		}
 		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
 		{
 			if (dup2(fd, STDIN_FILENO) == -1)
@@ -305,9 +308,15 @@ int main(void)
 		while (commands && commands[i] && !syntax_error_flag)
 		{
 			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
+
+			// Check for empty command (e.g., ";" or " | ")
 			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
-				syntax_error(";");
+				char *err = ";";
+				if (i > 0) // Handle trailing semicolon
+					err = "newline";
+
+				syntax_error(err);
 				free(trimmed_cmd);
 				syntax_error_flag = 1;
 				i++;

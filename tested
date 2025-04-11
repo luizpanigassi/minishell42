@@ -1,0 +1,45 @@
+
+
+minishell> cat << EOF\nHello\nEOF
+> 
+(goes to heredoc, on ctrl+c prints double prompt, does not print Hello)
+
+minishell> ls > out.txt 2> err.txt
+ls: cannot access '2': No such file or directory
+minishell> 
+(out2.txt/err.txt is empty)
+
+minishell> sleep 5
+^C
+minishell> minishell> 
+(double prompt)
+
+minishell> echo "hello
+minishell: unmatched quote
+
+minishell> echo "hello
+minishell: unmatched quote
+
+minishell> echo $?
+0
+minishell> 
+(expected Syntax error, exit code 2, getting code 0)
+
+
+minishell> ls >
+minishell: syntax error near unexpected token `newline'
+minishell> echo $?
+2
+minishell> 
+(wrong output, expected token >)
+
+minishell> (only spaces)
+minishell: syntax error near unexpected token `;'
+minishell> 
+(should do nothing)
+
+minishell> /etc/shadow; echo $?
+minishell: /etc/shadow: command not found
+127
+minishell> 
+(expected 126)

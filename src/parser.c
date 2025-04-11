@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 18:50:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/11 18:05:24 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ void init_parser(t_parse *p, char *input)
 	p->curr_char = input[0]; // Initialize first character
 	p->token_type = T_EOF;	 // Default to EOF
 	p->token_value = NULL;
+	p->redir_fd = 0;
 }
 
 /*
@@ -57,7 +58,6 @@ static void handle_quotes(t_parse *p, char quote)
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
-		p->token_type = T_EOF;
 		return;
 	}
 
@@ -98,6 +98,13 @@ static void handle_word(t_parse *p)
 */
 static void handle_special(t_parse *p)
 {
+	int fd = 0;
+	if (ft_isdigit(p->curr_char))
+	{
+		char *fd_str = parse_fd(p);
+		fd = atoi(fd_str);
+		free(fd_str);
+	}
 	if (p->curr_char == '|')
 	{
 		p->token_type = T_PIPE;
@@ -118,6 +125,7 @@ static void handle_special(t_parse *p)
 			p->token_type = T_REDIR_OUT;
 			p->token_value = ft_strdup(">");
 		}
+		p->redir_fd = fd;
 	}
 	else if (p->curr_char == '<')
 	{
@@ -184,6 +192,7 @@ t_cmd *parse_args(t_parse *p)
 		else if (is_redirection(p->token_type))
 		{
 			t_redir *redir = malloc(sizeof(t_redir));
+			redir->fd = p->redir_fd; // Capture the parsed FD
 			if (!redir)
 			{
 				ft_lstclear(&args, free_arg);
@@ -213,7 +222,7 @@ t_cmd *parse_args(t_parse *p)
 				free_redirections(redirs); // Free existing redirections
 				return (NULL);
 			}
-
+			p->redir_fd = 0; // Reset after use
 			redir->filename = ft_strdup(p->token_value);
 			redir->next = NULL;
 
@@ -265,28 +274,36 @@ int create_heredoc(const char *delimiter)
 		return (-1);
 	}
 
-	if (pid == 0)
-	{ // Child process
+	if (pid == 0) // Child process
+	{
 		char *line;
 		close(pipefd[0]); // Close unused read end
 
 		// Reset signals to default/ignore for heredoc context
 		signal(SIGINT, SIG_DFL);  // Allow Ctrl-C to terminate child
 		signal(SIGQUIT, SIG_IGN); // Ignore Ctrl-slash
+		int quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
 
 		while (1)
 		{
 			line = readline("> ");
 			if (!line)
-			{ // EOF (Ctrl-D) or error
 				break;
-			}
-			if (ft_strcmp(line, delimiter) == 0)
-			{ // Found delimiter
+			if (strcmp(line, delimiter) == 0)
+			{
 				free(line);
 				break;
 			}
-			write(pipefd[1], line, strlen(line)); // Write line to pipe
+			if (!quoted_delimiter)
+			{ // NEW: Expand variables only if unquoted
+				char *expanded = expand_variables(line);
+				write(pipefd[1], expanded, strlen(expanded));
+				free(expanded);
+			}
+			else
+			{
+				write(pipefd[1], line, strlen(line));
+			}
 			write(pipefd[1], "\n", 1);
 			free(line);
 		}
@@ -304,6 +321,8 @@ int create_heredoc(const char *delimiter)
 		{
 			// Heredoc interrupted by Ctrl-C
 			close(pipefd[0]);
+			rl_replace_line("", 0);
+			rl_on_new_line();
 			ft_putstr_fd("\n", STDOUT_FILENO); // Mimic bash behavior
 			set_exit_status(130);			   // Set $? = 130 (SIGINT exit code)
 			return (-1);
@@ -336,7 +355,7 @@ t_cmd *parse_pipeline(t_parse *p)
 
 	next_token(p);
 
-	// Check for leading pipe/semicolon (invalid)
+	// Check for leading pipe/semicolon
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value);
@@ -357,10 +376,16 @@ t_cmd *parse_pipeline(t_parse *p)
 
 		next_token(p);
 
-		// Check if pipe is followed by valid command (not |, ;, EOF)
+		// Handle pipe followed by invalid token
+		char *error_token = p->token_value;
+		if (p->token_type == T_EOF)
+			error_token = "newline";
+		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+			error_token = p->token_value;
+
 		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
 		{
-			syntax_error(p->token_value);
+			syntax_error(error_token);
 			free_cmd(head);
 			return NULL;
 		}

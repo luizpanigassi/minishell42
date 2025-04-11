@@ -44,12 +44,15 @@ typedef struct s_parse
 	char	curr_char;
 	t_token	token_type;
 	char	*token_value;
+	int		redir_fd;
 }	t_parse;
 
 typedef struct s_redir {
 	t_token			type;// T_REDIR_IN, T_REDIR_OUT, etc.
 	char			*filename;// Target file
 	struct s_redir	*next;// For multiple redirections
+	int heredoc_quoted;  // For quoted delimiter tracking
+	int				fd; // File descriptor for redirection
 }	t_redir;
 
 typedef struct s_cmd {
@@ -121,6 +124,7 @@ size_t	ft_cmd_size(t_cmd *pipeline);
 void	free_redirections(t_redir *redirs);
 void	free_env_copy(char **env_copy);
 void	syntax_error(char *token);
+char *parse_fd(t_parse *p);
 
 // Helper functions for parsing
 int		ft_isspace(int c);
@@ -213,8 +217,10 @@ int exec_cd(char **args)
 	if (chdir(path) != 0)
 	{
 		// ... error message logic ...
+		perror("cd");
+		set_exit_status(1);
 		free(oldpwd);
-		return 1;
+		return (1);
 	}
 
 	newpwd = getcwd(NULL, 0);
@@ -533,7 +539,6 @@ void ensure_var_exported(char *var_name)
 		free(var_name); // Free here since update_env_var no longer owns it
 }
 
-
 exit_status.c
 
 #include "minishell.h"
@@ -555,6 +560,7 @@ int get_exit_status(void)
 {
 	return (g_exit_status);
 }
+
 
 input.c
 
@@ -706,6 +712,7 @@ void exec_external_command(t_cmd *cmd)
 	free(path);
 	exit(EXIT_FAILURE);
 }
+
 
 main.c
 
@@ -944,8 +951,11 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
 
 		if (fd == -1)
-			return (perror("minishell"), -1);
-
+		{
+			perror("minishell");
+			set_exit_status(1); // Set status before exit
+			exit(EXIT_FAILURE); // Exit child immediately
+		}
 		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
 		{
 			if (dup2(fd, STDIN_FILENO) == -1)
@@ -1004,9 +1014,15 @@ int main(void)
 		while (commands && commands[i] && !syntax_error_flag)
 		{
 			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
+
+			// Check for empty command (e.g., ";" or " | ")
 			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
-				syntax_error(";");
+				char *err = ";";
+				if (i > 0) // Handle trailing semicolon
+					err = "newline";
+
+				syntax_error(err);
 				free(trimmed_cmd);
 				syntax_error_flag = 1;
 				i++;
@@ -1101,6 +1117,7 @@ void init_parser(t_parse *p, char *input)
 	p->curr_char = input[0]; // Initialize first character
 	p->token_type = T_EOF;	 // Default to EOF
 	p->token_value = NULL;
+	p->redir_fd = 0;
 }
 
 /*
@@ -1134,7 +1151,6 @@ static void handle_quotes(t_parse *p, char quote)
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
-		p->token_type = T_EOF;
 		return;
 	}
 
@@ -1175,6 +1191,13 @@ static void handle_word(t_parse *p)
 */
 static void handle_special(t_parse *p)
 {
+	int fd = 0;
+	if (ft_isdigit(p->curr_char))
+	{
+		char *fd_str = parse_fd(p);
+		fd = atoi(fd_str);
+		free(fd_str);
+	}
 	if (p->curr_char == '|')
 	{
 		p->token_type = T_PIPE;
@@ -1195,6 +1218,7 @@ static void handle_special(t_parse *p)
 			p->token_type = T_REDIR_OUT;
 			p->token_value = ft_strdup(">");
 		}
+		p->redir_fd = fd;
 	}
 	else if (p->curr_char == '<')
 	{
@@ -1261,6 +1285,7 @@ t_cmd *parse_args(t_parse *p)
 		else if (is_redirection(p->token_type))
 		{
 			t_redir *redir = malloc(sizeof(t_redir));
+			redir->fd = p->redir_fd; // Capture the parsed FD
 			if (!redir)
 			{
 				ft_lstclear(&args, free_arg);
@@ -1290,7 +1315,7 @@ t_cmd *parse_args(t_parse *p)
 				free_redirections(redirs); // Free existing redirections
 				return (NULL);
 			}
-
+			p->redir_fd = 0; // Reset after use
 			redir->filename = ft_strdup(p->token_value);
 			redir->next = NULL;
 
@@ -1316,13 +1341,6 @@ t_cmd *parse_args(t_parse *p)
 
 	// Cleanup temporary structures
 	ft_lstclear(&args, free_arg); // Free argument list and t_arg structs
-	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
-	{
-		syntax_error(p->token_value);
-		ft_lstclear(&args, free_arg);
-		free_redirections(redirs);
-		return NULL;
-	}
 	return (cmd);
 }
 
@@ -1349,28 +1367,36 @@ int create_heredoc(const char *delimiter)
 		return (-1);
 	}
 
-	if (pid == 0)
-	{ // Child process
+	if (pid == 0) // Child process
+	{
 		char *line;
 		close(pipefd[0]); // Close unused read end
 
 		// Reset signals to default/ignore for heredoc context
 		signal(SIGINT, SIG_DFL);  // Allow Ctrl-C to terminate child
 		signal(SIGQUIT, SIG_IGN); // Ignore Ctrl-slash
+		int quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
 
 		while (1)
 		{
 			line = readline("> ");
 			if (!line)
-			{ // EOF (Ctrl-D) or error
 				break;
-			}
-			if (ft_strcmp(line, delimiter) == 0)
-			{ // Found delimiter
+			if (strcmp(line, delimiter) == 0)
+			{
 				free(line);
 				break;
 			}
-			write(pipefd[1], line, strlen(line)); // Write line to pipe
+			if (!quoted_delimiter)
+			{ // NEW: Expand variables only if unquoted
+				char *expanded = expand_variables(line);
+				write(pipefd[1], expanded, strlen(expanded));
+				free(expanded);
+			}
+			else
+			{
+				write(pipefd[1], line, strlen(line));
+			}
 			write(pipefd[1], "\n", 1);
 			free(line);
 		}
@@ -1388,6 +1414,8 @@ int create_heredoc(const char *delimiter)
 		{
 			// Heredoc interrupted by Ctrl-C
 			close(pipefd[0]);
+			rl_replace_line("", 0);
+			rl_on_new_line();
 			ft_putstr_fd("\n", STDOUT_FILENO); // Mimic bash behavior
 			set_exit_status(130);			   // Set $? = 130 (SIGINT exit code)
 			return (-1);
@@ -1420,7 +1448,7 @@ t_cmd *parse_pipeline(t_parse *p)
 
 	next_token(p);
 
-	// Check for leading pipe/semicolon (invalid)
+	// Check for leading pipe/semicolon
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value);
@@ -1441,10 +1469,16 @@ t_cmd *parse_pipeline(t_parse *p)
 
 		next_token(p);
 
-		// Check if pipe is followed by valid command (not |, ;, EOF)
+		// Handle pipe followed by invalid token
+		char *error_token = p->token_value;
+		if (p->token_type == T_EOF)
+			error_token = "newline";
+		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+			error_token = p->token_value;
+
 		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
 		{
-			syntax_error(p->token_value);
+			syntax_error(error_token);
 			free_cmd(head);
 			return NULL;
 		}
@@ -1481,6 +1515,7 @@ char **build_expanded_args(t_list *args)
 	arr[i] = NULL;
 	return arr;
 }
+
 
 signals.c
 
@@ -1533,7 +1568,6 @@ void setup_child_signals(void)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 }
-
 
 utils.c
 
@@ -1894,10 +1928,20 @@ void free_env_copy(char **env_copy)
 void syntax_error(char *token)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
+
 	if (!token || *token == '\0')
 		ft_putstr_fd("newline", STDERR_FILENO);
 	else
 		ft_putstr_fd(token, STDERR_FILENO);
+
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	set_exit_status(SYNTAX_ERROR);
+}
+
+char *parse_fd(t_parse *p)
+{
+	int start = p->pos;
+	while (ft_isdigit(p->curr_char))
+		next_char(p);
+	return ft_substr(p->input, start, p->pos - start);
 }

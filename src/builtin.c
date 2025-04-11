@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/09 18:15:54 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/10 19:29:56 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,8 +86,10 @@ int exec_cd(char **args)
 	if (chdir(path) != 0)
 	{
 		// ... error message logic ...
+		perror("cd");
+		set_exit_status(1);
 		free(oldpwd);
-		return 1;
+		return (1);
 	}
 
 	newpwd = getcwd(NULL, 0);
