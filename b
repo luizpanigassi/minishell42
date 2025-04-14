@@ -1,0 +1,15 @@
+a
+b
+includes
+libft
+Makefile
+minishell
+minishell_evalsheet.pdf
+obj
+readline.supp
+README.md
+src
+subject.txt
+tested
+text
+utils

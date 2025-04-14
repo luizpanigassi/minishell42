@@ -1,45 +1,92 @@
-
-
-minishell> cat << EOF\nHello\nEOF
-> 
-(goes to heredoc, on ctrl+c prints double prompt, does not print Hello)
-
-minishell> ls > out.txt 2> err.txt
-ls: cannot access '2': No such file or directory
-minishell> 
-(out2.txt/err.txt is empty)
-
-minishell> sleep 5
-^C
-minishell> minishell> 
-(double prompt)
-
-minishell> echo "hello
-minishell: unmatched quote
-
-minishell> echo "hello
-minishell: unmatched quote
-
-minishell> echo $?
-0
-minishell> 
-(expected Syntax error, exit code 2, getting code 0)
-
-
-minishell> ls >
+minishell> echo bonjour |;
 minishell: syntax error near unexpected token `newline'
-minishell> echo $?
-2
 minishell> 
-(wrong output, expected token >)
 
-minishell> (only spaces)
-minishell: syntax error near unexpected token `;'
-minishell> 
-(should do nothing)
+(expected?
+c2r5p6% echo bonjour |;
+pipe> 
+)
 
-minishell> /etc/shadow; echo $?
-minishell: /etc/shadow: command not found
-127
+minishell> echo >
+minishell: syntax error near unexpected token `newline'
 minishell> 
-(expected 126)
+
+(
+expected? zsh: parse error near `\n'
+c2r5p6% 
+)
+
+minishell> echo bonbonjour >>> test.txt
+minishell: syntax error near unexpected token `>'
+minishell> 
+
+(
+expected: 
+c2r5p6% echo bonjour >>> test.txxt
+zsh: parse error near `>'
+c2r5p6% 
+)
+
+minishell> echo bonjour > > out
+minishell: syntax error near unexpected token `>'
+minishell> 
+(expected:
+c2r5p6% echo bonjour > > out
+zsh: parse error near `>'
+c2r5p6% 
+)
+
+minishell> echo coucou | ;
+minishell: syntax error near unexpected token `newline'
+minishell> 
+
+(fix syntax error code)
+
+simpleminishell> echo -n -n -nnnn -nnnnm
+-n -nnnn -nnnnmminishell> 
+(expected
+c2r5p6% echo -n -n -nnnn -nnnnm
+-nnnnm%                                                                         c2r5p6% 
+                                                                        c2r5p6% )
+
+
+minishell> cd a b c
+cd: No such file or directory
+minishell> 
+(handle excess arguments more gracefully)
+
+
+minishell> export var="cat Makefile | grep >"
+minishell: unmatched quote
+minishell: syntax error near unexpected token ` '
+minishell> 
+(expected nothing, error code 0)
+
+minishell> $bla
+minishell: Permission denied
+minishell> 
+(should be command not found? Invalid identifier?)
+
+minishell> echo "bip | bip ; coyotte > < " "
+minishell: unmatched quote
+zsh: segmentation fault (core dumped)  ./minishell
+c2r5p6% 
+(SEGFAULT)
+
+minishell> c$var Makefile
+minishell: c"cat: command not found
+minishell> 
+(should cat Makefile?)
+
+minishell> sleep 5 | exit
+Exiting minishell, goodbye!
+minishell> 
+(did not exit)
+
+minishell> echo hi " ; " hihi
+minishell: unmatched quote
+fish: Job 1, './minishell' terminated by signal SIGSEGV (Address boundary error)
+(SEGFAULT, expected hi  ;  hihi)
+
+minishell> > a ls > b < Makefile
+(prints nothing, expected syntax error?)

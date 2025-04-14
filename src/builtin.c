@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/10 19:29:56 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/14 17:17:51 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,14 @@ int exec_cd(char **args)
 	if (!oldpwd)
 		return (perror("cd"), 1);
 
+	// Check for too many arguments
+	if (args[1] && args[2])
+	{
+		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);
+		free(oldpwd);
+		set_exit_status(1);
+		return (1);
+	}
 	// Determine path (existing logic)
 	if (!args[1] || ft_strcmp(args[1], "~") == 0)
 		path = getenv("HOME");
@@ -98,11 +106,9 @@ int exec_cd(char **args)
 		free(oldpwd);
 		return (perror("cd"), 1);
 	}
-
 	// Update environment - DON'T FREE THESE AFTER
 	update_env_var("OLDPWD", oldpwd);
 	update_env_var("PWD", newpwd);
-
 	return 0;
 }
 
@@ -246,7 +252,7 @@ int exec_export(char **args)
 
 		if (!is_valid_var_name(var_name))
 		{
-			ft_putstr_fd("minishell: export: `", STDERR_FILENO);
+			ft_putstr_fd("minishell: export: '", STDERR_FILENO);
 			ft_putstr_fd(args[i], STDERR_FILENO);
 			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
 			ret = 1;
@@ -316,7 +322,7 @@ int exec_unset(char **args)
 	{
 		if (!is_valid_var_name(args[i]))
 		{
-			ft_putstr_fd("minishell: unset: `", STDERR_FILENO);
+			ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
 			ft_putstr_fd(args[i], STDERR_FILENO);
 			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
 			ret = 1;
