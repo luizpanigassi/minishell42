@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/10 19:31:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/14 15:32:16 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -312,13 +312,7 @@ int main(void)
 			// Check for empty command (e.g., ";" or " | ")
 			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
-				char *err = ";";
-				if (i > 0) // Handle trailing semicolon
-					err = "newline";
-
-				syntax_error(err);
 				free(trimmed_cmd);
-				syntax_error_flag = 1;
 				i++;
 				continue;
 			}
