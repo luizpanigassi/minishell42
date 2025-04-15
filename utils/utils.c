@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/11 17:50:28 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 17:35:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,9 +220,11 @@ void print_export_declarations(void)
 */
 size_t ft_strlen_size(const char *str)
 {
-	size_t len = 0;
-	while (str[len])
-		len++;
+	size_t len;
+	if (str)
+		len = ft_strlen(str);
+	else
+		len = 0;
 	return (len);
 }
 
@@ -257,9 +259,12 @@ char **ft_array_append(char **array, char *new_element)
 	if (!new_array)
 		return NULL;
 
-	int i = -1;
-	while (++i < count)
+	int i = 0;
+	while (array[i])
+	{
 		new_array[i] = array[i];
+		i++;
+	}
 	new_array[count] = new_element;
 	new_array[count + 1] = NULL;
 
@@ -366,7 +371,7 @@ void free_env_copy(char **env_copy)
 
 void syntax_error(char *token)
 {
-	ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
+	ft_putstr_fd("minishell: syntax error near unexpected token '", STDERR_FILENO);
 
 	if (!token || *token == '\0')
 		ft_putstr_fd("newline", STDERR_FILENO);

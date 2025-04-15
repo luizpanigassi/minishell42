@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/14 15:32:16 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 17:41:23 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,9 +131,10 @@ int execute_pipeline(t_cmd *pipeline)
 		{
 			setup_child_signals();
 			// Handle pipe redirections
-			handle_redirections(prev_pipe[0],
-								(current->next ? next_pipe[1] : -1),
-								current->redirections);
+			int pipe_out = -1;
+			if (current->next)
+				pipe_out = next_pipe[1];
+			handle_redirections(prev_pipe[0], pipe_out, current->redirections);
 
 			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
@@ -200,6 +201,17 @@ int execute_pipeline(t_cmd *pipeline)
 		// Update status for last command
 		if (WIFEXITED(status) && child_count == cmd_count)
 			last_status = WEXITSTATUS(status);
+	}
+	// Check if the last command in the pipeline was "exit"
+	t_cmd *last_cmd = pipeline;
+	while (last_cmd->next)
+		last_cmd = last_cmd->next;
+
+	if (is_builtin(last_cmd->args) && ft_strcmp(last_cmd->args[0], "exit") == 0)
+	{
+		free(child_pids);
+		free_pipeline(pipeline);
+		exit(last_status); // Exit the shell with the last command's status
 	}
 
 	free(child_pids);

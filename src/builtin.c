@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/14 17:17:51 by luinasci         ###   ########.fr       */
+/*   Created: 2025/03/26 18:05:42 by luinasci          #+#                #+#             */
+/*   Updated: 2025/04/14 17:34:17 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,11 +27,12 @@ int is_builtin(char **tokens)
 
 	if (!tokens || !tokens[0])
 		return (0);
-	i = -1;
-	while (builtins[++i])
+	i = 0;
+	while (builtins[i])
 	{
 		if (ft_strcmp(tokens[0], builtins[i]) == 0)
 			return (1);
+		i++;
 	}
 	return (0);
 }
@@ -56,7 +57,10 @@ int exec_builtin(char **args)
 	if (ft_strcmp(args[0], "env") == 0)
 		return (exec_env(args));
 	if (ft_strcmp(args[0], "exit") == 0)
-		return (exec_exit(args));
+	{
+		exec_exit(args);
+		return (EXIT_CODE_EXIT);
+	}
 	return (0);
 }
 
@@ -131,7 +135,9 @@ int exec_exit(char **args)
 	if (args[1])
 	{
 		if (ft_isnumber(args[1]))
+		{
 			status = ft_atoi(args[1]);
+		}
 		else
 		{
 			ft_putstr_fd("minishell: exit error: numeric argument required\n", STDERR_FILENO);

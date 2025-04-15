@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/14 15:28:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/14 17:33:56 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,8 +56,8 @@ char *get_cmd_path(char *cmd)
 	if (!paths)
 		return (NULL);
 
-	i = -1;
-	while (paths[++i])
+	i = 0;
+	while (paths[i])
 	{
 		// Create directory + slash
 		dir_slash = ft_strjoin(paths[i], "/");
@@ -81,6 +81,7 @@ char *get_cmd_path(char *cmd)
 			return (full_path);
 		}
 		free(full_path);
+		i++;
 	}
 	ft_free_array(paths);
 	return (NULL);
@@ -159,4 +160,33 @@ void exec_external_command(t_cmd *cmd)
 	perror("minishell");
 	free(path);
 	exit(EXIT_FAILURE);
+}
+
+/**
+ * @brief Handles redirection for commands.
+ * @param current Current redirection node.
+ * @param fd File descriptor for redirection.
+ * @return int 0 on success, -1 on error.
+ */
+int handle_redirection(t_redir *current, int fd)
+{
+	if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
+	{
+		if (dup2(fd, STDIN_FILENO) == -1)
+		{
+			close(fd);
+			perror("minishell");
+			return -1;
+		}
+	}
+	else
+	{
+		if (dup2(fd, STDOUT_FILENO) == -1)
+		{
+			close(fd);
+			perror("minishell");
+			return -1;
+		}
+	}
+	return 0;
 }

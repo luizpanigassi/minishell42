@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/11 18:05:24 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 17:35:52 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,7 +208,7 @@ t_cmd *parse_args(t_parse *p)
 				p->token_type != T_DOUBLE_QUOTED)
 			{
 				// Syntax error: print message and clean up
-				ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
+				ft_putstr_fd("minishell: syntax error near unexpected token '", STDERR_FILENO);
 				if (p->token_type == T_EOF)
 					ft_putstr_fd("newline", STDERR_FILENO);
 				else if (p->token_value)
@@ -379,7 +379,7 @@ t_cmd *parse_pipeline(t_parse *p)
 		// Handle pipe followed by invalid token
 		char *error_token = p->token_value;
 		if (p->token_type == T_EOF)
-			error_token = "newline";
+			error_token = ";";
 		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 			error_token = p->token_value;
 
@@ -406,7 +406,7 @@ char **build_expanded_args(t_list *args)
 	t_list *current = args;
 	int i = 0;
 
-	while (current)
+	while (i < count)
 	{
 		t_arg *a = (t_arg *)current->content;
 		char *expanded;

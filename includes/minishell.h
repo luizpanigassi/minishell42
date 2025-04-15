@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/11 18:04:25 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/14 17:23:20 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 # define CMD_NOT_FOUND 127
 # define PERM_DENIED 126
 # define SYNTAX_ERROR 2
+# define EXIT_CODE_EXIT 4242
 
 // Parsing structure
 typedef enum e_token
