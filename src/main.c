@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/15 17:50:24 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 19:03:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,6 +336,13 @@ int main(void)
 
 			if (!pipeline)
 			{
+				// Handle parsing errors (e.g., unmatched quotes)
+				if (parser.token_type == T_EOF && parser.token_value == NULL)
+				{
+					// Reset state and continue to next command
+					i++;
+					continue;
+				}
 				syntax_error_flag = 1;
 				i++;
 				continue;
