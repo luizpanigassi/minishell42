@@ -4,6 +4,7 @@
 		"text": "cpp",
 		"unistd.h": "c",
 		"dirent.h": "c",
-		"errno.h": "c"
+		"errno.h": "c",
+		"limits.h": "c"
 	}
 }

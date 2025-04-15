@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/15 17:35:18 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 17:50:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -388,4 +388,53 @@ char *parse_fd(t_parse *p)
 	while (ft_isdigit(p->curr_char))
 		next_char(p);
 	return ft_substr(p->input, start, p->pos - start);
+}
+
+/**
+ * @brief Splits a string by a delimiter, ignoring delimiters inside quotes.
+ * @param str The input string to split.
+ * @param delim The delimiter character.
+ * @return A NULL-terminated array of strings.
+ */
+char **split_with_quotes(const char *str, char delim)
+{
+	char **result = NULL;
+	int count = 0;
+	int in_quote = 0;
+	char quote_char = '\0';
+	const char *start = str;
+
+	while (*str)
+	{
+		if ((*str == '\'' || *str == '"') && (in_quote == 0 || *str == quote_char))
+		{
+			if (in_quote)
+				in_quote = 0; // Close quote
+			else
+			{
+				in_quote = 1; // Open quote
+				quote_char = *str;
+			}
+		}
+		else if (*str == delim && !in_quote)
+		{
+			// Found a delimiter outside quotes
+			result = realloc(result, sizeof(char *) * (count + 2));
+			result[count++] = ft_substr(start, 0, str - start);
+			start = str + 1;
+		}
+		str++;
+	}
+
+	// Add the last segment
+	if (start != str)
+	{
+		result = realloc(result, sizeof(char *) * (count + 2));
+		result[count++] = ft_substr(start, 0, str - start);
+	}
+
+	if (result)
+		result[count] = NULL;
+
+	return result;
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/15 17:41:23 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/15 17:50:24 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -312,7 +312,7 @@ int main(void)
 			continue;
 		}
 
-		char **commands = ft_split(input, ';');
+		char **commands = split_with_quotes(input, ';');
 		free(input);
 		int syntax_error_flag = 0;
 		int i = 0;
