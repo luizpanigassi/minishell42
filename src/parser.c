@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/16 14:36:56 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/16 17:58:37 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void handle_quotes(t_parse *p, char quote)
 
 	if (!p->curr_char) // Unmatched quote detected
 	{
-		ft_putstr_fd("minishell: unmatched quote", STDERR_FILENO);
+		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
 		p->token_type = T_EOF; // Set token type to EOF to stop parsing
 		return;
 	}
