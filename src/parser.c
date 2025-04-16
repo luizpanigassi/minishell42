@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/15 19:02:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/16 14:36:56 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ void init_parser(t_parse *p, char *input)
 ** Skips whitespace characters in input
 ** @param p Parser structure
 */
-static void skip_whitespace(t_parse *p)
+void skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
@@ -42,7 +42,7 @@ static void skip_whitespace(t_parse *p)
 ** @param p Parser structure
 ** @param quote Type of quote (' or ")
 */
-static void handle_quotes(t_parse *p, char quote)
+void handle_quotes(t_parse *p, char quote)
 {
 	size_t start = p->pos;
 	char *content;
@@ -57,7 +57,7 @@ static void handle_quotes(t_parse *p, char quote)
 
 	if (!p->curr_char) // Unmatched quote detected
 	{
-		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
+		ft_putstr_fd("minishell: unmatched quote", STDERR_FILENO);
 		p->token_type = T_EOF; // Set token type to EOF to stop parsing
 		return;
 	}
@@ -80,7 +80,7 @@ static void handle_quotes(t_parse *p, char quote)
 ** Handles regular words in input
 ** @param p Parser structure
 */
-static void handle_word(t_parse *p)
+void handle_word(t_parse *p)
 {
 	size_t start = p->pos;
 	while (p->curr_char && !ft_isspace(p->curr_char) && !is_special_char(p->curr_char))
@@ -97,7 +97,7 @@ static void handle_word(t_parse *p)
 ** Handles special characters (|, >, <, etc.)
 ** @param p Parser structure
 */
-static void handle_special(t_parse *p)
+void handle_special(t_parse *p)
 {
 	int fd = 0;
 	if (ft_isdigit(p->curr_char))
