@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
+#    By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/11 16:06:07 by luinasci         ###   ########.fr        #
+#    Updated: 2025/04/16 15:12:42 by jcologne         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -35,7 +35,11 @@ SRCS		  = $(addprefix $(SRC_PATH), \
 
 UTILS_PATH  = utils/
 UTILS_SRCS  = $(addprefix $(UTILS_PATH), \
-				  utils.c \
+				  utils_1.c \
+				  utils_2.c \
+				  utils_3.c \
+				  utils_4.c \
+				  utils_5.c \
 				  )
 
 OBJS		  = $(SRCS:.c=.o) $(UTILS_SRCS:.c=.o)
