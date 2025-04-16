@@ -141,8 +141,7 @@ int exec_exit(char **args)
 		else
 		{
 			ft_putstr_fd("minishell: exit error: numeric argument required\n", STDERR_FILENO);
-			status = 2;
-			exit(status);
+			return (2);
 		}
 	}
 	printf("Exiting minishell, goodbye!\n");
