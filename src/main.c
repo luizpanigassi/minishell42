@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/16 19:49:02 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/17 18:22:41 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,7 @@ int execute_pipeline(t_cmd *pipeline)
 			return 1;
 		}
 
+		// Ensure proper pipe management
 		int pipe_in = prev_pipe[0];
 		if (current->redirections && current->redirections->type == T_HEREDOC)
 		{
@@ -152,10 +153,12 @@ int execute_pipeline(t_cmd *pipeline)
 		else if (pid > 0) // Parent
 		{
 			child_pids[i++] = pid;
+			if (current->next)
+				close(next_pipe[1]); // Close write end of next pipe
 			if (pipe_in != -1)
-				close(pipe_in);
+				close(pipe_in); // Close read end of previous pipe
 			if (prev_pipe[0] != -1)
-				close(prev_pipe[0]);
+				close(prev_pipe[0]); // Close previous pipe ends
 			if (prev_pipe[1] != -1)
 				close(prev_pipe[1]);
 

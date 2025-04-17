@@ -316,49 +316,49 @@ char **ft_copy_env(char **original)
  */
 int exec_unset(char **args)
 {
-    extern char **environ;
+	extern char **environ;
 
-    if (!args[1]) // No arguments provided
-        return (0);
+	if (!args[1]) // No arguments provided
+		return (0);
 
-    int ret = 0;
-    int i = 1;
-    while (args[i])
-    {
-        // Validate the variable name
-        if (!is_valid_var_name(args[i]))
-        {
-            ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
-            ft_putstr_fd(args[i], STDERR_FILENO);
-            ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
-            ret = 1;
-            i++;
-            continue;
-        }
+	int ret = 0;
+	int i = 1;
+	while (args[i])
+	{
+		// Validate the variable name
+		if (!is_valid_var_name(args[i]))
+		{
+			ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
+			ft_putstr_fd(args[i], STDERR_FILENO);
+			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
+			ret = 1;
+			i++;
+			continue;
+		}
 
-        // Search for the variable in the environment
-        char **env_ptr = environ;
-        while (*env_ptr)
-        {
-            char *eq = ft_strchr(*env_ptr, '=');
-            size_t var_len = eq ? eq - *env_ptr : ft_strlen(*env_ptr);
+		// Search for the variable in the environment
+		char **env_ptr = environ;
+		while (*env_ptr)
+		{
+			char *eq = ft_strchr(*env_ptr, '=');
+			size_t var_len = eq ? eq - *env_ptr : ft_strlen(*env_ptr);
 
-            if (ft_strncmp(*env_ptr, args[i], var_len) == 0 && var_len == ft_strlen_size(args[i]))
-            {
-                free(*env_ptr);
-                char **ptr = env_ptr;
-                while (*ptr)
-                {
-                    *ptr = *(ptr + 1);
-                    ptr++;
-                }
-                break;
-            }
-            env_ptr++;
-        }
-        i++;
-    }
-    return (ret);
+			if (ft_strncmp(*env_ptr, args[i], var_len) == 0 && var_len == ft_strlen_size(args[i]))
+			{
+				free(*env_ptr);
+				char **ptr = env_ptr;
+				while (*ptr)
+				{
+					*ptr = *(ptr + 1);
+					ptr++;
+				}
+				break;
+			}
+			env_ptr++;
+		}
+		i++;
+	}
+	return (ret);
 }
 
 /* Environment variable operations */
