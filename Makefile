@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+         #
+#    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/16 15:12:42 by jcologne         ###   ########.fr        #
+#    Updated: 2025/04/17 11:24:34 by jcologne         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,11 +25,13 @@ LIBFT_LIB	= $(LIBFT_DIR)/libft.a
 
 SRC_PATH	 = src/
 SRCS		  = $(addprefix $(SRC_PATH), \
-				  builtin.c \
 				  exit_status.c \
 				  input.c \
 				  main.c \
-				  parser.c \
+				  create_heredoc.c \
+				  parser_1.c \
+				  parser_2.c \
+				  init_parser.c \
 				  signals.c \
 				  )
 
@@ -42,7 +44,17 @@ UTILS_SRCS  = $(addprefix $(UTILS_PATH), \
 				  utils_5.c \
 				  )
 
-OBJS		  = $(SRCS:.c=.o) $(UTILS_SRCS:.c=.o)
+BUILTIN_PATH = builtin/
+BUILTIN_SRCS = $(addprefix $(BUILTIN_PATH), \
+				  builtin.c \
+				  exec_cd.c \
+				  exec_exit.c \
+				  exec_echo.c \
+				  exec_pwd.c \
+				  )
+
+OBJ_DIR = obj
+OBJS = $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.o) $(UTILS_SRCS:.c=.o) $(BUILTIN_SRCS:.c=.o))
 CC			 = gcc
 CFLAGS		= -Wall -Wextra -Werror -g3
 INCLUDES	 = -Iincludes -I$(LIBFT_DIR)
@@ -76,13 +88,17 @@ $(LIBFT_LIB):
 	 @make -C $(LIBFT_DIR) --no-print-directory
 	 @echo "$(GREEN)$(CHECK_MARK) libft is ready!$(RESET)"
 
-%.o: %.c
+OBJ_DIR = obj
+
+$(OBJ_DIR)/%.o: %.c
+	 @mkdir -p $(dir $@)
 	 @echo "$(BLUE)$(WRENCH) Compiling $(notdir $<)...$(RESET)"
 	 @$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	 @echo "$(RED)$(BROOM) Cleaning object files...$(RESET)"
 	 @$(RM) $(OBJS)
+	 @rm -rf obj
 	 @make -C $(LIBFT_DIR) clean --no-print-directory
 	 @echo "$(RED)$(CHECK_MARK) Object files cleaned!$(RESET)"
 
