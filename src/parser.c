@@ -5,7 +5,7 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
+/*   Created: 2025/03/26 18:43:01 by luinasci          #+#                #+#             */
 /*   Updated: 2025/04/16 17:58:37 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
@@ -191,9 +191,20 @@ t_cmd *parse_args(t_parse *p)
 			t_arg *arg = malloc(sizeof(t_arg));
 			arg->value = ft_strdup(p->token_value);
 			arg->type = p->token_type;
-			ft_lstadd_back(&args, ft_lstnew(arg));
+
+			// Skip expansion for `unset` arguments
+			if (args && ft_strcmp(((t_arg *)args->content)->value, "unset") == 0)
+			{
+				ft_lstadd_back(&args, ft_lstnew(arg));
+			}
+			else
+			{
+				char *expanded = expand_variables(arg->value);
+				free(arg->value);
+				arg->value = expanded;
+				ft_lstadd_back(&args, ft_lstnew(arg));
+			}
 		}
-		// Handle redirection operators
 		else if (is_redirection(p->token_type))
 		{
 			t_redir *redir = malloc(sizeof(t_redir));
@@ -268,72 +279,46 @@ int create_heredoc(const char *delimiter)
 	pid_t pid;
 	int status;
 
-	if (pipe(pipefd)) // Create a pipe
+	if (pipe(pipefd) < 0)
 		return (-1);
 
 	pid = fork();
-	if (pid == -1)
-	{
-		close(pipefd[0]);
-		close(pipefd[1]);
-		return (-1);
-	}
-
 	if (pid == 0) // Child process
 	{
 		char *line;
-		close(pipefd[0]); // Close unused read end
-
-		// Reset signals to default/ignore for heredoc context
-		signal(SIGINT, SIG_DFL);  // Allow Ctrl-C to terminate child
-		signal(SIGQUIT, SIG_IGN); // Ignore Ctrl-slash
-		int quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
+		close(pipefd[0]); // Close read end
 
 		while (1)
 		{
 			line = readline("> ");
-			if (!line)
-				break;
-			if (strcmp(line, delimiter) == 0)
+			if (!line || ft_strcmp(line, delimiter) == 0)
 			{
 				free(line);
 				break;
 			}
-			if (!quoted_delimiter)
-			{ // NEW: Expand variables only if unquoted
-				char *expanded = expand_variables(line);
-				write(pipefd[1], expanded, strlen(expanded));
-				free(expanded);
-			}
-			else
-			{
-				write(pipefd[1], line, strlen(line));
-			}
+			write(pipefd[1], line, ft_strlen(line));
 			write(pipefd[1], "\n", 1);
 			free(line);
 		}
 		close(pipefd[1]);
-		exit(0); // Child exits normally
+		exit(0);
 	}
-	else
-	{					  // Parent process
-		close(pipefd[1]); // Close unused write end
-
-		// Wait for child to finish
+	else if (pid > 0) // Parent process
+	{
+		close(pipefd[1]); // Close write end
 		waitpid(pid, &status, 0);
-
 		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
 		{
-			// Heredoc interrupted by Ctrl-C
 			close(pipefd[0]);
-			rl_replace_line("", 0);
-			rl_on_new_line();
-			ft_putstr_fd("\n", STDOUT_FILENO); // Mimic bash behavior
-			set_exit_status(130);			   // Set $? = 130 (SIGINT exit code)
 			return (-1);
 		}
-
-		return (pipefd[0]); // Return read end of pipe
+		return (pipefd[0]); // Return read end
+	}
+	else
+	{
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return (-1);
 	}
 }
 
@@ -371,7 +356,10 @@ t_cmd *parse_pipeline(t_parse *p)
 	{
 		t_cmd *cmd = parse_args(p);
 		if (!cmd)
-			break;
+		{
+			free_cmd(head);
+			return NULL;
+		}
 
 		*curr = cmd;
 		curr = &cmd->next;
@@ -414,14 +402,16 @@ char **build_expanded_args(t_list *args)
 	while (i < count)
 	{
 		t_arg *a = (t_arg *)current->content;
-		char *expanded;
-
-		if (a->type == T_SINGLE_QUOTED)
-			expanded = ft_strdup(a->value); // No expansion
-		else
-			expanded = expand_variables(a->value); // Expand variables
-
-		arr[i++] = expanded;
+		char *expanded = expand_variables(a->value);
+		if (!expanded)
+		{
+			// Free previously allocated elements
+			while (--i >= 0)
+				free(arr[i]);
+			free(arr);
+			return NULL;
+		}
+		arr[i++] = expanded; // Already allocated
 		current = current->next;
 	}
 	arr[i] = NULL;
