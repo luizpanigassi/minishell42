@@ -6,7 +6,7 @@
 #    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/17 11:24:34 by jcologne         ###   ########.fr        #
+#    Updated: 2025/04/17 14:54:30 by jcologne         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,6 +27,7 @@ SRC_PATH	 = src/
 SRCS		  = $(addprefix $(SRC_PATH), \
 				  exit_status.c \
 				  input.c \
+				  get_cmd_path.c \
 				  main.c \
 				  create_heredoc.c \
 				  parser_1.c \

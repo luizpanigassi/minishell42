@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   input.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/14 17:33:56 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/17 14:54:02 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,75 +16,10 @@
 ** Prints error message and exits
 ** @param message Error message to display
 */
-void handle_error(char *message)
+void	handle_error(char *message)
 {
 	perror(message);
 	exit(EXIT_FAILURE);
-}
-
-/**
- * @brief Locates the full path of a command using PATH.
- * @param cmd Command name (e.g., "ls").
- * @return Allocated full path (e.g., "/bin/ls") or NULL if not found.
- * Caller must free the returned string.
- */
-char *get_cmd_path(char *cmd)
-{
-	char **paths;
-	char *full_path;
-	char *dir_slash;
-	int i;
-
-	// Handle absolute paths and commands with path specified
-	if (ft_strchr(cmd, '/') != NULL)
-	{
-		if (access(cmd, F_OK) == -1)
-			return NULL; // Not found
-		if (access(cmd, X_OK) == -1)
-		{
-			g_exit_status = PERM_DENIED; // Set global error
-			return NULL;
-		}
-		return ft_strdup(cmd);
-	}
-	// Get PATH environment variable
-	char *path_env = getenv("PATH");
-	if (!path_env)
-		return (NULL);
-	// Split PATH into individual directories
-	paths = ft_split(path_env, ':');
-	if (!paths)
-		return (NULL);
-
-	i = 0;
-	while (paths[i])
-	{
-		// Create directory + slash
-		dir_slash = ft_strjoin(paths[i], "/");
-		if (!dir_slash)
-		{
-			ft_free_array(paths);
-			return (NULL);
-		}
-		// Create full path
-		full_path = ft_strjoin(dir_slash, cmd);
-		free(dir_slash);
-		if (!full_path)
-		{
-			ft_free_array(paths);
-			return (NULL);
-		}
-		// Check if executable exists
-		if (access(full_path, X_OK) == 0)
-		{
-			ft_free_array(paths);
-			return (full_path);
-		}
-		free(full_path);
-		i++;
-	}
-	ft_free_array(paths);
-	return (NULL);
 }
 
 /**
@@ -99,30 +34,36 @@ char *get_cmd_path(char *cmd)
  * - Single-quoted strings suppress expansion.
  * - Double-quoted strings allow `$VAR` and `$?` expansion.
  */
-char *expand_variables(const char *input)
+char	*expand_variables(const char *input)
 {
-	char *result = ft_strdup("");
-	size_t i = 0;
+	char	*exit_status;
+	char	*result;
+	size_t	i;
+	size_t	start;
+	char	*var_name;
+	char	*var_value;
 
+	i = 0;
+	result = ft_strdup("");
 	while (input[i])
 	{
 		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1]) || input[i + 1] == '_'))
 		{
-			i++; // Skip $
+			i++;
 			if (input[i] == '?')
 			{
-				char *exit_status = ft_itoa(get_exit_status());
+				exit_status = ft_itoa(get_exit_status());
 				result = ft_strjoin_free(result, exit_status);
 				free(exit_status);
 				i++;
 			}
 			else
 			{
-				size_t start = i;
+				start = i;
 				while (input[i] && (ft_isalnum(input[i]) || input[i] == '_'))
 					i++;
-				char *var_name = ft_substr(input, start, i - start);
-				char *var_value = getenv(var_name);
+				var_name = ft_substr(input, start, i - start);
+				var_value = getenv(var_name);
 				if (var_value)
 					result = ft_strjoin_free(result, var_value);
 				free(var_name);
@@ -133,7 +74,7 @@ char *expand_variables(const char *input)
 			result = ft_strjoin_char(result, input[i++]);
 		}
 	}
-	return result;
+	return (result);
 }
 
 /**
@@ -141,11 +82,12 @@ char *expand_variables(const char *input)
  * @param cmd Command structure with arguments and redirections.
  * @note Terminates the process on completion or error.
  */
-void exec_external_command(t_cmd *cmd)
+void	exec_external_command(t_cmd *cmd)
 {
-	extern char **environ;
+	extern char	**environ;
+	char		*path;
 
-	char *path = get_cmd_path(cmd->args[0]);
+	path = get_cmd_path(cmd->args[0]);
 	if (!path)
 	{
 		if (access(cmd->args[0], F_OK) == 0)
@@ -155,7 +97,6 @@ void exec_external_command(t_cmd *cmd)
 		ft_putstr_fd(": command not found\n", STDERR_FILENO);
 		exit(CMD_NOT_FOUND);
 	}
-
 	execve(path, cmd->args, environ);
 	perror("minishell");
 	free(path);
@@ -168,7 +109,7 @@ void exec_external_command(t_cmd *cmd)
  * @param fd File descriptor for redirection.
  * @return int 0 on success, -1 on error.
  */
-int handle_redirection(t_redir *current, int fd)
+int	handle_redirection(t_redir *current, int fd)
 {
 	if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
 	{
@@ -176,7 +117,7 @@ int handle_redirection(t_redir *current, int fd)
 		{
 			close(fd);
 			perror("minishell");
-			return -1;
+			return (-1);
 		}
 	}
 	else
@@ -185,8 +126,8 @@ int handle_redirection(t_redir *current, int fd)
 		{
 			close(fd);
 			perror("minishell");
-			return -1;
+			return (-1);
 		}
 	}
-	return 0;
+	return (0);
 }
