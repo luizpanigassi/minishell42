@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser_1.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/17 09:55:16 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:50:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,12 @@ static void	skip_whitespace(t_parse *p)
 static void	handle_quotes(t_parse *p, char quote)
 {
 	size_t	start;
-	char		*content;
+	char	*content;
 
 	start = p->pos;
 	next_char(p);
-	while (p->curr_char && (p->curr_char != quote || (p->input[p->pos - 1] == '\\')))
+	while (p->curr_char && (p->curr_char != quote
+			|| (p->input[p->pos - 1] == '\\')))
 	{
 		if (p->curr_char == '\\' && quote == '"')
 			next_char(p);
@@ -43,7 +44,7 @@ static void	handle_quotes(t_parse *p, char quote)
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
-		return;
+		return ;
 	}
 	content = ft_substr(p->input, start + 1, p->pos - start - 1);
 	if (quote == '\'')
@@ -62,10 +63,11 @@ static void	handle_quotes(t_parse *p, char quote)
 static void	handle_word(t_parse *p)
 {
 	size_t	start;
-	char		*sub;
+	char	*sub;
 
 	start = p->pos;
-	while (p->curr_char && !ft_isspace(p->curr_char) && !is_special_char(p->curr_char))
+	while (p->curr_char && !ft_isspace(p->curr_char)
+		&& !is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}
@@ -89,7 +91,7 @@ static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 
 static void	handle_special(t_parse *p)
 {
-	int	fd;
+	int		fd;
 	char	*fd_str;
 
 	fd = 0;
@@ -136,7 +138,8 @@ void	next_token(t_parse *p)
 	}
 	if (p->curr_char == '\'' || p->curr_char == '"')
 		handle_quotes(p, p->curr_char);
-	else if (p->curr_char == '|' || p->curr_char == ';' || p->curr_char == '>' || p->curr_char == '<')
+	else if (p->curr_char == '|' || p->curr_char == ';' || p->curr_char == '>'
+		|| p->curr_char == '<')
 		handle_special(p);
 	else
 		handle_word(p);

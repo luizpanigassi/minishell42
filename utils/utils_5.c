@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_5.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/16 15:42:10 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 14:50:31 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,11 +23,51 @@ char	*parse_fd(t_parse *p)
 }
 
 /**
- * @brief Splits a string by a delimiter, ignoring delimiters inside quotes.
- * @param str The input string to split.
- * @param delim The delimiter character.
- * @return A NULL-terminated array of strings.
+ * @brief Updates the quote state based on the current character.
+ * @param c The current character.
+ * @param in_quote Pointer to the in_quote flag.
+ * @param quote_char Pointer to the current quote character.
  */
+void	update_quote_state(char c, int *in_quote, char *quote_char)
+{
+	if (*in_quote && c == *quote_char)
+		*in_quote = 0;
+	else if (!*in_quote && (c == '\'' || c == '"'))
+	{
+		*in_quote = 1;
+		*quote_char = c;
+	}
+}
+
+/**
+ * @brief Adds a substring to the result array.
+ * @param result Pointer to the result array.
+ * @param count Pointer to the current count of elements in the array.
+ * @param start Pointer to the start of the substring.
+ * @param end Pointer to the end of the substring.
+ */
+void	add_substring(char ***result, int *count,
+				const char *start, const char *end)
+{
+	*result = realloc(*result, sizeof(char *) * (*count + 2));
+	(*result)[(*count)++] = ft_substr(start, 0, end - start);
+}
+
+/**
+ * @brief Handles a delimiter in the string, adding a
+ *substring to the result array.
+ * @param str Pointer to the current position in the string.
+ * @param start Pointer to the start of the current substring.
+ * @param result Pointer to the result array.
+ * @param count Pointer to the current count of elements in the array.
+ */
+void	handle_delimiter(const char **str, const char **start,
+	char ***result, int *count)
+{
+	add_substring(result, count, *start, *str);
+	*start = *str + 1;
+}
+
 char	**split_with_quotes(const char *str, char delim)
 {
 	const char	*start;
@@ -36,36 +76,21 @@ char	**split_with_quotes(const char *str, char delim)
 	int			in_quote;
 	char		quote_char;
 
+	start = str;
 	result = NULL;
 	count = 0;
 	in_quote = 0;
 	quote_char = '\0';
-	start = str;
 	while (*str)
 	{
-		if ((*str == '\'' || *str == '"') && (in_quote == 0 || *str == quote_char))
-		{
-			if (in_quote)
-				in_quote = 0;
-			else
-			{
-				in_quote = 1;
-				quote_char = *str;
-			}
-		}
+		if ((*str == '\'' || *str == '"'))
+			update_quote_state(*str, &in_quote, &quote_char);
 		else if (*str == delim && !in_quote)
-		{
-			result = realloc(result, sizeof(char *) * (count + 2));
-			result[count++] = ft_substr(start, 0, str - start);
-			start = str + 1;
-		}
+			handle_delimiter(&str, &start, &result, &count);
 		str++;
 	}
 	if (start != str)
-	{
-		result = realloc(result, sizeof(char *) * (count + 2));
-		result[count++] = ft_substr(start, 0, str - start);
-	}
+		add_substring(&result, &count, start, str);
 	if (result)
 		result[count] = NULL;
 	return (result);

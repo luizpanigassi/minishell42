@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/15 17:49:59 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/18 14:45:35 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,6 +137,9 @@ void	free_env_copy(char **env_copy);
 void	syntax_error(char *token);
 char	*parse_fd(t_parse *p);
 char	**split_with_quotes(const char *str, char delim);
+void	update_quote_state(char c, int *in_quote, char *quote_char);
+void	add_substring(char ***result, int *count,
+			const char *start, const char *end);
 
 
 // Helper functions for parsing

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_4.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:08:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/16 15:11:01 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:13:55 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,11 +81,13 @@ void	free_env_copy(char **env_copy)
 	if (!env_copy)
 		return ;
 	ft_free_array(env_copy);
+	env_copy = NULL;
 }
 
 void	syntax_error(char *token)
 {
-	ft_putstr_fd("minishell: syntax error near unexpected token '", STDERR_FILENO);
+	ft_putstr_fd("minishell: syntax error near unexpected token '",
+		STDERR_FILENO);
 	if (!token || *token == '\0')
 		ft_putstr_fd("newline", STDERR_FILENO);
 	else

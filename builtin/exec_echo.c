@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   exec_echo.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:48:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/17 11:28:04 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:25:07 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 ** @param args Command arguments (-n flag suppresses newline)
 ** @return Always returns 0
 */
-int	exec_echo(char **args) // use -n
+int	exec_echo(char **args)
 {
 	int	i;
 	int	nl_flag;

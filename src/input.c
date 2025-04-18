@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   input.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/17 14:54:02 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 16:36:06 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,45 +34,57 @@ void	handle_error(char *message)
  * - Single-quoted strings suppress expansion.
  * - Double-quoted strings allow `$VAR` and `$?` expansion.
  */
-char	*expand_variables(const char *input)
+static char	*expand_variable(const char *input, size_t *i)
 {
-	char	*exit_status;
-	char	*result;
-	size_t	i;
+	char	*value;
 	size_t	start;
 	char	*var_name;
+	char	*var_value;
+
+	if (input[*i] == '?')
+	{
+		value = ft_itoa(get_exit_status());
+		(*i)++;
+	}
+	else
+	{
+		start = *i;
+		while (input[*i] && (ft_isalnum(input[*i]) || input[*i] == '_'))
+			(*i)++;
+		var_name = ft_substr(input, start, *i - start);
+		var_value = getenv(var_name);
+		if (var_value)
+			value = ft_strdup(var_value);
+		else
+			value = ft_strdup("");
+		free(var_name);
+	}
+	return (value);
+}
+
+char	*expand_variables(const char *input)
+{
+	char	*result;
+	size_t	i;
 	char	*var_value;
 
 	i = 0;
 	result = ft_strdup("");
 	while (input[i])
 	{
-		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1]) || input[i + 1] == '_'))
+		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1])
+				|| input[i + 1] == '_'))
 		{
 			i++;
-			if (input[i] == '?')
+			if (input[i])
 			{
-				exit_status = ft_itoa(get_exit_status());
-				result = ft_strjoin_free(result, exit_status);
-				free(exit_status);
-				i++;
-			}
-			else
-			{
-				start = i;
-				while (input[i] && (ft_isalnum(input[i]) || input[i] == '_'))
-					i++;
-				var_name = ft_substr(input, start, i - start);
-				var_value = getenv(var_name);
-				if (var_value)
-					result = ft_strjoin_free(result, var_value);
-				free(var_name);
+				var_value = expand_variable(input, &i);
+				result = ft_strjoin_free(result, var_value);
+				free(var_value);
 			}
 		}
 		else
-		{
 			result = ft_strjoin_char(result, input[i++]);
-		}
 	}
 	return (result);
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 17:22:04 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/07 18:02:43 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:24:22 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
  * @brief Updates the global exit status variable.
  * @param status Exit code to store (0-255).
  */
-void set_exit_status(int status)
+void	set_exit_status(int status)
 {
 	g_exit_status = status;
 }
@@ -25,7 +25,7 @@ void set_exit_status(int status)
  * @brief Retrieves the global exit status.
  * @return Last exit status of foreground commands.
  */
-int get_exit_status(void)
+int	get_exit_status(void)
 {
 	return (g_exit_status);
 }

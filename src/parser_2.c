@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser_2.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/17 10:00:25 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/18 16:05:23 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,8 +94,8 @@ t_cmd	*parse_args(t_parse *p)
 */
 int	is_redirection(t_token type)
 {
-	return (type == T_REDIR_IN || type == T_REDIR_OUT ||
-			type == T_APPEND || type == T_HEREDOC);
+	return (type == T_REDIR_IN || type == T_REDIR_OUT
+		|| type == T_APPEND || type == T_HEREDOC);
 }
 
 /*

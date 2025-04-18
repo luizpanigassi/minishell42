@@ -5,14 +5,14 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:05:42 by luinasci          #+#                #+#             */
-/*   Updated: 2025/04/14 17:34:17 by luinasci         ###   ########.fr       */
+/*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
+/*   Updated: 2025/04/18 15:48:16 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-extern volatile sig_atomic_t g_exit_status;
+extern volatile	sig_atomic_t g_exit_status;
 
 /*
 ** Checks if a command is a builtin

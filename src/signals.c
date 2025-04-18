@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:28:19 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/15 18:03:18 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:22:43 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
  * Prints a new prompt and resets input buffer.
  * @param sig Signal number (unused).
  */
-void handle_sigint(int sig)
+void	handle_sigint(int sig)
 {
 	(void)sig;
 	write(STDOUT_FILENO, "\n", 1);
@@ -29,11 +29,11 @@ void handle_sigint(int sig)
 /*
 ** Sets up signal handlers for parent process (shell)
 */
-void setup_parent_signals(void)
+void	setup_parent_signals(void)
 {
-	struct sigaction sa;
+	struct sigaction	sa;
 
-	sa.sa_handler = handle_sigint; // Custom SIGINT handler
+	sa.sa_handler = handle_sigint;
 	sa.sa_flags = SA_RESTART;
 	sigemptyset(&sa.sa_mask);
 	sigaction(SIGINT, &sa, NULL);
@@ -44,9 +44,8 @@ void setup_parent_signals(void)
  * @brief Configures child processes to use default signal handlers.
  * SIGINT and SIGQUIT will terminate children normally.
  */
-void setup_child_signals(void)
+void	setup_child_signals(void)
 {
-	// Reset to default signals
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 }
