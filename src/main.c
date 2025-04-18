@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/15 19:03:02 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/18 16:48:30 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,21 +18,18 @@ volatile sig_atomic_t g_exit_status = 0;
  * @brief Frees a command pipeline and associated resources.
  * @param pipeline Linked list of command structures.
  */
-void free_pipeline(t_cmd *pipeline)
+void	free_pipeline(t_cmd *pipeline)
 {
-	t_cmd *current;
-	t_redir *redir, *tmp_redir;
+	t_cmd	*current;
+	t_redir	*redir;
+	t_redir	*tmp_redir;
 
 	while (pipeline)
 	{
 		current = pipeline;
 		pipeline = pipeline->next;
-
-		// Free arguments
 		if (current->args)
 			ft_free_array(current->args);
-
-		// Free redirections
 		redir = current->redirections;
 		while (redir)
 		{
@@ -52,27 +49,26 @@ void free_pipeline(t_cmd *pipeline)
  * @param pipe_in Input file descriptor (or -1).
  * @param pipe_out Output file descriptor (or -1).
  */
-void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
-	pid_t pid;
-	extern char **environ;
+	pid_t		pid;
+	extern char	**environ;
+	char		*cmd_path;
 
-	// Always fork for pipeline commands
 	pid = fork();
 	if (pid == 0)
 	{
-		// Child process
 		setup_child_signals();
 		handle_redirections(pipe_in, pipe_out, cmd->redirections);
 
 		if (is_builtin(cmd->args))
 		{
 			exec_builtin(cmd->args);
-			exit(g_exit_status); // Make sure to exit after builtin
+			exit(g_exit_status);
 		}
 		else
 		{
-			char *cmd_path = get_cmd_path(cmd->args[0]);
+			cmd_path = get_cmd_path(cmd->args[0]);
 			if (!cmd_path)
 			{
 				ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
@@ -80,11 +76,7 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 				ft_putstr_fd("\n", STDERR_FILENO);
 				exit(CMD_NOT_FOUND);
 			}
-
-			// Execute the command with the current environment
 			execve(cmd_path, cmd->args, environ);
-
-			// If execve returns, it failed
 			perror("minishell");
 			free(cmd_path);
 			exit(EXIT_FAILURE);

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 15:48:16 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/18 16:57:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,11 @@ extern volatile	sig_atomic_t g_exit_status;
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int is_builtin(char **tokens)
+int	is_builtin(char **tokens)
 {
-	const char *builtins[] = {"echo", "cd", "pwd", "export",
-							  "unset", "env", "exit", NULL};
-	int i;
+	const char	*builtins[] = {"echo", "cd", "pwd", "export",
+		"unset", "env", "exit", NULL};
+	int			i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -42,7 +42,7 @@ int is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int exec_builtin(char **args)
+int	exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -69,10 +69,10 @@ int exec_builtin(char **args)
 ** @param args Ignored
 ** @return Always returns 0
 */
-int exec_env(char **args)
+int	exec_env(char **args)
 {
-	extern char **environ;
-	int i;
+	extern char	**environ;
+	int			i;
 
 	(void)args;
 	i = -1;
@@ -88,22 +88,25 @@ int exec_env(char **args)
  */
 int exec_export(char **args)
 {
-	extern char **environ;
+	extern char	**environ;
+	char		*eq_pos;
+	char		*var_name;
+	char		*value;
+	int			ret;
+	int			i;
 
 	if (!args[1])
 	{
 		print_export_declarations();
 		return (0);
 	}
-
-	int ret = 0;
-	int i = 1;
+	ret = 0;
+	i = 1;
 	while (args[i])
 	{
-		char *eq_pos = ft_strchr(args[i], '=');
-		char *var_name = NULL;
-		char *value = NULL;
-
+		eq_pos = ft_strchr(args[i], '=');
+		var_name = NULL;
+		value = NULL;
 		if (eq_pos)
 		{
 			var_name = ft_substr(args[i], 0, eq_pos - args[i]);
@@ -118,16 +121,15 @@ int exec_export(char **args)
 			ft_putstr_fd(args[i], STDERR_FILENO);
 			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
 			ret = 1;
-			free(var_name); // Free only on error
-			free(value);	// Free only on error
+			free(var_name);
+			free(value);
 			i++;
-			continue;
+			continue ;
 		}
-
 		if (eq_pos)
-			update_env_var(var_name, value); // Ownership transferred
+			update_env_var(var_name, value);
 		else
-			ensure_var_exported(var_name); // Ownership transferred
+			ensure_var_exported(var_name);
 		i++;
 	}
 	return (ret);
@@ -138,10 +140,10 @@ int exec_export(char **args)
 ** @param original Original environment array
 ** @return New allocated copy of the environment
 */
-char **ft_copy_env(char **original)
+char	**ft_copy_env(char **original)
 {
-	char **copy;
-	int i;
+	char	**copy;
+	int		i;
 
 	if (!original)
 		return (NULL);
@@ -155,9 +157,9 @@ char **ft_copy_env(char **original)
 	while (original[i])
 	{
 		copy[i] = ft_strdup(original[i]);
-		if (!copy[i]) // Handle allocation failure
+		if (!copy[i])
 		{
-			ft_free_array(copy); // Free previously allocated memory
+			ft_free_array(copy);
 			return (NULL);
 		}
 		i++;
@@ -174,12 +176,14 @@ char **ft_copy_env(char **original)
 int exec_unset(char **args)
 {
 	extern char **environ;
+	int ret;
+	int i;
 
 	if (!args[1])
 		return (0);
 
-	int ret = 0;
-	int i = 1;
+	ret = 0;
+	i = 1;
 	while (args[i])
 	{
 		if (!is_valid_var_name(args[i]))
@@ -224,48 +228,49 @@ int exec_unset(char **args)
  */
 void update_env_var(char *var, char *value)
 {
-	extern char **environ;
-	char *new_entry = NULL;
+	extern char	**environ;
+	char		*new_entry;
+	char		*eq;
+	char		**env_ptr;
 
-	// Create new environment entry
+	new_entry = NULL;
 	if (value)
 		new_entry = ft_strjoin3(var, "=", value);
 	else
 		new_entry = ft_strjoin(var, "=");
-
-	// Find and replace existing entry
-	char **env_ptr = environ;
+	env_ptr = environ;
 	while (*env_ptr)
 	{
-		char *eq = ft_strchr(*env_ptr, '=');
+		eq = ft_strchr(*env_ptr, '=');
 		if (eq && ft_strncmp(*env_ptr, var, eq - *env_ptr) == 0)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			free(value); // Only free the value parameter
-			return;
+			free(value);
+			return ;
 		}
 		env_ptr++;
 	}
-
-	// Add new entry
 	environ = ft_array_append(environ, new_entry);
-	free(value); // Only free the value parameter
+	free(value);
 }
 
 /*
 ** Ensures a variable exists in the environment (without value if not present)
 ** @param var_name Variable name to check/export
 */
-void ensure_var_exported(char *var_name)
+void	ensure_var_exported(char *var_name)
 {
-	extern char **environ;
-	char **env_ptr = environ;
-	int exists = 0;
+	extern char	**environ;
+	char		**env_ptr;
+	int			exists;
+	char		*eq;
 
+	exists = 0;
+	env_ptr = environ;
 	while (*env_ptr && !exists)
 	{
-		char *eq = ft_strchr(*env_ptr, '=');
+		eq = ft_strchr(*env_ptr, '=');
 		if (eq && ft_strncmp(*env_ptr, var_name, eq - *env_ptr) == 0)
 			exists = 1;
 		env_ptr++;
@@ -273,5 +278,5 @@ void ensure_var_exported(char *var_name)
 	if (!exists)
 		update_env_var(var_name, NULL);
 	else
-		free(var_name); // Free here since update_env_var no longer owns it
+		free(var_name);
 }
