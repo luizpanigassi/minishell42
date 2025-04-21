@@ -6,13 +6,13 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 16:57:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 14:53:58 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-extern volatile	sig_atomic_t g_exit_status;
+extern volatile sig_atomic_t	g_exit_status;
 
 /*
 ** Checks if a command is a builtin
@@ -65,77 +65,6 @@ int	exec_builtin(char **args)
 }
 
 /*
-** Prints the current environment variables
-** @param args Ignored
-** @return Always returns 0
-*/
-int	exec_env(char **args)
-{
-	extern char	**environ;
-	int			i;
-
-	(void)args;
-	i = -1;
-	while (environ[++i])
-		printf("%s\n", environ[i]);
-	return (0);
-}
-
-/**
- * @brief Executes the 'export' builtin to set environment variables.
- * @param args Array of arguments (e.g., ["export", "VAR=value"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
- */
-int exec_export(char **args)
-{
-	extern char	**environ;
-	char		*eq_pos;
-	char		*var_name;
-	char		*value;
-	int			ret;
-	int			i;
-
-	if (!args[1])
-	{
-		print_export_declarations();
-		return (0);
-	}
-	ret = 0;
-	i = 1;
-	while (args[i])
-	{
-		eq_pos = ft_strchr(args[i], '=');
-		var_name = NULL;
-		value = NULL;
-		if (eq_pos)
-		{
-			var_name = ft_substr(args[i], 0, eq_pos - args[i]);
-			value = ft_strdup(eq_pos + 1);
-		}
-		else
-			var_name = ft_strdup(args[i]);
-
-		if (!is_valid_var_name(var_name))
-		{
-			ft_putstr_fd("minishell: export: '", STDERR_FILENO);
-			ft_putstr_fd(args[i], STDERR_FILENO);
-			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
-			ret = 1;
-			free(var_name);
-			free(value);
-			i++;
-			continue ;
-		}
-		if (eq_pos)
-			update_env_var(var_name, value);
-		else
-			ensure_var_exported(var_name);
-		i++;
-	}
-	return (ret);
-}
-
-/*
 ** Creates a copy of the environment variables array
 ** @param original Original environment array
 ** @return New allocated copy of the environment
@@ -168,65 +97,13 @@ char	**ft_copy_env(char **original)
 	return (copy);
 }
 
-/**
- * @brief Executes the 'unset' builtin to remove environment variables.
- * @param args Array of arguments (e.g., ["unset", "VAR"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
- */
-int exec_unset(char **args)
-{
-	extern char **environ;
-	int ret;
-	int i;
-
-	if (!args[1])
-		return (0);
-
-	ret = 0;
-	i = 1;
-	while (args[i])
-	{
-		if (!is_valid_var_name(args[i]))
-		{
-			ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
-			ft_putstr_fd(args[i], STDERR_FILENO);
-			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
-			ret = 1;
-			i++;
-			continue;
-		}
-
-		char **env_ptr = environ;
-		while (*env_ptr)
-		{
-			char *eq = ft_strchr(*env_ptr, '=');
-			size_t var_len = eq ? eq - *env_ptr : ft_strlen(*env_ptr);
-
-			if (ft_strncmp(*env_ptr, args[i], var_len) == 0 && var_len == ft_strlen_size(args[i]))
-			{
-				free(*env_ptr);
-				char **ptr = env_ptr;
-				while (*ptr)
-				{
-					*ptr = *(ptr + 1);
-					ptr++;
-				}
-				break;
-			}
-			env_ptr++;
-		}
-		i++;
-	}
-	return (ret);
-}
-
 /* Environment variable operations */
 /**
  * @brief Updates or adds an environment variable.
  * @param var Variable name (ownership transferred).
  * @param value Variable value (ownership transferred).
  */
-void update_env_var(char *var, char *value)
+void	update_env_var(char *var, char *value)
 {
 	extern char	**environ;
 	char		*new_entry;

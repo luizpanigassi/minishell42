@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
+#    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/17 14:54:30 by jcologne         ###   ########.fr        #
+#    Updated: 2025/04/21 14:52:42 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -52,6 +52,9 @@ BUILTIN_SRCS = $(addprefix $(BUILTIN_PATH), \
 				  exec_exit.c \
 				  exec_echo.c \
 				  exec_pwd.c \
+				  exec_env.c \
+				  exec_export.c \
+				  exec_unset.c \
 				  )
 
 OBJ_DIR = obj

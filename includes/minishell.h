@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 14:42:36 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 15:36:33 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,12 @@ typedef struct s_arg {
 	char	*value;
 	t_token	type;
 }	t_arg;
+
+typedef struct s_export_params {
+	int		*ret;
+	int		*i;
+	char	*arg;
+}	t_export_params;
 
 /*
 ** Global variable to store the exit status of commands
@@ -153,6 +159,10 @@ int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 void	set_exit_status(int status);
 int		get_exit_status(void);
 
-int handle_cd_arguments(char **args, char *oldpwd);
+int		handle_cd_arguments(char **args, char *oldpwd);
+int		handle_export_argument(char *arg, int *i, int *ret);
+int		handle_invalid_identifier(char *var_name, char *value,
+			t_export_params params);
+
 
 #endif
