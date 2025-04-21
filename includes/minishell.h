@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 15:36:33 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 16:29:25 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,15 @@ typedef struct s_export_params {
 	int		*i;
 	char	*arg;
 }	t_export_params;
+
+typedef struct	s_exec_vars {
+	int		prev_pipe[2];
+	int		next_pipe[2];
+	pid_t	*child_pids;
+	pid_t	pid;
+	t_cmd	*current;
+	int		last_status;
+}	t_exec_vars;
 
 /*
 ** Global variable to store the exit status of commands
@@ -164,5 +173,7 @@ int		handle_export_argument(char *arg, int *i, int *ret);
 int		handle_invalid_identifier(char *var_name, char *value,
 			t_export_params params);
 
+int		execute_pipeline(t_cmd *pipeline);
+void	free_pipeline(t_cmd *pipeline);
 
 #endif

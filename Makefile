@@ -6,7 +6,7 @@
 #    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/21 14:52:42 by luinasci         ###   ########.fr        #
+#    Updated: 2025/04/21 16:15:18 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -34,6 +34,7 @@ SRCS		  = $(addprefix $(SRC_PATH), \
 				  parser_2.c \
 				  init_parser.c \
 				  signals.c \
+				  handle_pipe.c \
 				  )
 
 UTILS_PATH  = utils/

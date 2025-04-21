@@ -6,13 +6,13 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/18 16:48:30 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 19:13:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-volatile sig_atomic_t g_exit_status = 0;
+volatile sig_atomic_t	g_exit_status = 0;
 
 /**
  * @brief Frees a command pipeline and associated resources.
@@ -89,129 +89,6 @@ void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 }
 
 /*
-** Executes a pipeline of commands with proper piping
-** @param pipeline Command pipeline to execute
-** @return Exit status of the last command in pipeline
-*/
-int execute_pipeline(t_cmd *pipeline)
-{
-	int prev_pipe[2] = {-1, -1};
-	int next_pipe[2] = {-1, -1};
-	pid_t *child_pids;
-	int cmd_count = ft_cmd_size(pipeline);
-	int status;
-	int i = 0;
-
-	if (cmd_count == 0)
-		return 1;
-	child_pids = malloc(sizeof(pid_t) * cmd_count);
-	if (!child_pids)
-		return 1;
-
-	t_cmd *current = pipeline;
-	while (current)
-	{
-		if (current->next && pipe(next_pipe) < 0)
-		{
-			perror("minishell: pipe");
-			free(child_pids);
-			return 1;
-		}
-
-		pid_t pid = fork();
-		if (pid == 0) // Child
-		{
-			setup_child_signals();
-			// Handle pipe redirections
-			int pipe_out = -1;
-			if (current->next)
-				pipe_out = next_pipe[1];
-			handle_redirections(prev_pipe[0], pipe_out, current->redirections);
-
-			// Close all pipe ends in child
-			if (prev_pipe[0] != -1)
-				close(prev_pipe[0]);
-			if (prev_pipe[1] != -1)
-				close(prev_pipe[1]);
-			if (next_pipe[0] != -1)
-				close(next_pipe[0]);
-			if (next_pipe[1] != -1)
-				close(next_pipe[1]);
-
-			if (is_builtin(current->args))
-				exit(exec_builtin(current->args));
-			else
-				exec_external_command(current);
-		}
-		else if (pid > 0) // Parent
-		{
-			child_pids[i++] = pid;
-			// Close previous pipe ends
-			if (prev_pipe[0] != -1)
-				close(prev_pipe[0]);
-			if (prev_pipe[1] != -1)
-				close(prev_pipe[1]);
-
-			// Move to next pipe
-			prev_pipe[0] = next_pipe[0];
-			prev_pipe[1] = next_pipe[1];
-			next_pipe[0] = -1;
-			next_pipe[1] = -1;
-		}
-		else // Fork failed
-		{
-			perror("minishell: fork");
-			free(child_pids);
-			return 1;
-		}
-		current = current->next;
-	}
-
-	// Close any remaining pipe ends
-	if (prev_pipe[0] != -1)
-		close(prev_pipe[0]);
-	if (prev_pipe[1] != -1)
-		close(prev_pipe[1]);
-
-	// Wait for all children with EINTR handling
-	int last_status = 0;
-	int child_count = 0;
-	while (child_count < cmd_count)
-	{
-		int wpid = waitpid(-1, &status, 0);
-		if (wpid == -1)
-		{
-			if (errno == ECHILD)
-				break;
-			if (errno == EINTR)
-				continue;
-			perror("minishell: waitpid");
-			break;
-		}
-		child_count++;
-
-		// Update status for last command
-		if (WIFEXITED(status) && child_count == cmd_count)
-			last_status = WEXITSTATUS(status);
-	}
-	// Check if the last command in the pipeline was "exit"
-	t_cmd *last_cmd = pipeline;
-	while (last_cmd->next)
-		last_cmd = last_cmd->next;
-
-	if (is_builtin(last_cmd->args) && ft_strcmp(last_cmd->args[0], "exit") == 0)
-	{
-		free(child_pids);
-		free_pipeline(pipeline);
-		exit(last_status); // Exit the shell with the last command's status
-	}
-
-	free(child_pids);
-	set_exit_status(last_status);
-	return last_status;
-}
-
-/*
 ** Sets up file descriptors for I/O redirection
 ** @param pipe_in Input file descriptor
 ** @param pipe_out Output file descriptor
@@ -276,14 +153,18 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 */
 int main(void)
 {
-	char *input;
 	extern char **environ;
 	char **env_copy;
-	char **original_environ = environ;
-	env_copy = ft_copy_env(environ);
+	char **original_environ;
+	char **initial_env_copy;
+	char *input;
+
+	original_environ = environ;
+	if(original_environ)
+		env_copy = ft_copy_env(environ);
+	initial_env_copy = env_copy;
 	environ = env_copy;
 	setup_parent_signals();
-
 	while (1)
 	{
 		input = readline("minishell> ");
@@ -292,7 +173,7 @@ int main(void)
 			environ = original_environ;
 			free_env_copy(env_copy);
 			rl_clear_history();
-			write(STDOUT_FILENO, "exit\n", 5);
+			write(STDOUT_FILENO, "Exiting minishell, goodbye!\n", 28);
 			return (get_exit_status());
 		}
 
@@ -353,6 +234,7 @@ int main(void)
 				{
 					int result = exec_builtin(pipeline->args);
 					set_exit_status(result);
+					env_copy = environ;
 					dup2(saved_stdin, STDIN_FILENO);
 					dup2(saved_stdout, STDOUT_FILENO);
 					dup2(saved_stderr, STDERR_FILENO);
@@ -364,6 +246,7 @@ int main(void)
 				if (ft_strcmp(pipeline->args[0], "exit") == 0 && get_exit_status() != 1)
 				{
 					free_pipeline(pipeline);
+					free_env_copy(env_copy);
 					break; // Exit loop to terminate shell
 				}
 			}
@@ -393,9 +276,10 @@ int main(void)
 
 		setup_parent_signals();
 	}
-
-	environ = original_environ;
 	free_env_copy(env_copy);
+	if (initial_env_copy != env_copy)
+		free_env_copy(initial_env_copy);
+	environ = original_environ;
 	rl_clear_history();
 	return (get_exit_status());
 }

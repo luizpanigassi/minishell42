@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 14:53:58 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 18:10:11 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,13 +123,14 @@ void	update_env_var(char *var, char *value)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			free(value);
 			return ;
 		}
 		env_ptr++;
 	}
 	environ = ft_array_append(environ, new_entry);
-	free(value);
+	free (var);
+	if (value)
+		free(value);
 }
 
 /*

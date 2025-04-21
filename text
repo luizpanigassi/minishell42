@@ -67,6 +67,21 @@ typedef struct s_arg {
 	t_token	type;
 }	t_arg;
 
+typedef struct s_export_params {
+	int		*ret;
+	int		*i;
+	char	*arg;
+}	t_export_params;
+
+typedef struct	s_exec_vars {
+	int		prev_pipe[2];
+	int		next_pipe[2];
+	pid_t	*child_pids;
+	pid_t	pid;
+	t_cmd	*current;
+	int		last_status;
+}	t_exec_vars;
+
 /*
 ** Global variable to store the exit status of commands
 ** volatile sig_atomic_t ensures safe access in signal handlers
@@ -127,6 +142,9 @@ void	free_env_copy(char **env_copy);
 void	syntax_error(char *token);
 char	*parse_fd(t_parse *p);
 char	**split_with_quotes(const char *str, char delim);
+void	update_quote_state(char c, int *in_quote, char *quote_char);
+void	add_substring(char ***result, int *count,
+			const char *start, const char *end);
 
 
 // Helper functions for parsing
@@ -140,24 +158,32 @@ int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 void	set_exit_status(int status);
 int		get_exit_status(void);
 
+int		handle_cd_arguments(char **args, char *oldpwd);
+int		handle_export_argument(char *arg, int *i, int *ret);
+int		handle_invalid_identifier(char *var_name, char *value,
+			t_export_params params);
+
+int		execute_pipeline(t_cmd *pipeline);
+void	free_pipeline(t_cmd *pipeline);
+
 #endif
 
 builtin.c
 
 #include "minishell.h"
 
-extern volatile sig_atomic_t g_exit_status;
+extern volatile sig_atomic_t	g_exit_status;
 
 /*
 ** Checks if a command is a builtin
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int is_builtin(char **tokens)
+int	is_builtin(char **tokens)
 {
-	const char *builtins[] = {"echo", "cd", "pwd", "export",
-							  "unset", "env", "exit", NULL};
-	int i;
+	const char	*builtins[] = {"echo", "cd", "pwd", "export",
+		"unset", "env", "exit", NULL};
+	int			i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -176,7 +202,7 @@ int is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int exec_builtin(char **args)
+int	exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -199,20 +225,136 @@ int exec_builtin(char **args)
 }
 
 /*
+** Creates a copy of the environment variables array
+** @param original Original environment array
+** @return New allocated copy of the environment
+*/
+char	**ft_copy_env(char **original)
+{
+	char	**copy;
+	int		i;
+
+	if (!original)
+		return (NULL);
+	i = 0;
+	while (original[i])
+		i++;
+	copy = malloc(sizeof(char *) * (i + 1));
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (original[i])
+	{
+		copy[i] = ft_strdup(original[i]);
+		if (!copy[i])
+		{
+			ft_free_array(copy);
+			return (NULL);
+		}
+		i++;
+	}
+	copy[i] = NULL;
+	return (copy);
+}
+
+/* Environment variable operations */
+/**
+ * @brief Updates or adds an environment variable.
+ * @param var Variable name (ownership transferred).
+ * @param value Variable value (ownership transferred).
+ */
+void	update_env_var(char *var, char *value)
+{
+	extern char	**environ;
+	char		*new_entry;
+	char		*eq;
+	char		**env_ptr;
+
+	new_entry = NULL;
+	if (value)
+		new_entry = ft_strjoin3(var, "=", value);
+	else
+		new_entry = ft_strjoin(var, "=");
+	env_ptr = environ;
+	while (*env_ptr)
+	{
+		eq = ft_strchr(*env_ptr, '=');
+		if (eq && ft_strncmp(*env_ptr, var, eq - *env_ptr) == 0)
+		{
+			free(*env_ptr);
+			*env_ptr = new_entry;
+			return ;
+		}
+		env_ptr++;
+	}
+	environ = ft_array_append(environ, new_entry);
+	free (var);
+	if (value)
+		free(value);
+}
+
+/*
+** Ensures a variable exists in the environment (without value if not present)
+** @param var_name Variable name to check/export
+*/
+void	ensure_var_exported(char *var_name)
+{
+	extern char	**environ;
+	char		**env_ptr;
+	int			exists;
+	char		*eq;
+
+	exists = 0;
+	env_ptr = environ;
+	while (*env_ptr && !exists)
+	{
+		eq = ft_strchr(*env_ptr, '=');
+		if (eq && ft_strncmp(*env_ptr, var_name, eq - *env_ptr) == 0)
+			exists = 1;
+		env_ptr++;
+	}
+	if (!exists)
+		update_env_var(var_name, NULL);
+	else
+		free(var_name);
+}
+
+exec_cd.c
+
+#include "minishell.h"
+
+/*
 ** Changes the current directory
 ** @param args Command arguments (args[1] is the target directory)
 ** @return 0 on success, 1 on failure
 */
-int exec_cd(char **args)
+int	exec_cd(char **args)
 {
-	char *oldpwd = getcwd(NULL, 0);
-	char *path = NULL;
-	char *newpwd;
+	char	*oldpwd;
+	char	*newpwd;
 
+	oldpwd = getcwd(NULL, 0);
 	if (!oldpwd)
 		return (perror("cd"), 1);
+	if (handle_cd_arguments(args, oldpwd) != 0)
+		return (1);
+	newpwd = getcwd(NULL, 0);
+	if (!newpwd)
+	{
+		free(oldpwd);
+		return (perror("cd"), 1);
+	}
+	update_env_var("OLDPWD", oldpwd);
+	free(oldpwd);
+	update_env_var("PWD", newpwd);
+	free(newpwd);
+	return (0);
+}
 
-	// Check for too many arguments
+int	handle_cd_arguments(char **args, char *oldpwd)
+{
+	char	*path;
+
 	if (args[1] && args[2])
 	{
 		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);
@@ -220,79 +362,51 @@ int exec_cd(char **args)
 		set_exit_status(1);
 		return (1);
 	}
-	// Determine path (existing logic)
 	if (!args[1] || ft_strcmp(args[1], "~") == 0)
+	{
 		path = getenv("HOME");
+		if (!path)
+		{
+			ft_putstr_fd("minishell: cd: HOME not set\n", STDERR_FILENO);
+			free(oldpwd);
+			return (1);
+		}
+	}
 	else if (ft_strcmp(args[1], "-") == 0)
+	{
 		path = getenv("OLDPWD");
+		if (!path)
+		{
+			ft_putstr_fd("minishell: cd: OLDPWD not set\n", STDERR_FILENO);
+			free(oldpwd);
+			return (1);
+		}
+	}
 	else
 		path = args[1];
-
-	// Handle errors (existing error checking)
 	if (chdir(path) != 0)
 	{
-		// ... error message logic ...
 		perror("cd");
 		set_exit_status(1);
 		free(oldpwd);
 		return (1);
 	}
-
-	newpwd = getcwd(NULL, 0);
-	if (!newpwd)
-	{
-		free(oldpwd);
-		return (perror("cd"), 1);
-	}
-	// Update environment - DON'T FREE THESE AFTER
-	update_env_var("OLDPWD", oldpwd);
-	update_env_var("PWD", newpwd);
-	return 0;
+	return (0);
 }
 
-/*
-** Exits the shell with optional status code
-** @param args Command arguments (args[1] is optional exit status)
-** @return Does not return on success, returns 1 if too many arguments
-*/
-int exec_exit(char **args)
-{
-	int status;
+exec_echo.c
 
-	status = 0;
-	if (args[1] && args[2])
-	{
-		ft_putstr_fd("minishell: exit error: too many arguments\n", STDERR_FILENO);
-		return (1); // Return error code 1 (shell does NOT exit)
-	}
-
-	if (args[1])
-	{
-		if (ft_isnumber(args[1]))
-		{
-			status = ft_atoi(args[1]);
-		}
-		else
-		{
-			ft_putstr_fd("minishell: exit error: numeric argument required\n", STDERR_FILENO);
-			status = 2;
-			exit(status);
-		}
-	}
-	printf("Exiting minishell, goodbye!\n");
-	rl_clear_history();
-	exit(status);
-}
+#include "minishell.h"
 
 /*
 ** Prints arguments to stdout with optional newline suppression
 ** @param args Command arguments (-n flag suppresses newline)
 ** @return Always returns 0
 */
-int exec_echo(char **args) // use -n
+int	exec_echo(char **args)
 {
-	int i;
-	int nl_flag;
+	int	i;
+	int	nl_flag;
 
 	i = 1;
 	nl_flag = 0;
@@ -312,15 +426,20 @@ int exec_echo(char **args) // use -n
 	return (0);
 }
 
+
+exec_env.c
+
+#include "minishell.h"
+
 /*
 ** Prints the current environment variables
 ** @param args Ignored
 ** @return Always returns 0
 */
-int exec_env(char **args)
+int	exec_env(char **args)
 {
-	extern char **environ;
-	int i;
+	extern char	**environ;
+	int			i;
 
 	(void)args;
 	i = -1;
@@ -329,17 +448,126 @@ int exec_env(char **args)
 	return (0);
 }
 
+exec_exit.c
+
+#include "minishell.h"
+
+/*
+** Exits the shell with optional status code
+** @param args Command arguments (args[1] is optional exit status)
+** @return Does not return on success, returns 1 if too many arguments
+*/
+int	exec_exit(char **args)
+{
+	int	status;
+
+	status = 0;
+	if (args[1] && args[2])
+	{
+		ft_putstr_fd("minishell: exit error: too many arguments\n",
+			STDERR_FILENO);
+		return (1);
+	}
+	if (args[1])
+	{
+		if (ft_isnumber(args[1]))
+			status = ft_atoi(args[1]);
+		else
+		{
+			ft_putstr_fd("minishell: exit error: numeric argument required\n",
+				STDERR_FILENO);
+			return (2);
+		}
+	}
+	printf("Exiting minishell, goodbye!\n");
+	rl_clear_history();
+	exit(status);
+}
+
+exec_export.c
+
+#include "minishell.h"
+
+/**
+ * @brief Executes the 'export' builtin to set environment variables.
+ * @param args Array of arguments (e.g., ["export", "VAR=value"]).
+ * @return 0 on success, 1 if any invalid variable name is encountered.
+ */
+int	exec_export(char **args)
+{
+	int	ret;
+	int	i;
+
+	if (!args[1])
+		return (print_export_declarations(), 0);
+	ret = 0;
+	i = 1;
+	while (args[i])
+	{
+		if (handle_export_argument(args[i], &i, &ret))
+			continue ;
+		i++;
+	}
+	return (ret);
+}
+
+int	handle_invalid_identifier(char *var_name, char *value,
+		t_export_params params)
+{
+	if (is_valid_var_name(var_name))
+		return (0);
+	ft_putstr_fd("minishell: export: '", STDERR_FILENO);
+	ft_putstr_fd(params.arg, STDERR_FILENO);
+	ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
+	*params.ret = 1;
+	free(var_name);
+	free(value);
+	(*params.i)++;
+	return (1);
+}
+
+int	handle_export_argument(char *arg, int *i, int *ret)
+{
+	char			*eq_pos;
+	char			*var_name;
+	char			*value;
+	t_export_params	params;
+
+	params = (t_export_params){ret, i, arg};
+	eq_pos = ft_strchr(arg, '=');
+	var_name = NULL;
+	value = NULL;
+	if (eq_pos)
+	{
+		var_name = ft_substr(arg, 0, eq_pos - arg);
+		value = ft_strdup(eq_pos + 1);
+	}
+	else
+		var_name = ft_strdup(arg);
+	if (handle_invalid_identifier(var_name, value, params))
+		return (1);
+	if (eq_pos)
+		update_env_var(var_name, value);
+	else
+		ensure_var_exported(var_name);
+	return (0);
+}
+
+exec_pwd.c
+
+#include "minishell.h"
+
 /*
 ** Prints the current working directory
 ** @param args Ignored
 ** @return 0 on success, 1 on failure
 */
-int exec_pwd(char **args)
+int	exec_pwd(char **args)
 {
-	char *cwd;
+	char	*cwd;
 
 	(void)args;
-	cwd = getcwd(NULL, 0); // Let getcwd allocate memory
+	cwd = getcwd(NULL, 0);
 	if (args[1])
 	{
 		ft_putstr_fd("minishell: pwd: too many arguments\n", STDERR_FILENO);
@@ -359,89 +587,57 @@ int exec_pwd(char **args)
 	}
 }
 
-/**
- * @brief Executes the 'export' builtin to set environment variables.
- * @param args Array of arguments (e.g., ["export", "VAR=value"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
- */
-int exec_export(char **args)
+exec_unset.c
+
+#include "minishell.h"
+
+static int	handle_unset_error(char *arg)
 {
-	extern char **environ;
-
-	if (!args[1])
-	{
-		print_export_declarations();
+	if (is_valid_var_name(arg))
 		return (0);
-	}
-
-	int ret = 0;
-	int i = 1;
-	while (args[i])
-	{
-		char *eq_pos = ft_strchr(args[i], '=');
-		char *var_name = NULL;
-		char *value = NULL;
-
-		if (eq_pos)
-		{
-			var_name = ft_substr(args[i], 0, eq_pos - args[i]);
-			value = ft_strdup(eq_pos + 1);
-		}
-		else
-			var_name = ft_strdup(args[i]);
-
-		if (!is_valid_var_name(var_name))
-		{
-			ft_putstr_fd("minishell: export: '", STDERR_FILENO);
-			ft_putstr_fd(args[i], STDERR_FILENO);
-			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
-			ret = 1;
-			free(var_name); // Free only on error
-			free(value);	// Free only on error
-			i++;
-			continue;
-		}
-
-		if (eq_pos)
-			update_env_var(var_name, value); // Ownership transferred
-		else
-			ensure_var_exported(var_name); // Ownership transferred
-		i++;
-	}
-	return (ret);
+	ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
+	ft_putstr_fd(arg, STDERR_FILENO);
+	ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
+	return (1);
 }
 
-/*
-** Creates a copy of the environment variables array
-** @param original Original environment array
-** @return New allocated copy of the environment
-*/
-char **ft_copy_env(char **original)
+static void	shift_environment(char **env_ptr)
 {
-	char **copy;
-	int i;
+	char	**ptr;
 
-	if (!original)
-		return (NULL);
-	i = 0;
-	while (original[i])
-		i++;
-	copy = malloc(sizeof(char *) * (i + 1));
-	if (!copy)
-		return (NULL);
-	i = 0;
-	while (original[i])
+	ptr = env_ptr;
+	while (*ptr)
 	{
-		copy[i] = ft_strdup(original[i]);
-		if (!copy[i]) // Handle allocation failure
-		{
-			ft_free_array(copy); // Free previously allocated memory
-			return (NULL);
-		}
-		i++;
+		*ptr = *(ptr + 1);
+		ptr++;
 	}
-	copy[i] = NULL;
-	return (copy);
+}
+
+static void	remove_env_var(const char *var_name)
+{
+	extern char	**environ;
+	char		**env_ptr;
+	char		*eq;
+	size_t		var_len;
+	size_t		name_len;
+
+	env_ptr = environ;
+	name_len = ft_strlen(var_name);
+	while (*env_ptr)
+	{
+		eq = ft_strchr(*env_ptr, '=');
+		if (eq)
+			var_len = eq - *env_ptr;
+		else
+			var_len = ft_strlen(*env_ptr);
+		if (var_len == name_len && ft_strncmp(*env_ptr, var_name, var_len) == 0)
+		{
+			free(*env_ptr);
+			shift_environment(env_ptr);
+			break ;
+		}
+		env_ptr++;
+	}
 }
 
 /**
@@ -449,111 +645,102 @@ char **ft_copy_env(char **original)
  * @param args Array of arguments (e.g., ["unset", "VAR"]).
  * @return 0 on success, 1 if any invalid variable name is encountered.
  */
-int exec_unset(char **args)
+int	exec_unset(char **args)
 {
-	extern char **environ;
+	int	ret;
+	int	i;
 
 	if (!args[1])
 		return (0);
-
-	int ret = 0;
-	int i = 1;
+	ret = 0;
+	i = 1;
 	while (args[i])
 	{
-		if (!is_valid_var_name(args[i]))
-		{
-			ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
-			ft_putstr_fd(args[i], STDERR_FILENO);
-			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
+		if (handle_unset_error(args[i]))
 			ret = 1;
-			i++;
-			continue;
-		}
-
-		char **env_ptr = environ;
-		while (*env_ptr)
-		{
-			char *eq = ft_strchr(*env_ptr, '=');
-			size_t var_len = eq ? eq - *env_ptr : ft_strlen(*env_ptr);
-
-			if (ft_strncmp(*env_ptr, args[i], var_len) == 0 && var_len == ft_strlen_size(args[i]))
-			{
-				free(*env_ptr);
-				char **ptr = env_ptr;
-				while (*ptr)
-				{
-					*ptr = *(ptr + 1);
-					ptr++;
-				}
-				break;
-			}
-			env_ptr++;
-		}
+		else
+			remove_env_var(args[i]);
 		i++;
 	}
 	return (ret);
 }
 
-/* Environment variable operations */
+create_heredoc.c
+
+#include <minishell.h>
+
 /**
- * @brief Updates or adds an environment variable.
- * @param var Variable name (ownership transferred).
- * @param value Variable value (ownership transferred).
+ * @brief Creates a temporary heredoc file.
+ * @param delimiter Heredoc termination string.
+ * @return File descriptor of the heredoc temp file.
+ * @note Automatically deletes the temp file after opening.
  */
-void update_env_var(char *var, char *value)
+int	create_heredoc(const char *delimiter)
 {
-	extern char **environ;
-	char *new_entry = NULL;
+	int		pipefd[2];
+	pid_t	pid;
+	int		status;
+	char	*line;
+	int		quoted_delimiter;
+	char	*expanded;
 
-	// Create new environment entry
-	if (value)
-		new_entry = ft_strjoin3(var, "=", value);
-	else
-		new_entry = ft_strjoin(var, "=");
-
-	// Find and replace existing entry
-	char **env_ptr = environ;
-	while (*env_ptr)
+	if (pipe(pipefd))
+		return (-1);
+	pid = fork();
+	if (pid == -1)
 	{
-		char *eq = ft_strchr(*env_ptr, '=');
-		if (eq && ft_strncmp(*env_ptr, var, eq - *env_ptr) == 0)
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return (-1);
+	}
+	if (pid == 0)
+	{
+		close(pipefd[0]);
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_IGN);
+		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
+		while (1)
 		{
-			free(*env_ptr);
-			*env_ptr = new_entry;
-			free(value); // Only free the value parameter
-			return;
+			line = readline("> ");
+			if (!line)
+				break ;
+			if (strcmp(line, delimiter) == 0)
+			{
+				free(line);
+				break ;
+			}
+			if (!quoted_delimiter)
+			{
+				expanded = expand_variables(line);
+				write(pipefd[1], expanded, strlen(expanded));
+				free(expanded);
+			}
+			else
+			{
+				write(pipefd[1], line, strlen(line));
+			}
+			write(pipefd[1], "\n", 1);
+			free(line);
 		}
-		env_ptr++;
+		close(pipefd[1]);
+		exit(0);
 	}
-
-	// Add new entry
-	environ = ft_array_append(environ, new_entry);
-	free(value); // Only free the value parameter
-}
-
-/*
-** Ensures a variable exists in the environment (without value if not present)
-** @param var_name Variable name to check/export
-*/
-void ensure_var_exported(char *var_name)
-{
-	extern char **environ;
-	char **env_ptr = environ;
-	int exists = 0;
-
-	while (*env_ptr && !exists)
-	{
-		char *eq = ft_strchr(*env_ptr, '=');
-		if (eq && ft_strncmp(*env_ptr, var_name, eq - *env_ptr) == 0)
-			exists = 1;
-		env_ptr++;
-	}
-	if (!exists)
-		update_env_var(var_name, NULL);
 	else
-		free(var_name); // Free here since update_env_var no longer owns it
+	{
+		close(pipefd[1]);
+		waitpid(pid, &status, 0);
+		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+		{
+			close(pipefd[0]);
+			rl_replace_line("", 0);
+			rl_on_new_line();
+			ft_putstr_fd("\n", STDOUT_FILENO);
+			set_exit_status(130);
+			return (-1);
+		}
+		return (pipefd[0]);
+	}
 }
-
 
 exit_status.c
 
@@ -563,7 +750,7 @@ exit_status.c
  * @brief Updates the global exit status variable.
  * @param status Exit code to store (0-255).
  */
-void set_exit_status(int status)
+void	set_exit_status(int status)
 {
 	g_exit_status = status;
 }
@@ -572,23 +759,61 @@ void set_exit_status(int status)
  * @brief Retrieves the global exit status.
  * @return Last exit status of foreground commands.
  */
-int get_exit_status(void)
+int	get_exit_status(void)
 {
 	return (g_exit_status);
 }
 
-input.c
+get_cmd_path.c
 
 #include "minishell.h"
 
-/*
-** Prints error message and exits
-** @param message Error message to display
-*/
-void handle_error(char *message)
+static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
-	perror(message);
-	exit(EXIT_FAILURE);
+	char	*dir_slash;
+	char	*full_path;
+
+	dir_slash = ft_strjoin(dir_path, "/");
+	if (!dir_slash)
+		return (NULL);
+	full_path = ft_strjoin(dir_slash, cmd);
+	free(dir_slash);
+	if (!full_path)
+		return (NULL);
+	if (access(full_path, X_OK) == 0)
+		return (full_path);
+	free(full_path);
+	return (NULL);
+}
+
+static char	**get_path_directories(void)
+{
+	char	*path_env;
+	char	**paths;
+
+	path_env = getenv("PATH");
+	if (!path_env)
+		return (NULL);
+	paths = ft_split(path_env, ':');
+	if (!paths)
+		return (NULL);
+	return (paths);
+}
+
+static char	*check_direct_path(char *cmd)
+{
+	if (ft_strchr(cmd, '/') != NULL)
+	{
+		if (access(cmd, F_OK) == -1)
+			return (NULL);
+		if (access(cmd, X_OK) == -1)
+		{
+			g_exit_status = PERM_DENIED;
+			return (NULL);
+		}
+		return (ft_strdup(cmd));
+	}
+	return (NULL);
 }
 
 /**
@@ -597,257 +822,36 @@ void handle_error(char *message)
  * @return Allocated full path (e.g., "/bin/ls") or NULL if not found.
  * Caller must free the returned string.
  */
-char *get_cmd_path(char *cmd)
+char	*get_cmd_path(char *cmd)
 {
-	char **paths;
-	char *full_path;
-	char *dir_slash;
-	int i;
+	char	**paths;
+	char	*full_path;
+	int		i;
 
-	// Handle absolute paths and commands with path specified
-	if (ft_strchr(cmd, '/') != NULL)
-	{
-		if (access(cmd, F_OK) == -1)
-			return NULL; // Not found
-		if (access(cmd, X_OK) == -1)
-		{
-			g_exit_status = PERM_DENIED; // Set global error
-			return NULL;
-		}
-		return ft_strdup(cmd);
-	}
-	// Get PATH environment variable
-	char *path_env = getenv("PATH");
-	if (!path_env)
-		return (NULL);
-	// Split PATH into individual directories
-	paths = ft_split(path_env, ':');
+	full_path = check_direct_path(cmd);
+	if (full_path)
+		return (full_path);
+	paths = get_path_directories();
 	if (!paths)
 		return (NULL);
-
 	i = 0;
 	while (paths[i])
 	{
-		// Create directory + slash
-		dir_slash = ft_strjoin(paths[i], "/");
-		if (!dir_slash)
-		{
-			ft_free_array(paths);
-			return (NULL);
-		}
-		// Create full path
-		full_path = ft_strjoin(dir_slash, cmd);
-		free(dir_slash);
-		if (!full_path)
-		{
-			ft_free_array(paths);
-			return (NULL);
-		}
-		// Check if executable exists
-		if (access(full_path, X_OK) == 0)
+		full_path = check_path_for_cmd(paths[i], cmd);
+		if (full_path)
 		{
 			ft_free_array(paths);
 			return (full_path);
 		}
-		free(full_path);
 		i++;
 	}
 	ft_free_array(paths);
 	return (NULL);
 }
 
-/**
- * @brief Expands environment variables and `$?` in a string.
- *
- * @param input The input string to process.
- * @return char* New string with variables expanded. Must be freed by the caller.
- *
- * @note Expansion rules:
- * - `$VAR` → Replaced with environment variable value.
- * - `$?` → Replaced with the last exit status.
- * - Single-quoted strings suppress expansion.
- * - Double-quoted strings allow `$VAR` and `$?` expansion.
- */
-char *expand_variables(const char *input)
-{
-	char *result = ft_strdup("");
-	size_t i = 0;
-
-	while (input[i])
-	{
-		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1]) || input[i + 1] == '_'))
-		{
-			i++; // Skip $
-			if (input[i] == '?')
-			{
-				char *exit_status = ft_itoa(get_exit_status());
-				result = ft_strjoin_free(result, exit_status);
-				free(exit_status);
-				i++;
-			}
-			else
-			{
-				size_t start = i;
-				while (input[i] && (ft_isalnum(input[i]) || input[i] == '_'))
-					i++;
-				char *var_name = ft_substr(input, start, i - start);
-				char *var_value = getenv(var_name);
-				if (var_value)
-					result = ft_strjoin_free(result, var_value);
-				free(var_name);
-			}
-		}
-		else
-		{
-			result = ft_strjoin_char(result, input[i++]);
-		}
-	}
-	return result;
-}
-
-/**
- * @brief Executes an external command in a child process.
- * @param cmd Command structure with arguments and redirections.
- * @note Terminates the process on completion or error.
- */
-void exec_external_command(t_cmd *cmd)
-{
-	extern char **environ;
-
-	char *path = get_cmd_path(cmd->args[0]);
-	if (!path)
-	{
-		if (access(cmd->args[0], F_OK) == 0)
-			exit(PERM_DENIED);
-		ft_putstr_fd("minishell: ", STDERR_FILENO);
-		ft_putstr_fd(cmd->args[0], STDERR_FILENO);
-		ft_putstr_fd(": command not found\n", STDERR_FILENO);
-		exit(CMD_NOT_FOUND);
-	}
-
-	execve(path, cmd->args, environ);
-	perror("minishell");
-	free(path);
-	exit(EXIT_FAILURE);
-}
-
-/**
- * @brief Handles redirection for commands.
- * @param current Current redirection node.
- * @param fd File descriptor for redirection.
- * @return int 0 on success, -1 on error.
- */
-int handle_redirection(t_redir *current, int fd)
-{
-	if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
-	{
-		if (dup2(fd, STDIN_FILENO) == -1)
-		{
-			close(fd);
-			perror("minishell");
-			return -1;
-		}
-	}
-	else
-	{
-		if (dup2(fd, STDOUT_FILENO) == -1)
-		{
-			close(fd);
-			perror("minishell");
-			return -1;
-		}
-	}
-	return 0;
-}
-
-
-main.c
+handle_pipe.c
 
 #include "minishell.h"
-
-volatile sig_atomic_t g_exit_status = 0;
-
-/**
- * @brief Frees a command pipeline and associated resources.
- * @param pipeline Linked list of command structures.
- */
-void free_pipeline(t_cmd *pipeline)
-{
-	t_cmd *current;
-	t_redir *redir, *tmp_redir;
-
-	while (pipeline)
-	{
-		current = pipeline;
-		pipeline = pipeline->next;
-
-		// Free arguments
-		if (current->args)
-			ft_free_array(current->args);
-
-		// Free redirections
-		redir = current->redirections;
-		while (redir)
-		{
-			tmp_redir = redir;
-			redir = redir->next;
-			free(tmp_redir->filename);
-			free(tmp_redir);
-		}
-
-		free(current);
-	}
-}
-
-/**
- * @brief Executes a single command with I/O redirection.
- * @param cmd Command structure to execute.
- * @param pipe_in Input file descriptor (or -1).
- * @param pipe_out Output file descriptor (or -1).
- */
-void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
-{
-	pid_t pid;
-	extern char **environ;
-
-	// Always fork for pipeline commands
-	pid = fork();
-	if (pid == 0)
-	{
-		// Child process
-		setup_child_signals();
-		handle_redirections(pipe_in, pipe_out, cmd->redirections);
-
-		if (is_builtin(cmd->args))
-		{
-			exec_builtin(cmd->args);
-			exit(g_exit_status); // Make sure to exit after builtin
-		}
-		else
-		{
-			char *cmd_path = get_cmd_path(cmd->args[0]);
-			if (!cmd_path)
-			{
-				ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
-				ft_putstr_fd(cmd->args[0], STDERR_FILENO);
-				ft_putstr_fd("\n", STDERR_FILENO);
-				exit(CMD_NOT_FOUND);
-			}
-
-			// Execute the command with the current environment
-			execve(cmd_path, cmd->args, environ);
-
-			// If execve returns, it failed
-			perror("minishell");
-			free(cmd_path);
-			exit(EXIT_FAILURE);
-		}
-	}
-	else if (pid < 0)
-	{
-		perror("fork");
-	}
-}
 
 /*
 ** Executes a pipeline of commands with proper piping
@@ -949,11 +953,11 @@ int execute_pipeline(t_cmd *pipeline)
 			perror("minishell: waitpid");
 			break;
 		}
-		child_count++;
 
 		// Update status for last command
 		if (WIFEXITED(status) && child_count == cmd_count)
 			last_status = WEXITSTATUS(status);
+		child_count++;
 	}
 	// Check if the last command in the pipeline was "exit"
 	t_cmd *last_cmd = pipeline;
@@ -970,6 +974,241 @@ int execute_pipeline(t_cmd *pipeline)
 	free(child_pids);
 	set_exit_status(last_status);
 	return last_status;
+}
+
+init_parser.c
+
+#include <minishell.h>
+
+/**
+ * @brief Initializes the parser state for new input.
+ * @param p Parser structure to initialize.
+ * @param input Input string to parse.
+ */
+void	init_parser(t_parse *p, char *input)
+{
+	p->input = input;
+	p->pos = 0;
+	p->curr_char = input[0];
+	p->token_type = T_EOF;
+	p->token_value = NULL;
+	p->redir_fd = 0;
+}
+
+input.c
+
+#include "minishell.h"
+
+/*
+** Prints error message and exits
+** @param message Error message to display
+*/
+void	handle_error(char *message)
+{
+	perror(message);
+	exit(EXIT_FAILURE);
+}
+
+/**
+ * @brief Expands environment variables and `$?` in a string.
+ *
+ * @param input The input string to process.
+ * @return char* New string with variables expanded. Must be freed by the caller.
+ *
+ * @note Expansion rules:
+ * - `$VAR` → Replaced with environment variable value.
+ * - `$?` → Replaced with the last exit status.
+ * - Single-quoted strings suppress expansion.
+ * - Double-quoted strings allow `$VAR` and `$?` expansion.
+ */
+static char	*expand_variable(const char *input, size_t *i)
+{
+	char	*value;
+	size_t	start;
+	char	*var_name;
+	char	*var_value;
+
+	if (input[*i] == '?')
+	{
+		value = ft_itoa(get_exit_status());
+		(*i)++;
+	}
+	else
+	{
+		start = *i;
+		while (input[*i] && (ft_isalnum(input[*i]) || input[*i] == '_'))
+			(*i)++;
+		var_name = ft_substr(input, start, *i - start);
+		var_value = getenv(var_name);
+		if (var_value)
+			value = ft_strdup(var_value);
+		else
+			value = ft_strdup("");
+		free(var_name);
+	}
+	return (value);
+}
+
+char	*expand_variables(const char *input)
+{
+	char	*result;
+	size_t	i;
+	char	*var_value;
+
+	i = 0;
+	result = ft_strdup("");
+	while (input[i])
+	{
+		if (input[i] == '$' && (input[i + 1] == '?' || ft_isalpha(input[i + 1])
+				|| input[i + 1] == '_'))
+		{
+			i++;
+			if (input[i])
+			{
+				var_value = expand_variable(input, &i);
+				result = ft_strjoin_free(result, var_value);
+				free(var_value);
+			}
+		}
+		else
+			result = ft_strjoin_char(result, input[i++]);
+	}
+	return (result);
+}
+
+/**
+ * @brief Executes an external command in a child process.
+ * @param cmd Command structure with arguments and redirections.
+ * @note Terminates the process on completion or error.
+ */
+void	exec_external_command(t_cmd *cmd)
+{
+	extern char	**environ;
+	char		*path;
+
+	path = get_cmd_path(cmd->args[0]);
+	if (!path)
+	{
+		if (access(cmd->args[0], F_OK) == 0)
+			exit(PERM_DENIED);
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		ft_putstr_fd(cmd->args[0], STDERR_FILENO);
+		ft_putstr_fd(": command not found\n", STDERR_FILENO);
+		exit(CMD_NOT_FOUND);
+	}
+	execve(path, cmd->args, environ);
+	perror("minishell");
+	free(path);
+	exit(EXIT_FAILURE);
+}
+
+/**
+ * @brief Handles redirection for commands.
+ * @param current Current redirection node.
+ * @param fd File descriptor for redirection.
+ * @return int 0 on success, -1 on error.
+ */
+int	handle_redirection(t_redir *current, int fd)
+{
+	if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
+	{
+		if (dup2(fd, STDIN_FILENO) == -1)
+		{
+			close(fd);
+			perror("minishell");
+			return (-1);
+		}
+	}
+	else
+	{
+		if (dup2(fd, STDOUT_FILENO) == -1)
+		{
+			close(fd);
+			perror("minishell");
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+main.c
+
+#include "minishell.h"
+
+volatile sig_atomic_t	g_exit_status = 0;
+
+/**
+ * @brief Frees a command pipeline and associated resources.
+ * @param pipeline Linked list of command structures.
+ */
+void	free_pipeline(t_cmd *pipeline)
+{
+	t_cmd	*current;
+	t_redir	*redir;
+	t_redir	*tmp_redir;
+
+	while (pipeline)
+	{
+		current = pipeline;
+		pipeline = pipeline->next;
+		if (current->args)
+			ft_free_array(current->args);
+		redir = current->redirections;
+		while (redir)
+		{
+			tmp_redir = redir;
+			redir = redir->next;
+			free(tmp_redir->filename);
+			free(tmp_redir);
+		}
+
+		free(current);
+	}
+}
+
+/**
+ * @brief Executes a single command with I/O redirection.
+ * @param cmd Command structure to execute.
+ * @param pipe_in Input file descriptor (or -1).
+ * @param pipe_out Output file descriptor (or -1).
+ */
+void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+{
+	pid_t		pid;
+	extern char	**environ;
+	char		*cmd_path;
+
+	pid = fork();
+	if (pid == 0)
+	{
+		setup_child_signals();
+		handle_redirections(pipe_in, pipe_out, cmd->redirections);
+
+		if (is_builtin(cmd->args))
+		{
+			exec_builtin(cmd->args);
+			exit(g_exit_status);
+		}
+		else
+		{
+			cmd_path = get_cmd_path(cmd->args[0]);
+			if (!cmd_path)
+			{
+				ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
+				ft_putstr_fd(cmd->args[0], STDERR_FILENO);
+				ft_putstr_fd("\n", STDERR_FILENO);
+				exit(CMD_NOT_FOUND);
+			}
+			execve(cmd_path, cmd->args, environ);
+			perror("minishell");
+			free(cmd_path);
+			exit(EXIT_FAILURE);
+		}
+	}
+	else if (pid < 0)
+	{
+		perror("fork");
+	}
 }
 
 /*
@@ -1053,7 +1292,7 @@ int main(void)
 			environ = original_environ;
 			free_env_copy(env_copy);
 			rl_clear_history();
-			write(STDOUT_FILENO, "exit\n", 5);
+			write(STDOUT_FILENO, "Exiting minishell, goodbye!\n", 28);
 			return (get_exit_status());
 		}
 
@@ -1089,6 +1328,13 @@ int main(void)
 
 			if (!pipeline)
 			{
+				// Handle parsing errors (e.g., unmatched quotes)
+				if (parser.token_type == T_EOF && parser.token_value == NULL)
+				{
+					// Reset state and continue to next command
+					i++;
+					continue;
+				}
 				syntax_error_flag = 1;
 				i++;
 				continue;
@@ -1118,6 +1364,7 @@ int main(void)
 				if (ft_strcmp(pipeline->args[0], "exit") == 0 && get_exit_status() != 1)
 				{
 					free_pipeline(pipeline);
+					free_env_copy(env_copy);
 					break; // Exit loop to terminate shell
 				}
 			}
@@ -1158,26 +1405,11 @@ parser.c
 
 #include "minishell.h"
 
-/**
- * @brief Initializes the parser state for new input.
- * @param p Parser structure to initialize.
- * @param input Input string to parse.
- */
-void init_parser(t_parse *p, char *input)
-{
-	p->input = input;
-	p->pos = 0;
-	p->curr_char = input[0]; // Initialize first character
-	p->token_type = T_EOF;	 // Default to EOF
-	p->token_value = NULL;
-	p->redir_fd = 0;
-}
-
 /*
 ** Skips whitespace characters in input
 ** @param p Parser structure
 */
-static void skip_whitespace(t_parse *p)
+static void	skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
@@ -1188,51 +1420,51 @@ static void skip_whitespace(t_parse *p)
 ** @param p Parser structure
 ** @param quote Type of quote (' or ")
 */
-static void handle_quotes(t_parse *p, char quote)
+static void	handle_quotes(t_parse *p, char quote)
 {
-	size_t start = p->pos;
-	char *content;
+	size_t	start;
+	char	*content;
 
-	next_char(p); // Skip opening quote
-	while (p->curr_char && (p->curr_char != quote || (p->input[p->pos - 1] == '\\')))
+	start = p->pos;
+	next_char(p);
+	while (p->curr_char && (p->curr_char != quote
+			|| (p->input[p->pos - 1] == '\\')))
 	{
 		if (p->curr_char == '\\' && quote == '"')
-			next_char(p); // Skip escape char if inside double quotes
+			next_char(p);
 		next_char(p);
 	}
-
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
-		return;
+		return ;
 	}
-
-	// Extract content inside quotes (without the quotes themselves)
 	content = ft_substr(p->input, start + 1, p->pos - start - 1);
-
-	// Set token type based on quote type
 	if (quote == '\'')
 		p->token_type = T_SINGLE_QUOTED;
 	else
 		p->token_type = T_DOUBLE_QUOTED;
-
-	free(p->token_value); // Free previous value
+	free(p->token_value);
 	p->token_value = content;
-	next_char(p); // Skip closing quote
+	next_char(p);
 }
 
 /*
 ** Handles regular words in input
 ** @param p Parser structure
 */
-static void handle_word(t_parse *p)
+static void	handle_word(t_parse *p)
 {
-	size_t start = p->pos;
-	while (p->curr_char && !ft_isspace(p->curr_char) && !is_special_char(p->curr_char))
+	size_t	start;
+	char	*sub;
+
+	start = p->pos;
+	while (p->curr_char && !ft_isspace(p->curr_char)
+		&& !is_special_char(p->curr_char))
 	{
 		next_char(p);
 	}
-	char *sub = ft_substr(p->input, start, p->pos - start);
+	sub = ft_substr(p->input, start, p->pos - start);
 	p->token_value = ft_strdup(sub);
 	free(sub);
 	p->token_type = T_WORD;
@@ -1242,51 +1474,44 @@ static void handle_word(t_parse *p)
 ** Handles special characters (|, >, <, etc.)
 ** @param p Parser structure
 */
-static void handle_special(t_parse *p)
+static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 {
-	int fd = 0;
+	p->token_type = t;
+	p->token_value = ft_strdup(v);
+	if (n)
+		next_char(p);
+}
+
+static void	handle_special(t_parse *p)
+{
+	int		fd;
+	char	*fd_str;
+
+	fd = 0;
 	if (ft_isdigit(p->curr_char))
 	{
-		char *fd_str = parse_fd(p);
-		fd = atoi(fd_str);
+		fd_str = parse_fd(p);
+		fd = ft_atoi(fd_str);
 		free(fd_str);
 	}
 	if (p->curr_char == '|')
-	{
-		p->token_type = T_PIPE;
-		p->token_value = ft_strdup("|");
-		next_char(p);
-	}
+		assign_value(p, T_PIPE, "|", 1);
 	else if (p->curr_char == '>')
 	{
 		next_char(p);
 		if (p->curr_char == '>')
-		{
-			p->token_type = T_APPEND;
-			p->token_value = ft_strdup(">>");
-			next_char(p);
-		}
+			assign_value(p, T_APPEND, ">>", 1);
 		else
-		{
-			p->token_type = T_REDIR_OUT;
-			p->token_value = ft_strdup(">");
-		}
+			assign_value(p, T_REDIR_OUT, ">", 0);
 		p->redir_fd = fd;
 	}
 	else if (p->curr_char == '<')
 	{
 		next_char(p);
 		if (p->curr_char == '<')
-		{
-			p->token_type = T_HEREDOC;
-			p->token_value = ft_strdup("<<");
-			next_char(p);
-		}
+			assign_value(p, T_HEREDOC, "<<", 1);
 		else
-		{
-			p->token_type = T_REDIR_IN;
-			p->token_value = ft_strdup("<");
-		}
+			assign_value(p, T_REDIR_IN, "<", 0);
 	}
 }
 
@@ -1294,24 +1519,23 @@ static void handle_special(t_parse *p)
 ** Gets the next token from input
 ** @param p Parser structure
 */
-void next_token(t_parse *p)
+void	next_token(t_parse *p)
 {
 	skip_whitespace(p);
 	free(p->token_value);
 	p->token_value = NULL;
-
 	if (!p->curr_char)
 	{
 		p->token_type = T_EOF;
-		return;
+		return ;
 	}
-
 	if (p->curr_char == '\'' || p->curr_char == '"')
 		handle_quotes(p, p->curr_char);
-	else if (p->curr_char == '|' || p->curr_char == ';' || p->curr_char == '>' || p->curr_char == '<')
+	else if (p->curr_char == '|' || p->curr_char == ';' || p->curr_char == '>'
+		|| p->curr_char == '<')
 		handle_special(p);
 	else
-		handle_word(p); // Ensures words don’t include unquoted special chars
+		handle_word(p);
 }
 
 /*
@@ -1319,163 +1543,74 @@ void next_token(t_parse *p)
 ** @param p Parser structure
 ** @return Command structure with arguments and redirections
 */
-t_cmd *parse_args(t_parse *p)
+t_cmd	*parse_args(t_parse *p)
 {
-	t_list *args = NULL;
-	t_redir *redirs = NULL;
-	t_redir **redir_tail = &redirs;
+	t_list	*args;
+	t_redir	*redirs;
+	t_redir	**redir_tail;
+	t_arg	*arg;
+	t_redir	*redir;
+	t_cmd	*cmd;
 
+	args = NULL;
+	redirs = NULL;
+	redir_tail = &redirs;
 	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
 	{
 		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
 		{
-			t_arg *arg = malloc(sizeof(t_arg));
+			arg = malloc(sizeof(t_arg));
 			arg->value = ft_strdup(p->token_value);
 			arg->type = p->token_type;
 			ft_lstadd_back(&args, ft_lstnew(arg));
 		}
-		// Handle redirection operators
 		else if (is_redirection(p->token_type))
 		{
-			t_redir *redir = malloc(sizeof(t_redir));
-			redir->fd = p->redir_fd; // Capture the parsed FD
+			redir = malloc(sizeof(t_redir));
+			redir->fd = p->redir_fd;
 			if (!redir)
 			{
 				ft_lstclear(&args, free_arg);
 				return (NULL);
 			}
-
 			redir->type = p->token_type;
-			next_token(p); // Move to filename token
-
-			// Check if filename is valid (word or quoted)
+			next_token(p);
 			if (p->token_type != T_WORD &&
 				p->token_type != T_SINGLE_QUOTED &&
 				p->token_type != T_DOUBLE_QUOTED)
 			{
-				// Syntax error: print message and clean up
-				ft_putstr_fd("minishell: syntax error near unexpected token '", STDERR_FILENO);
+				ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
 				if (p->token_type == T_EOF)
 					ft_putstr_fd("newline", STDERR_FILENO);
 				else if (p->token_value)
 					ft_putstr_fd(p->token_value, STDERR_FILENO);
 				else
-					ft_putstr_fd(" ", STDERR_FILENO); // Fallback
+					ft_putstr_fd(" ", STDERR_FILENO);
 				ft_putstr_fd("'\n", STDERR_FILENO);
-
 				free(redir);
 				ft_lstclear(&args, free_arg);
-				free_redirections(redirs); // Free existing redirections
+				free_redirections(redirs);
 				return (NULL);
 			}
-			p->redir_fd = 0; // Reset after use
+			p->redir_fd = 0;
 			redir->filename = ft_strdup(p->token_value);
 			redir->next = NULL;
-
-			// Append to redirection list
 			*redir_tail = redir;
 			redir_tail = &redir->next;
 		}
-		next_token(p); // Advance to next token
+		next_token(p);
 	}
-
-	// Build command structure
-	t_cmd *cmd = malloc(sizeof(t_cmd));
+	cmd = malloc(sizeof(t_cmd));
 	if (!cmd)
 	{
 		ft_lstclear(&args, free_arg);
 		return (NULL);
 	}
-
-	// Convert argument list to expanded string array
 	cmd->args = build_expanded_args(args);
-	cmd->redirections = redirs; // Attach redirections
-	cmd->next = NULL;			// Initialize pipeline pointer
-
-	// Cleanup temporary structures
-	ft_lstclear(&args, free_arg); // Free argument list and t_arg structs
+	cmd->redirections = redirs;
+	cmd->next = NULL;
+	ft_lstclear(&args, free_arg);
 	return (cmd);
-}
-
-/**
- * @brief Creates a temporary heredoc file.
- * @param delimiter Heredoc termination string.
- * @return File descriptor of the heredoc temp file.
- * @note Automatically deletes the temp file after opening.
- */
-int create_heredoc(const char *delimiter)
-{
-	int pipefd[2];
-	pid_t pid;
-	int status;
-
-	if (pipe(pipefd)) // Create a pipe
-		return (-1);
-
-	pid = fork();
-	if (pid == -1)
-	{
-		close(pipefd[0]);
-		close(pipefd[1]);
-		return (-1);
-	}
-
-	if (pid == 0) // Child process
-	{
-		char *line;
-		close(pipefd[0]); // Close unused read end
-
-		// Reset signals to default/ignore for heredoc context
-		signal(SIGINT, SIG_DFL);  // Allow Ctrl-C to terminate child
-		signal(SIGQUIT, SIG_IGN); // Ignore Ctrl-slash
-		int quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
-
-		while (1)
-		{
-			line = readline("> ");
-			if (!line)
-				break;
-			if (strcmp(line, delimiter) == 0)
-			{
-				free(line);
-				break;
-			}
-			if (!quoted_delimiter)
-			{ // NEW: Expand variables only if unquoted
-				char *expanded = expand_variables(line);
-				write(pipefd[1], expanded, strlen(expanded));
-				free(expanded);
-			}
-			else
-			{
-				write(pipefd[1], line, strlen(line));
-			}
-			write(pipefd[1], "\n", 1);
-			free(line);
-		}
-		close(pipefd[1]);
-		exit(0); // Child exits normally
-	}
-	else
-	{					  // Parent process
-		close(pipefd[1]); // Close unused write end
-
-		// Wait for child to finish
-		waitpid(pid, &status, 0);
-
-		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		{
-			// Heredoc interrupted by Ctrl-C
-			close(pipefd[0]);
-			rl_replace_line("", 0);
-			rl_on_new_line();
-			ft_putstr_fd("\n", STDOUT_FILENO); // Mimic bash behavior
-			set_exit_status(130);			   // Set $? = 130 (SIGINT exit code)
-			return (-1);
-		}
-
-		return (pipefd[0]); // Return read end of pipe
-	}
 }
 
 /*
@@ -1483,10 +1618,10 @@ int create_heredoc(const char *delimiter)
 ** @param type Token type to check
 ** @return 1 if redirection, 0 otherwise
 */
-int is_redirection(t_token type)
+int	is_redirection(t_token type)
 {
-	return (type == T_REDIR_IN || type == T_REDIR_OUT ||
-			type == T_APPEND || type == T_HEREDOC);
+	return (type == T_REDIR_IN || type == T_REDIR_OUT
+		|| type == T_APPEND || type == T_HEREDOC);
 }
 
 /*
@@ -1494,49 +1629,44 @@ int is_redirection(t_token type)
 ** @param p Parser structure
 ** @return Linked list of command structures
 */
-t_cmd *parse_pipeline(t_parse *p)
+t_cmd	*parse_pipeline(t_parse *p)
 {
-	t_cmd *head = NULL;
-	t_cmd **curr = &head;
+	t_cmd	*head;
+	t_cmd	**curr;
+	t_cmd	*cmd;
+	char	*error_token;
 
+	head = NULL;
+	curr = &head;
 	next_token(p);
-
-	// Check for leading pipe/semicolon
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value);
-		return NULL;
+		return (NULL);
 	}
-
 	while (1)
 	{
-		t_cmd *cmd = parse_args(p);
+		cmd = parse_args(p);
 		if (!cmd)
-			break;
-
+			break ;
 		*curr = cmd;
 		curr = &cmd->next;
-
 		if (p->token_type != T_PIPE)
-			break;
-
+			break ;
 		next_token(p);
-
-		// Handle pipe followed by invalid token
-		char *error_token = p->token_value;
+		error_token = p->token_value;
 		if (p->token_type == T_EOF)
-			error_token = ";";
+			error_token = "newline";
 		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 			error_token = p->token_value;
-
 		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
 		{
 			syntax_error(error_token);
 			free_cmd(head);
-			return NULL;
+			return (NULL);
 		}
 	}
-	return head;
+	return (head);
 }
 
 /**
@@ -1545,28 +1675,27 @@ t_cmd *parse_pipeline(t_parse *p)
  * @param args Linked list of t_arg structs.
  * @return char** Array of expanded arguments. Must be freed with ft_free_array.
  */
-char **build_expanded_args(t_list *args)
+char	**build_expanded_args(t_list *args)
 {
-	int count = ft_lstsize(args);
-	char **arr = malloc(sizeof(char *) * (count + 1));
-	t_list *current = args;
-	int i = 0;
+	char		**arr;
+	t_list		*current;
+	int			i;
+	t_arg		*a;
 
-	while (i < count)
+	arr = malloc(sizeof(char *) * (ft_lstsize(args) + 1));
+	current = args;
+	i = 0;
+	while (current)
 	{
-		t_arg *a = (t_arg *)current->content;
-		char *expanded;
-
+		a = (t_arg *)current->content;
 		if (a->type == T_SINGLE_QUOTED)
-			expanded = ft_strdup(a->value); // No expansion
+			arr[i++] = ft_strdup(a->value);
 		else
-			expanded = expand_variables(a->value); // Expand variables
-
-		arr[i++] = expanded;
+			arr[i++] = expand_variables(a->value);
 		current = current->next;
 	}
 	arr[i] = NULL;
-	return arr;
+	return (arr);
 }
 
 signals.c
@@ -1578,7 +1707,7 @@ signals.c
  * Prints a new prompt and resets input buffer.
  * @param sig Signal number (unused).
  */
-void handle_sigint(int sig)
+void	handle_sigint(int sig)
 {
 	(void)sig;
 	write(STDOUT_FILENO, "\n", 1);
@@ -1590,11 +1719,11 @@ void handle_sigint(int sig)
 /*
 ** Sets up signal handlers for parent process (shell)
 */
-void setup_parent_signals(void)
+void	setup_parent_signals(void)
 {
-	struct sigaction sa;
+	struct sigaction	sa;
 
-	sa.sa_handler = handle_sigint; // Custom SIGINT handler
+	sa.sa_handler = handle_sigint;
 	sa.sa_flags = SA_RESTART;
 	sigemptyset(&sa.sa_mask);
 	sigaction(SIGINT, &sa, NULL);
@@ -1605,9 +1734,8 @@ void setup_parent_signals(void)
  * @brief Configures child processes to use default signal handlers.
  * SIGINT and SIGQUIT will terminate children normally.
  */
-void setup_child_signals(void)
+void	setup_child_signals(void)
 {
-	// Reset to default signals
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 }
@@ -1620,12 +1748,12 @@ utils.c
 ** Frees an array of strings
 ** @param args Array to free
 */
-void ft_free_array(char **args)
+void	ft_free_array(char **args)
 {
-	int i;
+	int	i;
 
 	if (!args)
-		return;
+		return ;
 	i = -1;
 	while (args[++i])
 		free(args[i]);
@@ -1637,16 +1765,17 @@ void ft_free_array(char **args)
 ** @param c Character to check
 ** @return 1 if whitespace, 0 otherwise
 */
-int ft_isspace(int c)
+int	ft_isspace(int c)
 {
-	return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
+	return (c == ' ' || c == '\t' || c == '\n' || c == '\r'
+		|| c == '\f' || c == '\v');
 }
 
 /*
 ** Advances to next character in parser input
 ** @param p Parser structure
 */
-void next_char(t_parse *p)
+void	next_char(t_parse *p)
 {
 	if (p->input[p->pos])
 	{
@@ -1664,7 +1793,7 @@ void next_char(t_parse *p)
 ** @param c Character to check
 ** @return 1 if special, 0 otherwise
 */
-int is_special_char(char c)
+int	is_special_char(char c)
 {
 	return (c == '|' || c == '>' || c == '<');
 }
@@ -1674,18 +1803,17 @@ int is_special_char(char c)
 ** @param lst Linked list to convert
 ** @return New allocated string array
 */
-char **list_to_array(t_list *lst)
+char	**list_to_array(t_list *lst)
 {
-	char **arr;
-	int count;
-	int i;
-	t_list *tmp;
+	char	**arr;
+	int		count;
+	int		i;
+	t_list	*tmp;
 
 	count = ft_lstsize(lst);
 	arr = malloc((count + 1) * sizeof(char *));
 	if (!arr)
 		return (NULL);
-
 	i = 0;
 	tmp = lst;
 	while (tmp)
@@ -1703,22 +1831,19 @@ char **list_to_array(t_list *lst)
 	return (arr);
 }
 
+
 /*
 ** Frees a command structure
 ** @param cmd Command to free
 */
-void free_cmd(t_cmd *cmd)
+void	free_cmd(t_cmd *cmd)
 {
-	t_redir *redir;
-	t_redir *tmp;
+	t_redir	*redir;
+	t_redir	*tmp;
 
 	if (!cmd)
-		return;
-
-	// Free arguments
+		return ;
 	ft_free_array(cmd->args);
-
-	// Free redirections
 	redir = cmd->redirections;
 	while (redir)
 	{
@@ -1736,7 +1861,7 @@ void free_cmd(t_cmd *cmd)
 ** @param s2 Second string
 ** @return Difference between first differing characters
 */
-int ft_strcmp(const char *s1, const char *s2)
+int	ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
 	{
@@ -1751,25 +1876,29 @@ int ft_strcmp(const char *s1, const char *s2)
 ** @param str String to check
 ** @return 1 if numeric, 0 otherwise
 */
-int ft_isnumber(const char *str)
+int	ft_isnumber(const char *str)
 {
-	int i;
+	int	i;
 
-	if (!str || !*str) // Handle NULL or empty string
+	if (!str || !*str)
 		return (0);
 	i = 0;
-	// Allow optional leading +/-
 	if (str[i] == '+' || str[i] == '-')
 		i++;
-	// Check remaining characters are digits
 	while (str[i])
 	{
 		if (!ft_isdigit(str[i]))
 			return (0);
 		i++;
 	}
-	// Must have at least one digit (after optional sign)
-	return (i > 0 && (str[0] == '+' || str[0] == '-') ? i > 1 : i > 0);
+	if (i > 0 && (str[0] == '+' || str[0] == '-'))
+	{
+		return (i > 1);
+	}
+	else
+	{
+		return (i > 0);
+	}
 }
 
 /*
@@ -1777,13 +1906,12 @@ int ft_isnumber(const char *str)
 ** @param name String to check
 ** @return 1 if valid, 0 otherwise
 */
-int is_valid_var_name(const char *name)
+int	is_valid_var_name(const char *name)
 {
-	int i;
+	int	i;
 
 	if (!name || !name[0] || ft_isdigit(name[0]))
 		return (0);
-
 	i = 0;
 	while (name[i])
 	{
@@ -1797,14 +1925,16 @@ int is_valid_var_name(const char *name)
 /*
 ** Prints environment variables in export format
 */
-void print_export_declarations(void)
+void	print_export_declarations(void)
 {
-	extern char **environ;
-	int i = 0;
+	extern char	**environ;
+	int			i;
+	char		*eq;
 
+	i = 0;
 	while (environ[i])
 	{
-		char *eq = ft_strchr(environ[i], '=');
+		eq = ft_strchr(environ[i], '=');
 		if (eq)
 		{
 			*eq = '\0';
@@ -1817,14 +1947,17 @@ void print_export_declarations(void)
 	}
 }
 
+#include "minishell.h"
+
 /*
 ** Safe strlen that returns size_t
 ** @param str String to measure
 ** @return Length of string
 */
-size_t ft_strlen_size(const char *str)
+size_t	ft_strlen_size(const char *str)
 {
-	size_t len;
+	size_t	len;
+
 	if (str)
 		len = ft_strlen(str);
 	else
@@ -1839,12 +1972,15 @@ size_t ft_strlen_size(const char *str)
 ** @param s3 Third string
 ** @return New concatenated string
 */
-char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
+char	*ft_strjoin3(const char *s1, const char *s2, const char *s3)
 {
-	char *tmp = ft_strjoin(s1, s2);
-	char *result = ft_strjoin(tmp, s3);
+	char	*tmp;
+	char	*result;
+
+	tmp = ft_strjoin(s1, s2);
+	result = ft_strjoin(tmp, s3);
 	free(tmp);
-	return result;
+	return (result);
 }
 
 /**
@@ -1853,17 +1989,19 @@ char *ft_strjoin3(const char *s1, const char *s2, const char *s3)
  * @param new_element Element to add.
  * @return New array with added element.
  */
-char **ft_array_append(char **array, char *new_element)
+char	**ft_array_append(char **array, char *new_element)
 {
-	int count = 0;
+	int		count;
+	char	**new_array;
+	int		i;
+
+	count = 0;
 	while (array && array[count])
 		count++;
-
-	char **new_array = malloc(sizeof(char *) * (count + 2));
+	new_array = malloc(sizeof(char *) * (count + 2));
 	if (!new_array)
-		return NULL;
-
-	int i = 0;
+		return (NULL);
+	i = 0;
 	while (array[i])
 	{
 		new_array[i] = array[i];
@@ -1871,9 +2009,8 @@ char **ft_array_append(char **array, char *new_element)
 	}
 	new_array[count] = new_element;
 	new_array[count + 1] = NULL;
-
 	free(array);
-	return new_array;
+	return (new_array);
 }
 
 /**
@@ -1881,9 +2018,11 @@ char **ft_array_append(char **array, char *new_element)
  *
  * @param arg_ptr Pointer to a t_arg structure.
  */
-void free_arg(void *arg)
+void	free_arg(void *arg)
 {
-	t_arg *a = (t_arg *)arg;
+	t_arg	*a;
+
+	a = (t_arg *)arg;
 	free(a->value);
 	free(a);
 }
@@ -1895,11 +2034,13 @@ void free_arg(void *arg)
  * @param s2 Second string (not freed). Can be NULL.
  * @return char* New string containing `s1` + `s2`. NULL on allocation failure.
  */
-char *ft_strjoin_free(char *s1, const char *s2)
+char	*ft_strjoin_free(char *s1, const char *s2)
 {
-	char *result = ft_strjoin(s1, s2);
+	char	*result;
+
+	result = ft_strjoin(s1, s2);
 	free(s1);
-	return result;
+	return (result);
 }
 
 /**
@@ -1908,25 +2049,22 @@ char *ft_strjoin_free(char *s1, const char *s2)
  * @param c Character to append.
  * @return New allocated string with appended character.
  */
-char *ft_strjoin_char(char *str, char c)
+char	*ft_strjoin_char(char *str, char c)
 {
-	char *new_str;
-	size_t len;
+	char	*new_str;
+	size_t	len;
 
 	if (!str)
 		len = 0;
 	else
 		len = ft_strlen(str);
-
-	new_str = malloc(len + 2); // Existing chars + new char + null terminator
+	new_str = malloc(len + 2);
 	if (!new_str)
 		return (NULL);
-
 	if (str)
 		ft_memcpy(new_str, str, len);
 	new_str[len] = c;
 	new_str[len + 1] = '\0';
-
 	free(str);
 	return (new_str);
 }
@@ -1935,13 +2073,15 @@ char *ft_strjoin_char(char *str, char c)
  * @brief Counts the number of commands in a pipeline.
  *
  * @param pipeline Head of the command pipeline (linked list of t_cmd).
- * @return size_t Number of commands in the pipeline. Returns 0 if pipeline is NULL.
- *
+ * @return size_t Number of commands in the pipeline.
+ * Returns 0 if pipeline is NULL.
  * @note Traverses the linked list of commands until reaching NULL.
  */
-size_t ft_cmd_size(t_cmd *pipeline)
+size_t	ft_cmd_size(t_cmd *pipeline)
 {
-	size_t count = 0;
+	size_t	count;
+
+	count = 0;
 	while (pipeline)
 	{
 		count++;
@@ -1950,9 +2090,10 @@ size_t ft_cmd_size(t_cmd *pipeline)
 	return (count);
 }
 
-void free_redirections(t_redir *redirs)
+void	free_redirections(t_redir *redirs)
 {
-	t_redir *tmp;
+	t_redir	*tmp;
+
 	while (redirs)
 	{
 		tmp = redirs->next;
@@ -1966,79 +2107,106 @@ void free_redirections(t_redir *redirs)
  * @brief Frees a copy of the environment variables.
  * @param env_copy The environment copy to free.
  */
-void free_env_copy(char **env_copy)
+void	free_env_copy(char **env_copy)
 {
 	if (!env_copy)
-		return;
-	ft_free_array(env_copy); // Reuse your existing ft_free_array function
+		return ;
+	ft_free_array(env_copy);
+	env_copy = NULL;
 }
 
-void syntax_error(char *token)
+void	syntax_error(char *token)
 {
-	ft_putstr_fd("minishell: syntax error near unexpected token '", STDERR_FILENO);
-
+	ft_putstr_fd("minishell: syntax error near unexpected token '",
+		STDERR_FILENO);
 	if (!token || *token == '\0')
 		ft_putstr_fd("newline", STDERR_FILENO);
 	else
 		ft_putstr_fd(token, STDERR_FILENO);
-
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	set_exit_status(SYNTAX_ERROR);
 }
 
-char *parse_fd(t_parse *p)
+char	*parse_fd(t_parse *p)
 {
-	int start = p->pos;
+	int	start;
+
+	start = p->pos;
 	while (ft_isdigit(p->curr_char))
 		next_char(p);
-	return ft_substr(p->input, start, p->pos - start);
+	return (ft_substr(p->input, start, p->pos - start));
 }
 
 /**
- * @brief Splits a string by a delimiter, ignoring delimiters inside quotes.
- * @param str The input string to split.
- * @param delim The delimiter character.
- * @return A NULL-terminated array of strings.
+ * @brief Updates the quote state based on the current character.
+ * @param c The current character.
+ * @param in_quote Pointer to the in_quote flag.
+ * @param quote_char Pointer to the current quote character.
  */
-char **split_with_quotes(const char *str, char delim)
+void	update_quote_state(char c, int *in_quote, char *quote_char)
 {
-	char **result = NULL;
-	int count = 0;
-	int in_quote = 0;
-	char quote_char = '\0';
-	const char *start = str;
+	if (*in_quote && c == *quote_char)
+		*in_quote = 0;
+	else if (!*in_quote && (c == '\'' || c == '"'))
+	{
+		*in_quote = 1;
+		*quote_char = c;
+	}
+}
 
+/**
+ * @brief Adds a substring to the result array.
+ * @param result Pointer to the result array.
+ * @param count Pointer to the current count of elements in the array.
+ * @param start Pointer to the start of the substring.
+ * @param end Pointer to the end of the substring.
+ */
+void	add_substring(char ***result, int *count,
+				const char *start, const char *end)
+{
+	*result = realloc(*result, sizeof(char *) * (*count + 2));
+	(*result)[(*count)++] = ft_substr(start, 0, end - start);
+}
+
+/**
+ * @brief Handles a delimiter in the string, adding a
+ *substring to the result array.
+ * @param str Pointer to the current position in the string.
+ * @param start Pointer to the start of the current substring.
+ * @param result Pointer to the result array.
+ * @param count Pointer to the current count of elements in the array.
+ */
+void	handle_delimiter(const char **str, const char **start,
+	char ***result, int *count)
+{
+	add_substring(result, count, *start, *str);
+	*start = *str + 1;
+}
+
+char	**split_with_quotes(const char *str, char delim)
+{
+	const char	*start;
+	char		**result;
+	int			count;
+	int			in_quote;
+	char		quote_char;
+
+	start = str;
+	result = NULL;
+	count = 0;
+	in_quote = 0;
+	quote_char = '\0';
 	while (*str)
 	{
-		if ((*str == '\'' || *str == '"') && (in_quote == 0 || *str == quote_char))
-		{
-			if (in_quote)
-				in_quote = 0; // Close quote
-			else
-			{
-				in_quote = 1; // Open quote
-				quote_char = *str;
-			}
-		}
+		if ((*str == '\'' || *str == '"'))
+			update_quote_state(*str, &in_quote, &quote_char);
 		else if (*str == delim && !in_quote)
-		{
-			// Found a delimiter outside quotes
-			result = realloc(result, sizeof(char *) * (count + 2));
-			result[count++] = ft_substr(start, 0, str - start);
-			start = str + 1;
-		}
+			handle_delimiter(&str, &start, &result, &count);
 		str++;
 	}
-
-	// Add the last segment
 	if (start != str)
-	{
-		result = realloc(result, sizeof(char *) * (count + 2));
-		result[count++] = ft_substr(start, 0, str - start);
-	}
-
+		add_substring(&result, &count, start, str);
 	if (result)
 		result[count] = NULL;
-
-	return result;
+	return (result);
 }
