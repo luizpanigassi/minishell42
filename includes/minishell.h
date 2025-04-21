@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 14:45:35 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 14:42:36 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,5 +152,7 @@ int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 //Exit status
 void	set_exit_status(int status);
 int		get_exit_status(void);
+
+int handle_cd_arguments(char **args, char *oldpwd);
 
 #endif

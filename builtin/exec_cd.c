@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:38:13 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/18 17:05:56 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 14:43:37 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,28 @@
 int	exec_cd(char **args)
 {
 	char	*oldpwd;
-	char	*path;
 	char	*newpwd;
 
 	oldpwd = getcwd(NULL, 0);
-	path = NULL;
 	if (!oldpwd)
 		return (perror("cd"), 1);
+	if (handle_cd_arguments(args, oldpwd) != 0)
+		return (1);
+	newpwd = getcwd(NULL, 0);
+	if (!newpwd)
+	{
+		free(oldpwd);
+		return (perror("cd"), 1);
+	}
+	update_env_var("OLDPWD", oldpwd);
+	update_env_var("PWD", newpwd);
+	return (0);
+}
+
+int	handle_cd_arguments(char **args, char *oldpwd)
+{
+	char	*path;
+
 	if (args[1] && args[2])
 	{
 		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);
@@ -47,13 +62,5 @@ int	exec_cd(char **args)
 		free(oldpwd);
 		return (1);
 	}
-	newpwd = getcwd(NULL, 0);
-	if (!newpwd)
-	{
-		free(oldpwd);
-		return (perror("cd"), 1);
-	}
-	update_env_var("OLDPWD", oldpwd);
-	update_env_var("PWD", newpwd);
 	return (0);
 }
