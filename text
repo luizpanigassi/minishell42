@@ -1,4 +1,4 @@
-header
+header:
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
@@ -113,6 +113,7 @@ char	**build_expanded_args(t_list *args);
 void	handle_sigint(int sig);
 void	setup_parent_signals(void);
 void	setup_child_signals(void);
+void	setup_heredoc_signals(void);
 
 // PARSING
 void	init_parser(t_parse *p, char *input);
@@ -168,7 +169,7 @@ void	free_pipeline(t_cmd *pipeline);
 
 #endif
 
-builtin.c
+builtin.c:
 
 #include "minishell.h"
 
@@ -319,7 +320,7 @@ void	ensure_var_exported(char *var_name)
 		free(var_name);
 }
 
-exec_cd.c
+exec_cd.c:
 
 #include "minishell.h"
 
@@ -394,7 +395,7 @@ int	handle_cd_arguments(char **args, char *oldpwd)
 	return (0);
 }
 
-exec_echo.c
+exec_echo.c:
 
 #include "minishell.h"
 
@@ -426,8 +427,7 @@ int	exec_echo(char **args)
 	return (0);
 }
 
-
-exec_env.c
+exec_env.c:
 
 #include "minishell.h"
 
@@ -448,7 +448,7 @@ int	exec_env(char **args)
 	return (0);
 }
 
-exec_exit.c
+exec_exit.c:
 
 #include "minishell.h"
 
@@ -484,7 +484,7 @@ int	exec_exit(char **args)
 	exit(status);
 }
 
-exec_export.c
+exec_export.c:
 
 #include "minishell.h"
 
@@ -553,7 +553,7 @@ int	handle_export_argument(char *arg, int *i, int *ret)
 	return (0);
 }
 
-exec_pwd.c
+exec_pwd.c:
 
 #include "minishell.h"
 
@@ -587,7 +587,7 @@ int	exec_pwd(char **args)
 	}
 }
 
-exec_unset.c
+exec_unset.c:
 
 #include "minishell.h"
 
@@ -665,7 +665,7 @@ int	exec_unset(char **args)
 	return (ret);
 }
 
-create_heredoc.c
+create_heredoc.c:
 
 #include <minishell.h>
 
@@ -675,74 +675,71 @@ create_heredoc.c
  * @return File descriptor of the heredoc temp file.
  * @note Automatically deletes the temp file after opening.
  */
-int	create_heredoc(const char *delimiter)
+int create_heredoc(const char *delimiter)
 {
-	int		pipefd[2];
-	pid_t	pid;
-	int		status;
-	char	*line;
-	int		quoted_delimiter;
-	char	*expanded;
+    int     pipefd[2];
+    pid_t   pid;
+    int     status;
+    char    *line;
+    int     quoted_delimiter;
+    char    *expanded;
 
-	if (pipe(pipefd))
-		return (-1);
-	pid = fork();
-	if (pid == -1)
-	{
-		close(pipefd[0]);
-		close(pipefd[1]);
-		return (-1);
-	}
-	if (pid == 0)
-	{
-		close(pipefd[0]);
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_IGN);
-		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
-		while (1)
-		{
-			line = readline("> ");
-			if (!line)
-				break ;
-			if (strcmp(line, delimiter) == 0)
-			{
-				free(line);
-				break ;
-			}
-			if (!quoted_delimiter)
-			{
-				expanded = expand_variables(line);
-				write(pipefd[1], expanded, strlen(expanded));
-				free(expanded);
-			}
-			else
-			{
-				write(pipefd[1], line, strlen(line));
-			}
-			write(pipefd[1], "\n", 1);
-			free(line);
-		}
-		close(pipefd[1]);
-		exit(0);
-	}
-	else
-	{
-		close(pipefd[1]);
-		waitpid(pid, &status, 0);
-		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		{
-			close(pipefd[0]);
-			rl_replace_line("", 0);
-			rl_on_new_line();
-			ft_putstr_fd("\n", STDOUT_FILENO);
-			set_exit_status(130);
-			return (-1);
-		}
-		return (pipefd[0]);
-	}
+    if (pipe(pipefd) < 0)
+        return (-1);
+    pid = fork();
+    if (pid == -1)
+    {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return (-1);
+    }
+    if (pid == 0) // Child process
+    {
+        close(pipefd[0]); // Close read end in child
+        signal(SIGINT, SIG_DFL);
+        signal(SIGQUIT, SIG_IGN);
+        quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
+        while (1)
+        {
+            line = readline("> ");
+            if (!line) // Handle Ctrl+D
+            {
+                write(STDOUT_FILENO, "\n", 1);
+                break;
+            }
+            if (strcmp(line, delimiter) == 0) // End of heredoc
+            {
+                free(line);
+                break;
+            }
+            if (!quoted_delimiter)
+            {
+                expanded = expand_variables(line);
+                write(pipefd[1], expanded, strlen(expanded));
+                free(expanded);
+            }
+            else
+                write(pipefd[1], line, strlen(line));
+            write(pipefd[1], "\n", 1); // Add newline after each line
+            free(line);
+        }
+        close(pipefd[1]); // Close write end in child
+        exit(0);
+    }
+    else // Parent process
+    {
+        close(pipefd[1]); // Close write end in parent
+        waitpid(pid, &status, 0);
+        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+        {
+            close(pipefd[0]);
+            return (-1); // Return error if interrupted
+        }
+        return (pipefd[0]); // Return read end of the pipe
+    }
 }
 
-exit_status.c
+exit_status.c:
 
 #include "minishell.h"
 
@@ -764,7 +761,7 @@ int	get_exit_status(void)
 	return (g_exit_status);
 }
 
-get_cmd_path.c
+get_cmd_path.c:
 
 #include "minishell.h"
 
@@ -849,7 +846,7 @@ char	*get_cmd_path(char *cmd)
 	return (NULL);
 }
 
-handle_pipe.c
+handle_pipe.c:
 
 #include "minishell.h"
 
@@ -876,6 +873,22 @@ int execute_pipeline(t_cmd *pipeline)
 	t_cmd *current = pipeline;
 	while (current)
 	{
+		t_redir *r = current->redirections;
+		while (r)
+		{
+			if (r->type == T_HEREDOC)
+			{
+				int hd_fd = create_heredoc(r->filename);
+				if (hd_fd < 0)
+				{ // Heredoc was interrupted
+					free(child_pids);
+					free_pipeline(pipeline);
+					return 130; // Return SIGINT exit code
+				}
+				r->fd = hd_fd;
+			}
+			r = r->next;
+		}
 		if (current->next && pipe(next_pipe) < 0)
 		{
 			perror("minishell: pipe");
@@ -976,7 +989,7 @@ int execute_pipeline(t_cmd *pipeline)
 	return last_status;
 }
 
-init_parser.c
+init_parser.c:
 
 #include <minishell.h>
 
@@ -995,7 +1008,7 @@ void	init_parser(t_parse *p, char *input)
 	p->redir_fd = 0;
 }
 
-input.c
+input.c:
 
 #include "minishell.h"
 
@@ -1131,7 +1144,7 @@ int	handle_redirection(t_redir *current, int fd)
 	return (0);
 }
 
-main.c
+main.c:
 
 #include "minishell.h"
 
@@ -1276,14 +1289,18 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 */
 int main(void)
 {
-	char *input;
 	extern char **environ;
 	char **env_copy;
-	char **original_environ = environ;
-	env_copy = ft_copy_env(environ);
+	char **original_environ;
+	char **initial_env_copy;
+	char *input;
+
+	original_environ = environ;
+	if(original_environ)
+		env_copy = ft_copy_env(environ);
+	initial_env_copy = env_copy;
 	environ = env_copy;
 	setup_parent_signals();
-
 	while (1)
 	{
 		input = readline("minishell> ");
@@ -1353,6 +1370,7 @@ int main(void)
 				{
 					int result = exec_builtin(pipeline->args);
 					set_exit_status(result);
+					env_copy = environ;
 					dup2(saved_stdin, STDIN_FILENO);
 					dup2(saved_stdout, STDOUT_FILENO);
 					dup2(saved_stderr, STDERR_FILENO);
@@ -1394,14 +1412,15 @@ int main(void)
 
 		setup_parent_signals();
 	}
-
-	environ = original_environ;
 	free_env_copy(env_copy);
+	if (initial_env_copy != env_copy)
+		free_env_copy(initial_env_copy);
+	environ = original_environ;
 	rl_clear_history();
 	return (get_exit_status());
 }
 
-parser.c
+parser.c:
 
 #include "minishell.h"
 
@@ -1537,6 +1556,8 @@ void	next_token(t_parse *p)
 	else
 		handle_word(p);
 }
+
+#include "minishell.h"
 
 /*
 ** Parses command arguments and redirections
@@ -1698,7 +1719,8 @@ char	**build_expanded_args(t_list *args)
 	return (arr);
 }
 
-signals.c
+
+signals.c:
 
 #include "minishell.h"
 
@@ -1740,7 +1762,14 @@ void	setup_child_signals(void)
 	signal(SIGQUIT, SIG_DFL);
 }
 
-utils.c
+void	setup_heredoc_signals(void)
+{
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_IGN);
+}
+
+
+utils.c:
 
 #include "minishell.h"
 
@@ -1831,6 +1860,7 @@ char	**list_to_array(t_list *lst)
 	return (arr);
 }
 
+#include "minishell.h"
 
 /*
 ** Frees a command structure
@@ -2043,6 +2073,8 @@ char	*ft_strjoin_free(char *s1, const char *s2)
 	return (result);
 }
 
+#include "minishell.h"
+
 /**
  * @brief Safely appends a character to a string.
  * @param str Original string (freed after appending).
@@ -2112,7 +2144,6 @@ void	free_env_copy(char **env_copy)
 	if (!env_copy)
 		return ;
 	ft_free_array(env_copy);
-	env_copy = NULL;
 }
 
 void	syntax_error(char *token)
@@ -2126,6 +2157,8 @@ void	syntax_error(char *token)
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	set_exit_status(SYNTAX_ERROR);
 }
+
+#include "minishell.h"
 
 char	*parse_fd(t_parse *p)
 {

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/21 19:13:39 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/22 17:01:10 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,7 +117,7 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	{
 		int fd = -1;
 		if (current->type == T_HEREDOC)
-			fd = create_heredoc(current->filename);
+			fd = current->fd;
 		else if (current->type == T_REDIR_IN)
 			fd = open(current->filename, O_RDONLY);
 		else if (current->type == T_REDIR_OUT)

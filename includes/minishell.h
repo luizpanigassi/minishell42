@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 16:29:25 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 19:26:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,6 +123,7 @@ char	**build_expanded_args(t_list *args);
 void	handle_sigint(int sig);
 void	setup_parent_signals(void);
 void	setup_child_signals(void);
+void	setup_heredoc_signals(void);
 
 // PARSING
 void	init_parser(t_parse *p, char *input);

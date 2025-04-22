@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 17:26:26 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/21 19:38:00 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,22 @@ int execute_pipeline(t_cmd *pipeline)
 	t_cmd *current = pipeline;
 	while (current)
 	{
+		t_redir *r = current->redirections;
+		while (r)
+		{
+			if (r->type == T_HEREDOC)
+			{
+				int hd_fd = create_heredoc(r->filename);
+				if (hd_fd < 0)
+				{ // Heredoc was interrupted
+					free(child_pids);
+					free_pipeline(pipeline);
+					return 130; // Return SIGINT exit code
+				}
+				r->fd = hd_fd;
+			}
+			r = r->next;
+		}
 		if (current->next && pipe(next_pipe) < 0)
 		{
 			perror("minishell: pipe");
