@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser_1.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 17:22:22 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/23 14:09:12 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,51 +75,6 @@ static void	handle_word(t_parse *p)
 	p->token_value = ft_strdup(sub);
 	free(sub);
 	p->token_type = T_WORD;
-}
-
-/*
-** Handles special characters (|, >, <, etc.)
-** @param p Parser structure
-*/
-static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
-{
-	p->token_type = t;
-	p->token_value = ft_strdup(v);
-	if (n)
-		next_char(p);
-}
-
-static void	handle_special(t_parse *p)
-{
-	int		fd;
-	char	*fd_str;
-
-	fd = 0;
-	if (ft_isdigit(p->curr_char))
-	{
-		fd_str = parse_fd(p);
-		fd = ft_atoi(fd_str);
-		free(fd_str);
-	}
-	if (p->curr_char == '|')
-		assign_value(p, T_PIPE, "|", 1);
-	else if (p->curr_char == '>')
-	{
-		next_char(p);
-		if (p->curr_char == '>')
-			assign_value(p, T_APPEND, ">>", 1);
-		else
-			assign_value(p, T_REDIR_OUT, ">", 0);
-		p->redir_fd = fd;
-	}
-	else if (p->curr_char == '<')
-	{
-		next_char(p);
-		if (p->curr_char == '<')
-			assign_value(p, T_HEREDOC, "<<", 1);
-		else
-			assign_value(p, T_REDIR_IN, "<", 0);
-	}
 }
 
 /*

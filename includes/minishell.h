@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 19:26:18 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/23 14:08:04 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,6 +132,7 @@ t_cmd	*parse_args(t_parse *p);
 int		create_heredoc(const char *delimiter);
 int		is_redirection(t_token type);
 t_cmd	*parse_pipeline(t_parse *p);
+void	handle_special(t_parse *p);
 
 // UTILS
 void	ft_free_array(char **array);
