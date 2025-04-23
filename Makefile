@@ -6,7 +6,7 @@
 #    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/23 14:38:08 by jcologne         ###   ########.fr        #
+#    Updated: 2025/04/23 15:45:51 by jcologne         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,6 +37,7 @@ SRCS		  = $(addprefix $(SRC_PATH), \
 				  handle_pipe.c \
 				  handle_special.c \
 				  parse_args.c \
+				  parse_pipeline.c \
 				  )
 
 UTILS_PATH  = utils/
