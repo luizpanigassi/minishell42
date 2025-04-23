@@ -3,89 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   parser_2.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/18 16:05:23 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/23 14:37:24 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-/*
-** Parses command arguments and redirections
-** @param p Parser structure
-** @return Command structure with arguments and redirections
-*/
-t_cmd	*parse_args(t_parse *p)
-{
-	t_list	*args;
-	t_redir	*redirs;
-	t_redir	**redir_tail;
-	t_arg	*arg;
-	t_redir	*redir;
-	t_cmd	*cmd;
-
-	args = NULL;
-	redirs = NULL;
-	redir_tail = &redirs;
-	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
-	{
-		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
-		{
-			arg = malloc(sizeof(t_arg));
-			arg->value = ft_strdup(p->token_value);
-			arg->type = p->token_type;
-			ft_lstadd_back(&args, ft_lstnew(arg));
-		}
-		else if (is_redirection(p->token_type))
-		{
-			redir = malloc(sizeof(t_redir));
-			redir->fd = p->redir_fd;
-			if (!redir)
-			{
-				ft_lstclear(&args, free_arg);
-				return (NULL);
-			}
-			redir->type = p->token_type;
-			next_token(p);
-			if (p->token_type != T_WORD &&
-				p->token_type != T_SINGLE_QUOTED &&
-				p->token_type != T_DOUBLE_QUOTED)
-			{
-				ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
-				if (p->token_type == T_EOF)
-					ft_putstr_fd("newline", STDERR_FILENO);
-				else if (p->token_value)
-					ft_putstr_fd(p->token_value, STDERR_FILENO);
-				else
-					ft_putstr_fd(" ", STDERR_FILENO);
-				ft_putstr_fd("'\n", STDERR_FILENO);
-				free(redir);
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return (NULL);
-			}
-			p->redir_fd = 0;
-			redir->filename = ft_strdup(p->token_value);
-			redir->next = NULL;
-			*redir_tail = redir;
-			redir_tail = &redir->next;
-		}
-		next_token(p);
-	}
-	cmd = malloc(sizeof(t_cmd));
-	if (!cmd)
-	{
-		ft_lstclear(&args, free_arg);
-		return (NULL);
-	}
-	cmd->args = build_expanded_args(args);
-	cmd->redirections = redirs;
-	cmd->next = NULL;
-	ft_lstclear(&args, free_arg);
-	return (cmd);
-}
 
 /*
 ** Checks if a token type is a redirection
