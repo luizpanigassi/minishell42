@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 19:38:00 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/25 16:13:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ int execute_pipeline(t_cmd *pipeline)
 	int next_pipe[2] = {-1, -1};
 	pid_t *child_pids;
 	int cmd_count = ft_cmd_size(pipeline);
-	int status;
 	int i = 0;
 
 	if (cmd_count == 0)
@@ -118,20 +117,12 @@ int execute_pipeline(t_cmd *pipeline)
 	int child_count = 0;
 	while (child_count < cmd_count)
 	{
-		int wpid = waitpid(-1, &status, 0);
-		if (wpid == -1)
-		{
-			if (errno == ECHILD)
-				break;
-			if (errno == EINTR)
-				continue;
-			perror("minishell: waitpid");
-			break;
-		}
-
-		// Update status for last command
-		if (WIFEXITED(status) && child_count == cmd_count)
+		int status;
+		waitpid(child_pids[child_count], &status, 0);
+		if (WIFEXITED(status))
 			last_status = WEXITSTATUS(status);
+		else if (WIFSIGNALED(status))
+			last_status = 128 + WTERMSIG(status);
 		child_count++;
 	}
 	// Check if the last command in the pipeline was "exit"
