@@ -6,27 +6,29 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 16:01:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:46:05 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Skips whitespace characters in input
-** @param p Parser structure
-*/
+/**
+ * @brief Advances parser past whitespace characters.
+ * @param p Parser state.
+ * @note Modifies parser position and current character.
+ */
 static void	skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
 }
 
-/*
-** Handles quoted strings in input
-** @param p Parser structure
-** @param quote Type of quote (' or ")
-*/
+/**
+ * @brief Processes quoted string tokens.
+ * @param p Parser state.
+ * @param quote Quote character (' or ").
+ * @note Handles escape characters and nested quotes.
+ */
 static void	handle_quotes(t_parse *p, char quote)
 {
 	size_t	start;
@@ -58,10 +60,11 @@ static void	handle_quotes(t_parse *p, char quote)
 	next_char(p);
 }
 
-/*
-** Handles regular words in input
-** @param p Parser structure
-*/
+/**
+ * @brief Processes unquoted word tokens.
+ * @param p Parser state.
+ * @note Collects characters until whitespace or special character.
+ */
 static void	handle_word(t_parse *p)
 {
 	size_t	start;
@@ -79,10 +82,11 @@ static void	handle_word(t_parse *p)
 	p->token_type = T_WORD;
 }
 
-/*
-** Gets the next token from input
-** @param p Parser structure
-*/
+/**
+ * @brief Main lexical analyzer - gets next token.
+ * @param p Parser state.
+ * @note Updates token type/value and parser position.
+ */
 void	next_token(t_parse *p)
 {
 	skip_whitespace(p);

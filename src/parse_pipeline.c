@@ -6,12 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 15:44:42 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 18:44:30 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:32:49 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Converts raw input into command structures.
+ * @param p Initialized parser state.
+ * @return Parsed command structure or NULL on error.
+ * @note Handles quotes, redirections, and command chaining.
+ */
 t_cmd *parse_pipeline(t_parse *p)
 {
 	t_cmd *head;

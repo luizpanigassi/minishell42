@@ -6,16 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 16:36:06 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:42:34 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Prints error message and exits
-** @param message Error message to display
-*/
+/**
+ * @brief Global error handler with exit.
+ * @param message Error description to display.
+ * @note Prints to stderr and exits with failure status.
+ */
 void	handle_error(char *message)
 {
 	perror(message);
@@ -62,6 +63,12 @@ static char	*expand_variable(const char *input, size_t *i)
 	return (value);
 }
 
+/**
+ * @brief Executes external programs via fork/exec.
+ * @param cmd Command structure with arguments.
+ * @note Uses PATH resolution and reports command errors.
+ */
+
 char	*expand_variables(const char *input)
 {
 	char	*result;
@@ -90,9 +97,9 @@ char	*expand_variables(const char *input)
 }
 
 /**
- * @brief Executes an external command in a child process.
- * @param cmd Command structure with arguments and redirections.
- * @note Terminates the process on completion or error.
+ * @brief Executes external programs via fork/exec.
+ * @param cmd Command structure with arguments.
+ * @note Uses PATH resolution and reports command errors.
  */
 void	exec_external_command(t_cmd *cmd)
 {

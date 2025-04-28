@@ -3,20 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   parser_2.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/23 15:45:21 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:46:24 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Checks if a token type is a redirection
-** @param type Token type to check
-** @return 1 if redirection, 0 otherwise
-*/
+/**
+ * @brief Checks if token is redirection operator.
+ * @param type Token type to check.
+ * @return 1 if redirection token, 0 otherwise.
+ * @note Covers all redirection types (>, >>, <, <<).
+ */
 int	is_redirection(t_token type)
 {
 	return (type == T_REDIR_IN || type == T_REDIR_OUT

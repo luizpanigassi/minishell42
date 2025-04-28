@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 18:35:21 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:13:54 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,12 @@
 
 extern volatile sig_atomic_t g_exit_status;
 
-/*
-** Checks if a command is a builtin
-** @param tokens Array of command tokens
-** @return 1 if builtin, 0 otherwise
-*/
+/**
+ * @brief Checks if a command is a builtin command.
+ * @param tokens Array of command tokens to check.
+ * @return 1 if the command is a builtin, 0 otherwise.
+ * @note Checks against predefined list of builtin commands.
+ */
 int is_builtin(char **tokens)
 {
 	const char *builtins[] = {"echo", "cd", "pwd", "export",
@@ -37,11 +38,12 @@ int is_builtin(char **tokens)
 	return (0);
 }
 
-/*
-** Executes the appropriate builtin function based on command
-** @param args Command arguments
-** @return Exit status of the builtin command
-*/
+/**
+ * @brief Executes the appropriate builtin function.
+ * @param args Command arguments including builtin name.
+ * @return Exit status of the executed builtin.
+ * @note Dispatches to specific builtin implementations based on first argument.
+ */
 int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
@@ -64,11 +66,12 @@ int exec_builtin(char **args)
 	return (0);
 }
 
-/*
-** Creates a copy of the environment variables array
-** @param original Original environment array
-** @return New allocated copy of the environment
-*/
+/**
+ * @brief Creates a deep copy of the environment variables array.
+ * @param original Original environment array to copy.
+ * @return New allocated copy of environment variables.
+ * @note Caller must free the returned array with free_env_copy().
+ */
 char **ft_copy_env(char **original)
 {
 	char **copy;

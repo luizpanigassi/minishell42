@@ -3,15 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   handle_special.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:06:27 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/23 14:20:17 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:42:15 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Assigns token values during parsing.
+ * @param p Parser state.
+ * @param t Token type to assign.
+ * @param v Token value string.
+ * @param n Whether to advance character position.
+ * @note Manages parser state transitions for special tokens.
+ */
 static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 {
 	p->token_type = t;
@@ -20,6 +28,11 @@ static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 		next_char(p);
 }
 
+/**
+ * @brief Processes file descriptor prefix in redirections.
+ * @param p Parser state.
+ * @note Extracts leading digits for numbered file descriptors.
+ */
 static void	handle_file_descriptor(t_parse *p)
 {
 	int		fd;
@@ -35,6 +48,11 @@ static void	handle_file_descriptor(t_parse *p)
 	}
 }
 
+/**
+ * @brief Handles output redirection tokens (> and >>).
+ * @param p Parser state.
+ * @note Determines between truncate (>) and append (>>) modes.
+ */
 static void	handle_output_redirection(t_parse *p)
 {
 	next_char(p);
@@ -44,6 +62,11 @@ static void	handle_output_redirection(t_parse *p)
 		assign_value(p, T_REDIR_OUT, ">", 0);
 }
 
+/**
+ * @brief Handles input redirection tokens (< and <<).
+ * @param p Parser state.
+ * @note Distinguishes between regular input and heredoc redirection.
+ */
 static void	handle_input_redirection(t_parse *p)
 {
 	next_char(p);
@@ -53,6 +76,11 @@ static void	handle_input_redirection(t_parse *p)
 		assign_value(p, T_REDIR_IN, "<", 0);
 }
 
+/**
+ * @brief Processes redirection tokens during parsing.
+ * @param p Parser state structure.
+ * @note Handles >, >>, <, << operators and file descriptors.
+ */
 void	handle_special(t_parse *p)
 {
 	handle_file_descriptor(p);

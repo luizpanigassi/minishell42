@@ -6,12 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/10 17:43:44 by luinasci          #+#    #+#             */
-/*   Updated: 2024/10/29 14:53:45 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:44:38 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
+/**
+ * @brief Advances parser past whitespace characters.
+ * @param p Parser state.
+ * @note Modifies parser position and current character.
+ */
 static void	skip_whitespace(const char **str, int *sign)
 {
 	while (**str == ' ' || **str == '\t' || **str == '\n'

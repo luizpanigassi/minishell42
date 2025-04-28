@@ -6,16 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:12:41 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/18 14:40:55 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:47:32 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Frees an array of strings
-** @param args Array to free
-*/
+/**
+ * @brief Frees null-terminated string array.
+ * @param array Array to free.
+ * @note Handles NULL input safely.
+ */
 void	ft_free_array(char **args)
 {
 	int	i;
@@ -28,21 +29,23 @@ void	ft_free_array(char **args)
 	free(args);
 }
 
-/*
-** Checks if character is whitespace
-** @param c Character to check
-** @return 1 if whitespace, 0 otherwise
-*/
+/**
+ * @brief Checks if character is whitespace.
+ * @param c Character to check.
+ * @return 1 if whitespace, 0 otherwise.
+ * @note Includes all standard whitespace characters.
+ */
 int	ft_isspace(int c)
 {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r'
 		|| c == '\f' || c == '\v');
 }
 
-/*
-** Advances to next character in parser input
-** @param p Parser structure
-*/
+/**
+ * @brief Advances parser to next input character.
+ * @param p Parser state.
+ * @note Handles end-of-input detection.
+ */
 void	next_char(t_parse *p)
 {
 	if (p->input[p->pos])
@@ -56,21 +59,23 @@ void	next_char(t_parse *p)
 	}
 }
 
-/*
-** Checks if character is special shell character
-** @param c Character to check
-** @return 1 if special, 0 otherwise
-*/
+/**
+ * @brief Checks if character is shell metacharacter.
+ * @param c Character to check.
+ * @return 1 if special character, 0 otherwise.
+ * @note Includes |, >, <, and ;.
+ */
 int	is_special_char(char c)
 {
 	return (c == '|' || c == '>' || c == '<');
 }
 
-/*
-** Converts a linked list to string array
-** @param lst Linked list to convert
-** @return New allocated string array
-*/
+/**
+ * @brief Converts linked list to string array.
+ * @param lst List of string elements.
+ * @return Null-terminated string array.
+ * @note Performs deep copy of list contents.
+ */
 char	**list_to_array(t_list *lst)
 {
 	char	**arr;

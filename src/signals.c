@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:28:19 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 19:26:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:46:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,10 @@ void	handle_sigint(int sig)
 	rl_redisplay();
 }
 
-/*
-** Sets up signal handlers for parent process (shell)
-*/
+/**
+ * @brief Manages shell signal handling configurations.
+ * @note Sets SIGINT/SIGQUIT handlers for interactive mode.
+ */
 void	setup_parent_signals(void)
 {
 	struct sigaction	sa;
@@ -50,6 +51,10 @@ void	setup_child_signals(void)
 	signal(SIGQUIT, SIG_DFL);
 }
 
+/**
+ * @brief Configures signal handling for heredoc.
+ * @note Sets SIGINT to default and ignores SIGQUIT.
+ */
 void	setup_heredoc_signals(void)
 {
 	signal(SIGINT, SIG_DFL);

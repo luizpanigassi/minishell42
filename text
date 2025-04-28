@@ -1,4 +1,4 @@
-header:
+header
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
@@ -50,17 +50,17 @@ typedef struct s_parse
 }	t_parse;
 
 typedef struct s_redir {
-	t_token			type;// T_REDIR_IN, T_REDIR_OUT, etc.
-	char			*filename;// Target file
-	struct s_redir	*next;// For multiple redirections
-	int heredoc_quoted;  // For quoted delimiter tracking
-	int				fd; // File descriptor for redirection
+	t_token			type;
+	char			*filename;
+	struct s_redir	*next;
+	int				heredoc_quoted;
+	int				fd;
 }	t_redir;
 
 typedef struct s_cmd {
-	char			**args; // Command arguments (e.g., ["ls", "-l"])
-	t_redir			*redirections; // List of redirections
-	struct s_cmd	*next; // For pipe
+	char			**args;
+	t_redir			*redirections;
+	struct s_cmd	*next;
 }	t_cmd;
 
 typedef struct s_arg {
@@ -74,7 +74,7 @@ typedef struct s_export_params {
 	char	*arg;
 }	t_export_params;
 
-typedef struct	s_exec_vars {
+typedef struct s_exec_vars {
 	int		prev_pipe[2];
 	int		next_pipe[2];
 	pid_t	*child_pids;
@@ -149,7 +149,6 @@ void	update_quote_state(char c, int *in_quote, char *quote_char);
 void	add_substring(char ***result, int *count,
 			const char *start, const char *end);
 
-
 // Helper functions for parsing
 int		ft_isspace(int c);
 void	next_char(t_parse *p);
@@ -171,7 +170,7 @@ void	free_pipeline(t_cmd *pipeline);
 
 #endif
 
-builtin.c:
+builtin.c
 
 #include "minishell.h"
 
@@ -238,38 +237,29 @@ char **ft_copy_env(char **original)
 	int i;
 	int count;
 
-	if (!original) // Add null check for original array
-		return (NULL);
+	i = 0;
+	if (!original)
+		return NULL;
 
-	// First pass: count valid entries
 	count = 0;
-	while (original[count] != NULL)
+	while (original[count])
 		count++;
 
-	// Allocate space including NULL terminator
 	copy = malloc(sizeof(char *) * (count + 1));
 	if (!copy)
-		return (NULL);
-
-	// Second pass: copy valid strings
-	i = 0;
+		return NULL;
 	while (i < count)
 	{
-		if (original[i] != NULL) // Additional safety check
+		copy[i] = ft_strdup(original[i]);
+		if (!copy[i])
 		{
-			copy[i] = ft_strdup(original[i]);
-			if (!copy[i])
-			{
-				ft_free_array(copy);
-				return (NULL);
-			}
+			ft_free_array(copy);
+			return NULL;
 		}
-		else
-			copy[i] = NULL;
 		i++;
 	}
-	copy[count] = NULL; // Explicit NULL termination
-	return (copy);
+	copy[count] = NULL;
+	return copy;
 }
 
 /* Environment variable operations */
@@ -285,12 +275,9 @@ void update_env_var(char *var, char *value)
 	char *eq;
 	char **env_ptr;
 
-	new_entry = NULL;
-	if (value)
-		new_entry = ft_strjoin3(var, "=", value);
-	else
-		new_entry = ft_strjoin(var, "=");
+	new_entry = value ? ft_strjoin3(var, "=", value) : ft_strjoin(var, "=");
 	env_ptr = environ;
+
 	while (*env_ptr)
 	{
 		eq = ft_strchr(*env_ptr, '=');
@@ -302,6 +289,7 @@ void update_env_var(char *var, char *value)
 		}
 		env_ptr++;
 	}
+
 	environ = ft_array_append(environ, new_entry);
 	free(var);
 	if (value)
@@ -334,7 +322,7 @@ void ensure_var_exported(char *var_name)
 		free(var_name);
 }
 
-exec_cd.c:
+exec_cd.c
 
 #include "minishell.h"
 
@@ -441,7 +429,7 @@ int	exec_echo(char **args)
 	return (0);
 }
 
-exec_env.c:
+exec_env.c
 
 #include "minishell.h"
 
@@ -462,7 +450,7 @@ int	exec_env(char **args)
 	return (0);
 }
 
-exec_exit.c:
+exec_exit.c
 
 #include "minishell.h"
 
@@ -480,12 +468,13 @@ int	exec_exit(char **args)
 	{
 		ft_putstr_fd("minishell: exit error: too many arguments\n",
 			STDERR_FILENO);
+		set_exit_status(1);
 		return (1);
 	}
 	if (args[1])
 	{
 		if (ft_isnumber(args[1]))
-			status = ft_atoi(args[1]);
+			status = ft_atoi(args[1]) % 256;
 		else
 		{
 			ft_putstr_fd("minishell: exit error: numeric argument required\n",
@@ -498,7 +487,7 @@ int	exec_exit(char **args)
 	exit(status);
 }
 
-exec_export.c:
+exec_export.c
 
 #include "minishell.h"
 
@@ -567,7 +556,7 @@ int	handle_export_argument(char *arg, int *i, int *ret)
 	return (0);
 }
 
-exec_pwd.c:
+exec_pwd.c
 
 #include "minishell.h"
 
@@ -601,7 +590,7 @@ int	exec_pwd(char **args)
 	}
 }
 
-exec_unset.c:
+exec_unset.c
 
 #include "minishell.h"
 
@@ -679,7 +668,7 @@ int	exec_unset(char **args)
 	return (ret);
 }
 
-create_heredoc.c:
+create_heredoc.c
 
 #include <minishell.h>
 
@@ -709,7 +698,7 @@ int create_heredoc(const char *delimiter)
 	}
 	if (pid == 0) // Child process
 	{
-		close(pipefd[0]); // Close read end in child
+		close(pipefd[0]);
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_IGN);
 		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
@@ -734,7 +723,7 @@ int create_heredoc(const char *delimiter)
 			}
 			else
 				write(pipefd[1], line, strlen(line));
-			write(pipefd[1], "\n", 1); // Add newline after each line
+			write(pipefd[1], "\n", 1);
 			free(line);
 		}
 		close(pipefd[1]); // Close write end in child
@@ -742,18 +731,18 @@ int create_heredoc(const char *delimiter)
 	}
 	else // Parent process
 	{
-		close(pipefd[1]); // Close write end in parent
+		close(pipefd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
 		{
 			close(pipefd[0]);
 			return (-1); // Return error if interrupted
 		}
-		return (pipefd[0]); // Return read end of the pipe
+		return (pipefd[0]);
 	}
 }
 
-exit_status.c:
+exit_status.c
 
 #include "minishell.h"
 
@@ -775,7 +764,7 @@ int	get_exit_status(void)
 	return (g_exit_status);
 }
 
-get_cmd_path.c:
+get_cmd_path.c
 
 #include "minishell.h"
 
@@ -860,7 +849,7 @@ char	*get_cmd_path(char *cmd)
 	return (NULL);
 }
 
-handle_pipe.c:
+handle_pipe.c
 
 #include "minishell.h"
 
@@ -896,7 +885,7 @@ int execute_pipeline(t_cmd *pipeline)
 				{ // Heredoc was interrupted
 					free(child_pids);
 					free_pipeline(pipeline);
-					return 130; // Return SIGINT exit code
+					return 130;
 				}
 				r->fd = hd_fd;
 			}
@@ -913,13 +902,11 @@ int execute_pipeline(t_cmd *pipeline)
 		if (pid == 0) // Child
 		{
 			setup_child_signals();
-			// Handle pipe redirections
+			// pipe redirections
 			int pipe_out = -1;
 			if (current->next)
 				pipe_out = next_pipe[1];
 			handle_redirections(prev_pipe[0], pipe_out, current->redirections);
-
-			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			if (prev_pipe[1] != -1)
@@ -937,12 +924,10 @@ int execute_pipeline(t_cmd *pipeline)
 		else if (pid > 0) // Parent
 		{
 			child_pids[i++] = pid;
-			// Close previous pipe ends
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			if (prev_pipe[1] != -1)
 				close(prev_pipe[1]);
-
 			// Move to next pipe
 			prev_pipe[0] = next_pipe[0];
 			prev_pipe[1] = next_pipe[1];
@@ -957,8 +942,6 @@ int execute_pipeline(t_cmd *pipeline)
 		}
 		current = current->next;
 	}
-
-	// Close any remaining pipe ends
 	if (prev_pipe[0] != -1)
 		close(prev_pipe[0]);
 	if (prev_pipe[1] != -1)
@@ -977,7 +960,6 @@ int execute_pipeline(t_cmd *pipeline)
 			last_status = 128 + WTERMSIG(status);
 		child_count++;
 	}
-	// Check if the last command in the pipeline was "exit"
 	t_cmd *last_cmd = pipeline;
 	while (last_cmd->next)
 		last_cmd = last_cmd->next;
@@ -986,7 +968,7 @@ int execute_pipeline(t_cmd *pipeline)
 	{
 		free(child_pids);
 		free_pipeline(pipeline);
-		exit(last_status); // Exit the shell with the last command's status
+		exit(last_status);
 	}
 
 	free(child_pids);
@@ -994,7 +976,7 @@ int execute_pipeline(t_cmd *pipeline)
 	return last_status;
 }
 
-handle_special.c:
+handle_special.c
 
 #include "minishell.h"
 
@@ -1050,7 +1032,7 @@ void	handle_special(t_parse *p)
 		handle_input_redirection(p);
 }
 
-init_parser.c:
+init_parser.c
 
 #include <minishell.h>
 
@@ -1070,7 +1052,7 @@ void	init_parser(t_parse *p, char *input)
 	p->syntax_error = 0;
 }
 
-input.c:
+input.c
 
 #include "minishell.h"
 
@@ -1206,7 +1188,7 @@ int	handle_redirection(t_redir *current, int fd)
 	return (0);
 }
 
-main.c:
+main.c
 
 #include "minishell.h"
 
@@ -1308,7 +1290,6 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			return (perror("minishell"), -1);
 		close(pipe_out);
 	}
-
 	// Handle file redirections
 	t_redir *current = redirections;
 	while (current)
@@ -1326,8 +1307,8 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 		if (fd == -1)
 		{
 			perror("minishell");
-			set_exit_status(1); // Set status before exit
-			exit(EXIT_FAILURE); // Exit child immediately
+			set_exit_status(1);
+			exit(EXIT_FAILURE);
 		}
 		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
 		{
@@ -1406,16 +1387,16 @@ int main(void)
 
 			if (parser.syntax_error)
 			{
-				// Handle parsing errors (e.g., unmatched quotes)
-
+				// Handle parsing errors
 				syntax_error_flag = 1;
 				set_exit_status(SYNTAX_ERROR);
 				free_pipeline(pipeline);
+				pipeline = NULL;
 				i++;
 				continue;
 			}
 
-			// Handle builtins in parent process (e.g., exit, cd)
+			// Handle builtins in parent
 			if (!pipeline->next && is_builtin(pipeline->args))
 			{
 				int saved_stdin = dup(STDIN_FILENO);
@@ -1441,7 +1422,7 @@ int main(void)
 				{
 					free_pipeline(pipeline);
 					free_env_copy(env_copy);
-					break; // Exit loop to terminate shell
+					break; // Terminate shell
 				}
 			}
 			else
@@ -1452,8 +1433,6 @@ int main(void)
 			free_pipeline(pipeline);
 			i++;
 		}
-
-		// Free commands array
 		if (commands)
 		{
 			char **ptr = commands;
@@ -1500,13 +1479,12 @@ static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 				 STDERR_FILENO);
 	if (p->token_type == T_EOF)
 		ft_putstr_fd("newline", STDERR_FILENO);
-	else if (p->token_value)
-		ft_putstr_fd(p->token_value, STDERR_FILENO);
 	else
-		ft_putstr_fd(" ", STDERR_FILENO);
+		ft_putstr_fd(p->token_value, STDERR_FILENO);
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	ft_lstclear(args, free_arg);
 	free_redirections(redirs);
+	p->syntax_error = 1;
 	return (NULL);
 }
 
@@ -1525,7 +1503,8 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	redir->fd = p->redir_fd;
 	redir->type = p->token_type;
 	next_token(p);
-	if (p->token_type != T_WORD && p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED)
+	if (!p->token_value || (p->token_type != T_WORD &&
+							p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
 	{
 		free(redir);
 		return (handle_redir_error(p, args, redirs));
@@ -1572,7 +1551,6 @@ t_cmd *parse_args(t_parse *p)
 		{
 			if (!p->token_value)
 			{
-				// Cleanup and bail if we have NULL value from error
 				ft_lstclear(&args, free_arg);
 				free_redirections(redirs);
 				return NULL;
@@ -1607,7 +1585,7 @@ t_cmd *parse_pipeline(t_parse *p)
 	curr = &head;
 	next_token(p);
 
-	// Handle empty input or immediate pipe/semicolon
+	// empty input or immediate pipe
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value ? p->token_value : "newline");
@@ -1616,23 +1594,23 @@ t_cmd *parse_pipeline(t_parse *p)
 	while (1)
 	{
 		cmd = parse_args(p);
-		// If parse_args failed due to syntax error, abort
+		// parse_args failed
 		if (p->syntax_error)
 		{
 			free_cmd(head);
 			return NULL;
 		}
-		// If we got a valid command, add to pipeline
+		// valid command
 		if (cmd)
 		{
 			*curr = cmd;
 			curr = &cmd->next;
 		}
-		// Check for pipeline termination conditions
+		// pipeline termination conditions
 		if (!cmd || p->token_type != T_PIPE)
 			break;
 		next_token(p);
-		// Handle consecutive pipes or pipe at end of input
+		// consecutive pipes
 		error_token = p->token_value;
 		if (p->token_type == T_EOF)
 			error_token = "newline";
@@ -1645,7 +1623,7 @@ t_cmd *parse_pipeline(t_parse *p)
 			return NULL;
 		}
 	}
-	// Final syntax check after pipeline parsing
+	// syntax check after pipeline parsing
 	if (p->syntax_error)
 	{
 		free_cmd(head);
@@ -1747,8 +1725,6 @@ void	next_token(t_parse *p)
 	else
 		handle_word(p);
 }
-
-#include "minishell.h"
 
 /*
 ** Checks if a token type is a redirection

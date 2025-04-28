@@ -6,17 +6,17 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:59:44 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 18:38:27 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:16:51 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <minishell.h>
 
 /**
- * @brief Creates a temporary heredoc file.
+ * @brief Creates temporary file for heredoc input.
  * @param delimiter Heredoc termination string.
- * @return File descriptor of the heredoc temp file.
- * @note Automatically deletes the temp file after opening.
+ * @return Read-end file descriptor of pipe.
+ * @note Automatically handles variable expansion unless quoted.
  */
 int create_heredoc(const char *delimiter)
 {

@@ -3,19 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   utils_2.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 14:40:41 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/16 14:58:50 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:48:40 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Frees a command structure
-** @param cmd Command to free
-*/
+/**
+ * @brief Frees command structure and components.
+ * @param cmd Command to free.
+ * @note Recursively frees arguments and redirections.
+ */
 void	free_cmd(t_cmd *cmd)
 {
 	t_redir	*redir;
@@ -35,12 +36,13 @@ void	free_cmd(t_cmd *cmd)
 	free(cmd);
 }
 
-/*
-** String comparison
-** @param s1 First string
-** @param s2 Second string
-** @return Difference between first differing characters
-*/
+/**
+ * @brief Compares two strings.
+ * @param s1 First string.
+ * @param s2 Second string.
+ * @return Difference at first mismatch or 0 if equal.
+ * @note Unsafe for NULL inputs.
+ */
 int	ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
@@ -51,11 +53,12 @@ int	ft_strcmp(const char *s1, const char *s2)
 	return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }
 
-/*
-** Checks if string is numeric
-** @param str String to check
-** @return 1 if numeric, 0 otherwise
-*/
+/**
+ * @brief Validates numeric string format.
+ * @param str String to check.
+ * @return 1 if valid number, 0 otherwise.
+ * @note Allows optional leading + or - sign.
+ */
 int	ft_isnumber(const char *str)
 {
 	int	i;
@@ -81,11 +84,12 @@ int	ft_isnumber(const char *str)
 	}
 }
 
-/*
-** Checks if string is valid variable name
-** @param name String to check
-** @return 1 if valid, 0 otherwise
-*/
+/**
+ * @brief Validates variable name syntax.
+ * @param name String to check.
+ * @return 1 if valid identifier, 0 otherwise.
+ * @note Follows POSIX variable naming rules.
+ */
 int	is_valid_var_name(const char *name)
 {
 	int	i;
@@ -102,9 +106,10 @@ int	is_valid_var_name(const char *name)
 	return (1);
 }
 
-/*
-** Prints environment variables in export format
-*/
+/**
+ * @brief Prints environment in export format.
+ * @note Shows variables with declare -x syntax.
+ */
 void	print_export_declarations(void)
 {
 	extern char	**environ;

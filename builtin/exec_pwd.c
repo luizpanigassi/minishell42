@@ -3,20 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   exec_pwd.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:52:50 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/17 11:30:38 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:15:45 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Prints the current working directory
-** @param args Ignored
-** @return 0 on success, 1 on failure
-*/
+/**
+ * @brief Prints current working directory.
+ * @param args Ignored parameter.
+ * @return 0 on success, 1 on error.
+ * @note Uses getcwd() system call.
+ */
 int	exec_pwd(char **args)
 {
 	char	*cwd;

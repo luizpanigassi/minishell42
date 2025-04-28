@@ -6,12 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:51:59 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 15:48:05 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:40:44 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Validates variable name for unset operation.
+ * @param arg Variable name to check.
+ * @return 1 if invalid, 0 if valid.
+ * @note Prints formatted error message for invalid names.
+ */
 static int	handle_unset_error(char *arg)
 {
 	if (is_valid_var_name(arg))
@@ -22,6 +28,11 @@ static int	handle_unset_error(char *arg)
 	return (1);
 }
 
+/**
+ * @brief Shifts environment array elements after removal.
+ * @param env_ptr Pointer to start position in environment array.
+ * @note Modifies environment array in-place after variable removal.
+ */
 static void	shift_environment(char **env_ptr)
 {
 	char	**ptr;
@@ -33,7 +44,11 @@ static void	shift_environment(char **env_ptr)
 		ptr++;
 	}
 }
-
+/**
+ * @brief Removes environment variable from global environ.
+ * @param var_name Name of variable to remove.
+ * @note Directly modifies the environ array.
+ */
 static void	remove_env_var(const char *var_name)
 {
 	extern char	**environ;
@@ -62,9 +77,10 @@ static void	remove_env_var(const char *var_name)
 }
 
 /**
- * @brief Executes the 'unset' builtin to remove environment variables.
- * @param args Array of arguments (e.g., ["unset", "VAR"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
+ * @brief Removes environment variables.
+ * @param args Variables to unset.
+ * @return 0 on success, 1 for invalid names.
+ * @note Modifies environ array directly.
  */
 int	exec_unset(char **args)
 {

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 18:40:42 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:31:47 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,13 +88,14 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 	}
 }
 
-/*
-** Sets up file descriptors for I/O redirection
-** @param pipe_in Input file descriptor
-** @param pipe_out Output file descriptor
-** @param redirections List of redirection specifications
-** @return 0 on success, -1 on error
-*/
+/**
+ * @brief Applies redirection operations for command.
+ * @param pipe_in Input file descriptor.
+ * @param pipe_out Output file descriptor.
+ * @param redirections Redirection specification list.
+ * @return 0 on success, -1 on error.
+ * @note Handles heredoc, truncate, and append modes.
+ */
 int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
 	// Handle pipe redirections first
@@ -146,10 +147,11 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	return (0);
 }
 
-/*
-** Main shell loop
-** @return Exit status of shell
-*/
+/**
+ * @brief Main shell entry point.
+ * @note Manages readline loop, signal handling, and cleanup.
+ */
+
 int main(void)
 {
 	extern char **environ;

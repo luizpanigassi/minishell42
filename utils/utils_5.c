@@ -6,12 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/18 14:50:31 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:49:45 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Extracts file descriptor number from input.
+ * @param p Parser state.
+ * @return String containing numeric file descriptor.
+ * @note Advances parser position past digits.
+ */
 char	*parse_fd(t_parse *p)
 {
 	int	start;
@@ -68,6 +74,13 @@ void	handle_delimiter(const char **str, const char **start,
 	*start = *str + 1;
 }
 
+/**
+ * @brief Splits string while respecting quoted sections.
+ * @param str Input string to split.
+ * @param delim Delimiter character.
+ * @return Array of split tokens.
+ * @note Preserves quoted content including delimiters.
+ */
 char	**split_with_quotes(const char *str, char delim)
 {
 	const char	*start;

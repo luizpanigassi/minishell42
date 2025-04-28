@@ -3,20 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   utils_3.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:01:57 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/16 15:05:15 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:49:07 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Safe strlen that returns size_t
-** @param str String to measure
-** @return Length of string
-*/
+/**
+ * @brief Safe strlen with NULL handling.
+ * @param s String to measure.
+ * @return String length or 0 for NULL.
+ */
 size_t	ft_strlen_size(const char *str)
 {
 	size_t	len;
@@ -28,13 +28,14 @@ size_t	ft_strlen_size(const char *str)
 	return (len);
 }
 
-/*
-** Joins three strings together
-** @param s1 First string
-** @param s2 Second string
-** @param s3 Third string
-** @return New concatenated string
-*/
+/**
+ * @brief Concatenates three strings.
+ * @param s1 First string.
+ * @param s2 Second string.
+ * @param s3 Third string.
+ * @return Combined string.
+ * @note Manages temporary allocations internally.
+ */
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3)
 {
 	char	*tmp;

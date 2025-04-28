@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:08:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/21 19:00:11 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:49:36 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,11 @@ size_t	ft_cmd_size(t_cmd *pipeline)
 	return (count);
 }
 
+/**
+ * @brief Frees redirection structures.
+ * @param redirs Redirection list head.
+ * @note Iteratively frees all nodes in list.
+ */
 void	free_redirections(t_redir *redirs)
 {
 	t_redir	*tmp;
@@ -83,6 +88,11 @@ void	free_env_copy(char **env_copy)
 	ft_free_array(env_copy);
 }
 
+/**
+ * @brief Handles syntax error reporting.
+ * @param token Offending token string.
+ * @note Sets global syntax error flag and exit status.
+ */
 void	syntax_error(char *token)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token '",

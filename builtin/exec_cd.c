@@ -6,17 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:38:13 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/21 17:21:59 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:14:13 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Changes the current directory
-** @param args Command arguments (args[1] is the target directory)
-** @return 0 on success, 1 on failure
-*/
+/**
+ * @brief Changes the current working directory.
+ * @param args Command arguments (args[1] is target directory).
+ * @return 0 on success, 1 on failure.
+ * @note Updates PWD and OLDPWD environment variables.
+ */
 int	exec_cd(char **args)
 {
 	char	*oldpwd;
@@ -39,6 +40,14 @@ int	exec_cd(char **args)
 	free(newpwd);
 	return (0);
 }
+
+/**
+ * @brief Handles argument validation and path resolution for cd command.
+ * @param args Command arguments array.
+ * @param oldpwd Current working directory before change.
+ * @return 0 on success, 1 on error.
+ * @note Manages ~, -, and empty argument special cases.
+ */
 
 int	handle_cd_arguments(char **args, char *oldpwd)
 {

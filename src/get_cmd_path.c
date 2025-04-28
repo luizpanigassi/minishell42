@@ -3,15 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   get_cmd_path.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 14:53:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/17 17:47:32 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:41:15 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Constructs full command path from directory and command name.
+ * @param dir_path Directory path component.
+ * @param cmd Command name component.
+ * @return Full path string or NULL.
+ * @note Checks execute permissions on constructed path.
+ */
 static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
 	char	*dir_slash;
@@ -30,6 +37,11 @@ static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 	return (NULL);
 }
 
+/**
+ * @brief Extracts PATH directories into array.
+ * @return Null-terminated array of directory strings.
+ * @note Splits PATH environment variable using colon delimiter.
+ */
 static char	**get_path_directories(void)
 {
 	char	*path_env;

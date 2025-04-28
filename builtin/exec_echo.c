@@ -6,17 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:48:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/18 15:25:07 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:14:23 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Prints arguments to stdout with optional newline suppression
-** @param args Command arguments (-n flag suppresses newline)
-** @return Always returns 0
-*/
+/**
+ * @brief Prints arguments to stdout with newline control.
+ * @param args Arguments to print (supports -n flag).
+ * @return Always returns 0.
+ * @note -n flag suppresses trailing newline.
+ */
 int	exec_echo(char **args)
 {
 	int	i;

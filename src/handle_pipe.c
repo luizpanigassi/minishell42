@@ -6,17 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 18:39:18 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 19:19:11 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-/*
-** Executes a pipeline of commands with proper piping
-** @param pipeline Command pipeline to execute
-** @return Exit status of the last command in pipeline
-*/
+/**
+ * @brief Manages pipeline execution with process forking.
+ * @param pipeline Linked list of commands to execute.
+ * @return Exit status of last command in pipeline.
+ * @note Handles input/output redirection between commands.
+ */
 int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
