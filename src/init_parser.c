@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   init_parser.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:53:29 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/17 11:33:14 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 15:50:58 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,4 +25,5 @@ void	init_parser(t_parse *p, char *input)
 	p->token_type = T_EOF;
 	p->token_value = NULL;
 	p->redir_fd = 0;
+	p->syntax_error = 0;
 }

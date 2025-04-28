@@ -6,24 +6,24 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/21 18:10:11 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/25 16:06:00 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-extern volatile sig_atomic_t	g_exit_status;
+extern volatile sig_atomic_t g_exit_status;
 
 /*
 ** Checks if a command is a builtin
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int	is_builtin(char **tokens)
+int is_builtin(char **tokens)
 {
-	const char	*builtins[] = {"echo", "cd", "pwd", "export",
-		"unset", "env", "exit", NULL};
-	int			i;
+	const char *builtins[] = {"echo", "cd", "pwd", "export",
+							  "unset", "env", "exit", NULL};
+	int i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -42,7 +42,7 @@ int	is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int	exec_builtin(char **args)
+int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -69,31 +69,43 @@ int	exec_builtin(char **args)
 ** @param original Original environment array
 ** @return New allocated copy of the environment
 */
-char	**ft_copy_env(char **original)
+char **ft_copy_env(char **original)
 {
-	char	**copy;
-	int		i;
+	char **copy;
+	int i;
+	int count;
 
-	if (!original)
+	if (!original) // Add null check for original array
 		return (NULL);
-	i = 0;
-	while (original[i])
-		i++;
-	copy = malloc(sizeof(char *) * (i + 1));
+
+	// First pass: count valid entries
+	count = 0;
+	while (original[count] != NULL)
+		count++;
+
+	// Allocate space including NULL terminator
+	copy = malloc(sizeof(char *) * (count + 1));
 	if (!copy)
 		return (NULL);
+
+	// Second pass: copy valid strings
 	i = 0;
-	while (original[i])
+	while (i < count)
 	{
-		copy[i] = ft_strdup(original[i]);
-		if (!copy[i])
+		if (original[i] != NULL) // Additional safety check
 		{
-			ft_free_array(copy);
-			return (NULL);
+			copy[i] = ft_strdup(original[i]);
+			if (!copy[i])
+			{
+				ft_free_array(copy);
+				return (NULL);
+			}
 		}
+		else
+			copy[i] = NULL;
 		i++;
 	}
-	copy[i] = NULL;
+	copy[count] = NULL; // Explicit NULL termination
 	return (copy);
 }
 
@@ -103,12 +115,12 @@ char	**ft_copy_env(char **original)
  * @param var Variable name (ownership transferred).
  * @param value Variable value (ownership transferred).
  */
-void	update_env_var(char *var, char *value)
+void update_env_var(char *var, char *value)
 {
-	extern char	**environ;
-	char		*new_entry;
-	char		*eq;
-	char		**env_ptr;
+	extern char **environ;
+	char *new_entry;
+	char *eq;
+	char **env_ptr;
 
 	new_entry = NULL;
 	if (value)
@@ -123,12 +135,12 @@ void	update_env_var(char *var, char *value)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			return ;
+			return;
 		}
 		env_ptr++;
 	}
 	environ = ft_array_append(environ, new_entry);
-	free (var);
+	free(var);
 	if (value)
 		free(value);
 }
@@ -137,12 +149,12 @@ void	update_env_var(char *var, char *value)
 ** Ensures a variable exists in the environment (without value if not present)
 ** @param var_name Variable name to check/export
 */
-void	ensure_var_exported(char *var_name)
+void ensure_var_exported(char *var_name)
 {
-	extern char	**environ;
-	char		**env_ptr;
-	int			exists;
-	char		*eq;
+	extern char **environ;
+	char **env_ptr;
+	int exists;
+	char *eq;
 
 	exists = 0;
 	env_ptr = environ;

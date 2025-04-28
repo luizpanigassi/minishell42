@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser_1.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/23 14:09:12 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 16:01:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,8 @@ static void	handle_quotes(t_parse *p, char quote)
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
+		p->token_value = NULL;
+		p->syntax_error = 1;
 		return ;
 	}
 	content = ft_substr(p->input, start + 1, p->pos - start - 1);

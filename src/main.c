@@ -6,23 +6,23 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/22 17:01:10 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 16:06:54 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-volatile sig_atomic_t	g_exit_status = 0;
+volatile sig_atomic_t g_exit_status = 0;
 
 /**
  * @brief Frees a command pipeline and associated resources.
  * @param pipeline Linked list of command structures.
  */
-void	free_pipeline(t_cmd *pipeline)
+void free_pipeline(t_cmd *pipeline)
 {
-	t_cmd	*current;
-	t_redir	*redir;
-	t_redir	*tmp_redir;
+	t_cmd *current;
+	t_redir *redir;
+	t_redir *tmp_redir;
 
 	while (pipeline)
 	{
@@ -49,11 +49,11 @@ void	free_pipeline(t_cmd *pipeline)
  * @param pipe_in Input file descriptor (or -1).
  * @param pipe_out Output file descriptor (or -1).
  */
-void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
-	pid_t		pid;
-	extern char	**environ;
-	char		*cmd_path;
+	pid_t pid;
+	extern char **environ;
+	char *cmd_path;
 
 	pid = fork();
 	if (pid == 0)
@@ -160,8 +160,7 @@ int main(void)
 	char *input;
 
 	original_environ = environ;
-	if(original_environ)
-		env_copy = ft_copy_env(environ);
+	env_copy = ft_copy_env(environ);
 	initial_env_copy = env_copy;
 	environ = env_copy;
 	setup_parent_signals();
@@ -207,16 +206,13 @@ int main(void)
 			t_cmd *pipeline = parse_pipeline(&parser);
 			free(trimmed_cmd);
 
-			if (!pipeline)
+			if (parser.syntax_error)
 			{
 				// Handle parsing errors (e.g., unmatched quotes)
-				if (parser.token_type == T_EOF && parser.token_value == NULL)
-				{
-					// Reset state and continue to next command
-					i++;
-					continue;
-				}
+
 				syntax_error_flag = 1;
+				set_exit_status(SYNTAX_ERROR);
+				free_pipeline(pipeline);
 				i++;
 				continue;
 			}

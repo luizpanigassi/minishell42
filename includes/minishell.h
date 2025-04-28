@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/23 14:08:04 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/04/28 15:50:43 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ typedef struct s_parse
 	t_token	token_type;
 	char	*token_value;
 	int		redir_fd;
+	int		syntax_error;
 }	t_parse;
 
 typedef struct s_redir {
