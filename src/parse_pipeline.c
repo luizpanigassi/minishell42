@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 15:44:42 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 16:31:46 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:44:30 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ t_cmd *parse_pipeline(t_parse *p)
 	curr = &head;
 	next_token(p);
 
-	// Handle empty input or immediate pipe/semicolon
+	// empty input or immediate pipe
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value ? p->token_value : "newline");
@@ -32,23 +32,23 @@ t_cmd *parse_pipeline(t_parse *p)
 	while (1)
 	{
 		cmd = parse_args(p);
-		// If parse_args failed due to syntax error, abort
+		// parse_args failed
 		if (p->syntax_error)
 		{
 			free_cmd(head);
 			return NULL;
 		}
-		// If we got a valid command, add to pipeline
+		// valid command
 		if (cmd)
 		{
 			*curr = cmd;
 			curr = &cmd->next;
 		}
-		// Check for pipeline termination conditions
+		// pipeline termination conditions
 		if (!cmd || p->token_type != T_PIPE)
 			break;
 		next_token(p);
-		// Handle consecutive pipes or pipe at end of input
+		// consecutive pipes
 		error_token = p->token_value;
 		if (p->token_type == T_EOF)
 			error_token = "newline";
@@ -61,7 +61,7 @@ t_cmd *parse_pipeline(t_parse *p)
 			return NULL;
 		}
 	}
-	// Final syntax check after pipeline parsing
+	// syntax check after pipeline parsing
 	if (p->syntax_error)
 	{
 		free_cmd(head);

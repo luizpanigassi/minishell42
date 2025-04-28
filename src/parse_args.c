@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 17:28:07 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:41:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,6 @@ t_cmd *parse_args(t_parse *p)
 		{
 			if (!p->token_value)
 			{
-				// Cleanup and bail if we have NULL value from error
 				ft_lstclear(&args, free_arg);
 				free_redirections(redirs);
 				return NULL;

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/25 16:06:00 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:35:21 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,38 +75,29 @@ char **ft_copy_env(char **original)
 	int i;
 	int count;
 
-	if (!original) // Add null check for original array
-		return (NULL);
+	i = 0;
+	if (!original)
+		return NULL;
 
-	// First pass: count valid entries
 	count = 0;
-	while (original[count] != NULL)
+	while (original[count])
 		count++;
 
-	// Allocate space including NULL terminator
 	copy = malloc(sizeof(char *) * (count + 1));
 	if (!copy)
-		return (NULL);
-
-	// Second pass: copy valid strings
-	i = 0;
+		return NULL;
 	while (i < count)
 	{
-		if (original[i] != NULL) // Additional safety check
+		copy[i] = ft_strdup(original[i]);
+		if (!copy[i])
 		{
-			copy[i] = ft_strdup(original[i]);
-			if (!copy[i])
-			{
-				ft_free_array(copy);
-				return (NULL);
-			}
+			ft_free_array(copy);
+			return NULL;
 		}
-		else
-			copy[i] = NULL;
 		i++;
 	}
-	copy[count] = NULL; // Explicit NULL termination
-	return (copy);
+	copy[count] = NULL;
+	return copy;
 }
 
 /* Environment variable operations */
@@ -122,12 +113,9 @@ void update_env_var(char *var, char *value)
 	char *eq;
 	char **env_ptr;
 
-	new_entry = NULL;
-	if (value)
-		new_entry = ft_strjoin3(var, "=", value);
-	else
-		new_entry = ft_strjoin(var, "=");
+	new_entry = value ? ft_strjoin3(var, "=", value) : ft_strjoin(var, "=");
 	env_ptr = environ;
+
 	while (*env_ptr)
 	{
 		eq = ft_strchr(*env_ptr, '=');
@@ -139,6 +127,7 @@ void update_env_var(char *var, char *value)
 		}
 		env_ptr++;
 	}
+
 	environ = ft_array_append(environ, new_entry);
 	free(var);
 	if (value)

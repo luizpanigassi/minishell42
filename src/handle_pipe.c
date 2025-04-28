@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/25 16:13:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:39:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ int execute_pipeline(t_cmd *pipeline)
 				{ // Heredoc was interrupted
 					free(child_pids);
 					free_pipeline(pipeline);
-					return 130; // Return SIGINT exit code
+					return 130;
 				}
 				r->fd = hd_fd;
 			}
@@ -61,13 +61,11 @@ int execute_pipeline(t_cmd *pipeline)
 		if (pid == 0) // Child
 		{
 			setup_child_signals();
-			// Handle pipe redirections
+			// pipe redirections
 			int pipe_out = -1;
 			if (current->next)
 				pipe_out = next_pipe[1];
 			handle_redirections(prev_pipe[0], pipe_out, current->redirections);
-
-			// Close all pipe ends in child
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			if (prev_pipe[1] != -1)
@@ -85,12 +83,10 @@ int execute_pipeline(t_cmd *pipeline)
 		else if (pid > 0) // Parent
 		{
 			child_pids[i++] = pid;
-			// Close previous pipe ends
 			if (prev_pipe[0] != -1)
 				close(prev_pipe[0]);
 			if (prev_pipe[1] != -1)
 				close(prev_pipe[1]);
-
 			// Move to next pipe
 			prev_pipe[0] = next_pipe[0];
 			prev_pipe[1] = next_pipe[1];
@@ -105,8 +101,6 @@ int execute_pipeline(t_cmd *pipeline)
 		}
 		current = current->next;
 	}
-
-	// Close any remaining pipe ends
 	if (prev_pipe[0] != -1)
 		close(prev_pipe[0]);
 	if (prev_pipe[1] != -1)
@@ -125,7 +119,6 @@ int execute_pipeline(t_cmd *pipeline)
 			last_status = 128 + WTERMSIG(status);
 		child_count++;
 	}
-	// Check if the last command in the pipeline was "exit"
 	t_cmd *last_cmd = pipeline;
 	while (last_cmd->next)
 		last_cmd = last_cmd->next;
@@ -134,7 +127,7 @@ int execute_pipeline(t_cmd *pipeline)
 	{
 		free(child_pids);
 		free_pipeline(pipeline);
-		exit(last_status); // Exit the shell with the last command's status
+		exit(last_status);
 	}
 
 	free(child_pids);

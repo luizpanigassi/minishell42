@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:59:44 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/22 17:05:56 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:38:27 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ int create_heredoc(const char *delimiter)
 	}
 	if (pid == 0) // Child process
 	{
-		close(pipefd[0]); // Close read end in child
+		close(pipefd[0]);
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_IGN);
 		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
@@ -63,7 +63,7 @@ int create_heredoc(const char *delimiter)
 			}
 			else
 				write(pipefd[1], line, strlen(line));
-			write(pipefd[1], "\n", 1); // Add newline after each line
+			write(pipefd[1], "\n", 1);
 			free(line);
 		}
 		close(pipefd[1]); // Close write end in child
@@ -71,13 +71,13 @@ int create_heredoc(const char *delimiter)
 	}
 	else // Parent process
 	{
-		close(pipefd[1]); // Close write end in parent
+		close(pipefd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
 		{
 			close(pipefd[0]);
 			return (-1); // Return error if interrupted
 		}
-		return (pipefd[0]); // Return read end of the pipe
+		return (pipefd[0]);
 	}
 }

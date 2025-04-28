@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 17:28:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:40:42 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,7 +110,6 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			return (perror("minishell"), -1);
 		close(pipe_out);
 	}
-
 	// Handle file redirections
 	t_redir *current = redirections;
 	while (current)
@@ -128,8 +127,8 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 		if (fd == -1)
 		{
 			perror("minishell");
-			set_exit_status(1); // Set status before exit
-			exit(EXIT_FAILURE); // Exit child immediately
+			set_exit_status(1);
+			exit(EXIT_FAILURE);
 		}
 		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
 		{
@@ -208,7 +207,7 @@ int main(void)
 
 			if (parser.syntax_error)
 			{
-				// Handle parsing errors (e.g., unmatched quotes)
+				// Handle parsing errors
 				syntax_error_flag = 1;
 				set_exit_status(SYNTAX_ERROR);
 				free_pipeline(pipeline);
@@ -217,7 +216,7 @@ int main(void)
 				continue;
 			}
 
-			// Handle builtins in parent process (e.g., exit, cd)
+			// Handle builtins in parent
 			if (!pipeline->next && is_builtin(pipeline->args))
 			{
 				int saved_stdin = dup(STDIN_FILENO);
@@ -243,7 +242,7 @@ int main(void)
 				{
 					free_pipeline(pipeline);
 					free_env_copy(env_copy);
-					break; // Exit loop to terminate shell
+					break; // Terminate shell
 				}
 			}
 			else
@@ -254,8 +253,6 @@ int main(void)
 			free_pipeline(pipeline);
 			i++;
 		}
-
-		// Free commands array
 		if (commands)
 		{
 			char **ptr = commands;

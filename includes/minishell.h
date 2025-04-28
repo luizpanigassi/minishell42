@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 15:50:43 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 18:36:49 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,17 +60,17 @@ typedef struct s_parse
 }	t_parse;
 
 typedef struct s_redir {
-	t_token			type;// T_REDIR_IN, T_REDIR_OUT, etc.
-	char			*filename;// Target file
-	struct s_redir	*next;// For multiple redirections
-	int heredoc_quoted;  // For quoted delimiter tracking
-	int				fd; // File descriptor for redirection
+	t_token			type;
+	char			*filename;
+	struct s_redir	*next;
+	int				heredoc_quoted;
+	int				fd;
 }	t_redir;
 
 typedef struct s_cmd {
-	char			**args; // Command arguments (e.g., ["ls", "-l"])
-	t_redir			*redirections; // List of redirections
-	struct s_cmd	*next; // For pipe
+	char			**args;
+	t_redir			*redirections;
+	struct s_cmd	*next;
 }	t_cmd;
 
 typedef struct s_arg {
@@ -84,7 +84,7 @@ typedef struct s_export_params {
 	char	*arg;
 }	t_export_params;
 
-typedef struct	s_exec_vars {
+typedef struct s_exec_vars {
 	int		prev_pipe[2];
 	int		next_pipe[2];
 	pid_t	*child_pids;
@@ -158,7 +158,6 @@ char	**split_with_quotes(const char *str, char delim);
 void	update_quote_state(char c, int *in_quote, char *quote_char);
 void	add_substring(char ***result, int *count,
 			const char *start, const char *end);
-
 
 // Helper functions for parsing
 int		ft_isspace(int c);
