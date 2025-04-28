@@ -46,6 +46,7 @@ typedef struct s_parse
 	t_token	token_type;
 	char	*token_value;
 	int		redir_fd;
+	int		syntax_error;
 }	t_parse;
 
 typedef struct s_redir {
@@ -122,6 +123,7 @@ t_cmd	*parse_args(t_parse *p);
 int		create_heredoc(const char *delimiter);
 int		is_redirection(t_token type);
 t_cmd	*parse_pipeline(t_parse *p);
+void	handle_special(t_parse *p);
 
 // UTILS
 void	ft_free_array(char **array);
@@ -173,18 +175,18 @@ builtin.c:
 
 #include "minishell.h"
 
-extern volatile sig_atomic_t	g_exit_status;
+extern volatile sig_atomic_t g_exit_status;
 
 /*
 ** Checks if a command is a builtin
 ** @param tokens Array of command tokens
 ** @return 1 if builtin, 0 otherwise
 */
-int	is_builtin(char **tokens)
+int is_builtin(char **tokens)
 {
-	const char	*builtins[] = {"echo", "cd", "pwd", "export",
-		"unset", "env", "exit", NULL};
-	int			i;
+	const char *builtins[] = {"echo", "cd", "pwd", "export",
+							  "unset", "env", "exit", NULL};
+	int i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -203,7 +205,7 @@ int	is_builtin(char **tokens)
 ** @param args Command arguments
 ** @return Exit status of the builtin command
 */
-int	exec_builtin(char **args)
+int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -230,31 +232,43 @@ int	exec_builtin(char **args)
 ** @param original Original environment array
 ** @return New allocated copy of the environment
 */
-char	**ft_copy_env(char **original)
+char **ft_copy_env(char **original)
 {
-	char	**copy;
-	int		i;
+	char **copy;
+	int i;
+	int count;
 
-	if (!original)
+	if (!original) // Add null check for original array
 		return (NULL);
-	i = 0;
-	while (original[i])
-		i++;
-	copy = malloc(sizeof(char *) * (i + 1));
+
+	// First pass: count valid entries
+	count = 0;
+	while (original[count] != NULL)
+		count++;
+
+	// Allocate space including NULL terminator
+	copy = malloc(sizeof(char *) * (count + 1));
 	if (!copy)
 		return (NULL);
+
+	// Second pass: copy valid strings
 	i = 0;
-	while (original[i])
+	while (i < count)
 	{
-		copy[i] = ft_strdup(original[i]);
-		if (!copy[i])
+		if (original[i] != NULL) // Additional safety check
 		{
-			ft_free_array(copy);
-			return (NULL);
+			copy[i] = ft_strdup(original[i]);
+			if (!copy[i])
+			{
+				ft_free_array(copy);
+				return (NULL);
+			}
 		}
+		else
+			copy[i] = NULL;
 		i++;
 	}
-	copy[i] = NULL;
+	copy[count] = NULL; // Explicit NULL termination
 	return (copy);
 }
 
@@ -264,12 +278,12 @@ char	**ft_copy_env(char **original)
  * @param var Variable name (ownership transferred).
  * @param value Variable value (ownership transferred).
  */
-void	update_env_var(char *var, char *value)
+void update_env_var(char *var, char *value)
 {
-	extern char	**environ;
-	char		*new_entry;
-	char		*eq;
-	char		**env_ptr;
+	extern char **environ;
+	char *new_entry;
+	char *eq;
+	char **env_ptr;
 
 	new_entry = NULL;
 	if (value)
@@ -284,12 +298,12 @@ void	update_env_var(char *var, char *value)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			return ;
+			return;
 		}
 		env_ptr++;
 	}
 	environ = ft_array_append(environ, new_entry);
-	free (var);
+	free(var);
 	if (value)
 		free(value);
 }
@@ -298,12 +312,12 @@ void	update_env_var(char *var, char *value)
 ** Ensures a variable exists in the environment (without value if not present)
 ** @param var_name Variable name to check/export
 */
-void	ensure_var_exported(char *var_name)
+void ensure_var_exported(char *var_name)
 {
-	extern char	**environ;
-	char		**env_ptr;
-	int			exists;
-	char		*eq;
+	extern char **environ;
+	char **env_ptr;
+	int exists;
+	char *eq;
 
 	exists = 0;
 	env_ptr = environ;
@@ -395,7 +409,7 @@ int	handle_cd_arguments(char **args, char *oldpwd)
 	return (0);
 }
 
-exec_echo.c:
+exec_echo.c
 
 #include "minishell.h"
 
@@ -677,66 +691,66 @@ create_heredoc.c:
  */
 int create_heredoc(const char *delimiter)
 {
-    int     pipefd[2];
-    pid_t   pid;
-    int     status;
-    char    *line;
-    int     quoted_delimiter;
-    char    *expanded;
+	int pipefd[2];
+	pid_t pid;
+	int status;
+	char *line;
+	int quoted_delimiter;
+	char *expanded;
 
-    if (pipe(pipefd) < 0)
-        return (-1);
-    pid = fork();
-    if (pid == -1)
-    {
-        close(pipefd[0]);
-        close(pipefd[1]);
-        return (-1);
-    }
-    if (pid == 0) // Child process
-    {
-        close(pipefd[0]); // Close read end in child
-        signal(SIGINT, SIG_DFL);
-        signal(SIGQUIT, SIG_IGN);
-        quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
-        while (1)
-        {
-            line = readline("> ");
-            if (!line) // Handle Ctrl+D
-            {
-                write(STDOUT_FILENO, "\n", 1);
-                break;
-            }
-            if (strcmp(line, delimiter) == 0) // End of heredoc
-            {
-                free(line);
-                break;
-            }
-            if (!quoted_delimiter)
-            {
-                expanded = expand_variables(line);
-                write(pipefd[1], expanded, strlen(expanded));
-                free(expanded);
-            }
-            else
-                write(pipefd[1], line, strlen(line));
-            write(pipefd[1], "\n", 1); // Add newline after each line
-            free(line);
-        }
-        close(pipefd[1]); // Close write end in child
-        exit(0);
-    }
-    else // Parent process
-    {
-        close(pipefd[1]); // Close write end in parent
-        waitpid(pid, &status, 0);
-        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-        {
-            close(pipefd[0]);
-            return (-1); // Return error if interrupted
-        }
-        return (pipefd[0]); // Return read end of the pipe
-    }
+	if (pipe(pipefd) < 0)
+		return (-1);
+	pid = fork();
+	if (pid == -1)
+	{
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return (-1);
+	}
+	if (pid == 0) // Child process
+	{
+		close(pipefd[0]); // Close read end in child
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_IGN);
+		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
+		while (1)
+		{
+			line = readline("> ");
+			if (!line) // Handle Ctrl+D
+			{
+				write(STDOUT_FILENO, "\n", 1);
+				break;
+			}
+			if (strcmp(line, delimiter) == 0) // End of heredoc
+			{
+				free(line);
+				break;
+			}
+			if (!quoted_delimiter)
+			{
+				expanded = expand_variables(line);
+				write(pipefd[1], expanded, strlen(expanded));
+				free(expanded);
+			}
+			else
+				write(pipefd[1], line, strlen(line));
+			write(pipefd[1], "\n", 1); // Add newline after each line
+			free(line);
+		}
+		close(pipefd[1]); // Close write end in child
+		exit(0);
+	}
+	else // Parent process
+	{
+		close(pipefd[1]); // Close write end in parent
+		waitpid(pid, &status, 0);
+		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+		{
+			close(pipefd[0]);
+			return (-1); // Return error if interrupted
+		}
+		return (pipefd[0]); // Return read end of the pipe
+	}
 }
 
 exit_status.c:
@@ -861,7 +875,6 @@ int execute_pipeline(t_cmd *pipeline)
 	int next_pipe[2] = {-1, -1};
 	pid_t *child_pids;
 	int cmd_count = ft_cmd_size(pipeline);
-	int status;
 	int i = 0;
 
 	if (cmd_count == 0)
@@ -956,20 +969,12 @@ int execute_pipeline(t_cmd *pipeline)
 	int child_count = 0;
 	while (child_count < cmd_count)
 	{
-		int wpid = waitpid(-1, &status, 0);
-		if (wpid == -1)
-		{
-			if (errno == ECHILD)
-				break;
-			if (errno == EINTR)
-				continue;
-			perror("minishell: waitpid");
-			break;
-		}
-
-		// Update status for last command
-		if (WIFEXITED(status) && child_count == cmd_count)
+		int status;
+		waitpid(child_pids[child_count], &status, 0);
+		if (WIFEXITED(status))
 			last_status = WEXITSTATUS(status);
+		else if (WIFSIGNALED(status))
+			last_status = 128 + WTERMSIG(status);
 		child_count++;
 	}
 	// Check if the last command in the pipeline was "exit"
@@ -989,6 +994,62 @@ int execute_pipeline(t_cmd *pipeline)
 	return last_status;
 }
 
+handle_special.c:
+
+#include "minishell.h"
+
+static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
+{
+	p->token_type = t;
+	p->token_value = ft_strdup(v);
+	if (n)
+		next_char(p);
+}
+
+static void	handle_file_descriptor(t_parse *p)
+{
+	int		fd;
+	char	*fd_str;
+
+	fd = 0;
+	if (ft_isdigit(p->curr_char))
+	{
+		fd_str = parse_fd(p);
+		fd = ft_atoi(fd_str);
+		free(fd_str);
+		p->redir_fd = fd;
+	}
+}
+
+static void	handle_output_redirection(t_parse *p)
+{
+	next_char(p);
+	if (p->curr_char == '>')
+		assign_value(p, T_APPEND, ">>", 1);
+	else
+		assign_value(p, T_REDIR_OUT, ">", 0);
+}
+
+static void	handle_input_redirection(t_parse *p)
+{
+	next_char(p);
+	if (p->curr_char == '<')
+		assign_value(p, T_HEREDOC, "<<", 1);
+	else
+		assign_value(p, T_REDIR_IN, "<", 0);
+}
+
+void	handle_special(t_parse *p)
+{
+	handle_file_descriptor(p);
+	if (p->curr_char == '|')
+		assign_value(p, T_PIPE, "|", 1);
+	else if (p->curr_char == '>')
+		handle_output_redirection(p);
+	else if (p->curr_char == '<')
+		handle_input_redirection(p);
+}
+
 init_parser.c:
 
 #include <minishell.h>
@@ -1006,6 +1067,7 @@ void	init_parser(t_parse *p, char *input)
 	p->token_type = T_EOF;
 	p->token_value = NULL;
 	p->redir_fd = 0;
+	p->syntax_error = 0;
 }
 
 input.c:
@@ -1148,17 +1210,17 @@ main.c:
 
 #include "minishell.h"
 
-volatile sig_atomic_t	g_exit_status = 0;
+volatile sig_atomic_t g_exit_status = 0;
 
 /**
  * @brief Frees a command pipeline and associated resources.
  * @param pipeline Linked list of command structures.
  */
-void	free_pipeline(t_cmd *pipeline)
+void free_pipeline(t_cmd *pipeline)
 {
-	t_cmd	*current;
-	t_redir	*redir;
-	t_redir	*tmp_redir;
+	t_cmd *current;
+	t_redir *redir;
+	t_redir *tmp_redir;
 
 	while (pipeline)
 	{
@@ -1185,11 +1247,11 @@ void	free_pipeline(t_cmd *pipeline)
  * @param pipe_in Input file descriptor (or -1).
  * @param pipe_out Output file descriptor (or -1).
  */
-void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
-	pid_t		pid;
-	extern char	**environ;
-	char		*cmd_path;
+	pid_t pid;
+	extern char **environ;
+	char *cmd_path;
 
 	pid = fork();
 	if (pid == 0)
@@ -1253,7 +1315,7 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	{
 		int fd = -1;
 		if (current->type == T_HEREDOC)
-			fd = create_heredoc(current->filename);
+			fd = current->fd;
 		else if (current->type == T_REDIR_IN)
 			fd = open(current->filename, O_RDONLY);
 		else if (current->type == T_REDIR_OUT)
@@ -1296,8 +1358,7 @@ int main(void)
 	char *input;
 
 	original_environ = environ;
-	if(original_environ)
-		env_copy = ft_copy_env(environ);
+	env_copy = ft_copy_env(environ);
 	initial_env_copy = env_copy;
 	environ = env_copy;
 	setup_parent_signals();
@@ -1343,16 +1404,13 @@ int main(void)
 			t_cmd *pipeline = parse_pipeline(&parser);
 			free(trimmed_cmd);
 
-			if (!pipeline)
+			if (parser.syntax_error)
 			{
 				// Handle parsing errors (e.g., unmatched quotes)
-				if (parser.token_type == T_EOF && parser.token_value == NULL)
-				{
-					// Reset state and continue to next command
-					i++;
-					continue;
-				}
+
 				syntax_error_flag = 1;
+				set_exit_status(SYNTAX_ERROR);
+				free_pipeline(pipeline);
 				i++;
 				continue;
 			}
@@ -1420,7 +1478,183 @@ int main(void)
 	return (get_exit_status());
 }
 
-parser.c:
+parse_args.c
+
+#include "minishell.h"
+
+/* Process a single argument and add it to the args list */
+static void process_argument(t_parse *p, t_list **args)
+{
+	t_arg *arg;
+
+	arg = malloc(sizeof(t_arg));
+	arg->value = ft_strdup(p->token_value);
+	arg->type = p->token_type;
+	ft_lstadd_back(args, ft_lstnew(arg));
+}
+
+/* Handle redirection errors and return appropriate error message */
+static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
+{
+	ft_putstr_fd("minishell: syntax error near unexpected token `",
+				 STDERR_FILENO);
+	if (p->token_type == T_EOF)
+		ft_putstr_fd("newline", STDERR_FILENO);
+	else if (p->token_value)
+		ft_putstr_fd(p->token_value, STDERR_FILENO);
+	else
+		ft_putstr_fd(" ", STDERR_FILENO);
+	ft_putstr_fd("'\n", STDERR_FILENO);
+	ft_lstclear(args, free_arg);
+	free_redirections(redirs);
+	return (NULL);
+}
+
+/* Process a redirection and add it to the redirection list */
+static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
+{
+	t_redir *redir;
+
+	redir = malloc(sizeof(t_redir));
+	if (!redir)
+	{
+		ft_lstclear(args, free_arg);
+		free_redirections(redirs);
+		return (NULL);
+	}
+	redir->fd = p->redir_fd;
+	redir->type = p->token_type;
+	next_token(p);
+	if (p->token_type != T_WORD && p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED)
+	{
+		free(redir);
+		return (handle_redir_error(p, args, redirs));
+	}
+	p->redir_fd = 0;
+	redir->filename = ft_strdup(p->token_value);
+	redir->next = NULL;
+	return (redir);
+}
+
+/* Create the final command structure */
+static t_cmd *create_command(t_list *args, t_redir *redirs)
+{
+	t_cmd *cmd;
+
+	cmd = malloc(sizeof(t_cmd));
+	if (!cmd)
+	{
+		ft_lstclear(&args, free_arg);
+		free_redirections(redirs);
+		return (NULL);
+	}
+	cmd->args = build_expanded_args(args);
+	cmd->redirections = redirs;
+	cmd->next = NULL;
+	ft_lstclear(&args, free_arg);
+	return (cmd);
+}
+
+/* Main parse_args function, now using helper functions */
+t_cmd *parse_args(t_parse *p)
+{
+	t_list *args;
+	t_redir *redirs;
+	t_redir **redir_tail;
+	t_redir *new_redir;
+
+	args = NULL;
+	redirs = NULL;
+	redir_tail = &redirs;
+	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
+	{
+		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
+		{
+			if (!p->token_value)
+			{
+				// Cleanup and bail if we have NULL value from error
+				ft_lstclear(&args, free_arg);
+				free_redirections(redirs);
+				return NULL;
+			}
+			process_argument(p, &args);
+		}
+		else if (is_redirection(p->token_type))
+		{
+			new_redir = process_redirection(p, &args, redirs);
+			if (!new_redir)
+				return (NULL);
+			*redir_tail = new_redir;
+			redir_tail = &new_redir->next;
+		}
+		next_token(p);
+	}
+	return (create_command(args, redirs));
+}
+
+parse_pipeline.c
+
+#include "minishell.h"
+
+t_cmd *parse_pipeline(t_parse *p)
+{
+	t_cmd *head;
+	t_cmd **curr;
+	t_cmd *cmd;
+	char *error_token;
+
+	head = NULL;
+	curr = &head;
+	next_token(p);
+
+	// Handle empty input or immediate pipe/semicolon
+	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+	{
+		syntax_error(p->token_value ? p->token_value : "newline");
+		return NULL;
+	}
+	while (1)
+	{
+		cmd = parse_args(p);
+		// If parse_args failed due to syntax error, abort
+		if (p->syntax_error)
+		{
+			free_cmd(head);
+			return NULL;
+		}
+		// If we got a valid command, add to pipeline
+		if (cmd)
+		{
+			*curr = cmd;
+			curr = &cmd->next;
+		}
+		// Check for pipeline termination conditions
+		if (!cmd || p->token_type != T_PIPE)
+			break;
+		next_token(p);
+		// Handle consecutive pipes or pipe at end of input
+		error_token = p->token_value;
+		if (p->token_type == T_EOF)
+			error_token = "newline";
+		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
+			error_token = p->token_value;
+		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
+		{
+			syntax_error(error_token);
+			free_cmd(head);
+			return NULL;
+		}
+	}
+	// Final syntax check after pipeline parsing
+	if (p->syntax_error)
+	{
+		free_cmd(head);
+		return NULL;
+	}
+	return head;
+}
+
+parser.c
 
 #include "minishell.h"
 
@@ -1456,6 +1690,8 @@ static void	handle_quotes(t_parse *p, char quote)
 	if (!p->curr_char)
 	{
 		ft_putstr_fd("minishell: unmatched quote\n", STDERR_FILENO);
+		p->token_value = NULL;
+		p->syntax_error = 1;
 		return ;
 	}
 	content = ft_substr(p->input, start + 1, p->pos - start - 1);
@@ -1490,51 +1726,6 @@ static void	handle_word(t_parse *p)
 }
 
 /*
-** Handles special characters (|, >, <, etc.)
-** @param p Parser structure
-*/
-static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
-{
-	p->token_type = t;
-	p->token_value = ft_strdup(v);
-	if (n)
-		next_char(p);
-}
-
-static void	handle_special(t_parse *p)
-{
-	int		fd;
-	char	*fd_str;
-
-	fd = 0;
-	if (ft_isdigit(p->curr_char))
-	{
-		fd_str = parse_fd(p);
-		fd = ft_atoi(fd_str);
-		free(fd_str);
-	}
-	if (p->curr_char == '|')
-		assign_value(p, T_PIPE, "|", 1);
-	else if (p->curr_char == '>')
-	{
-		next_char(p);
-		if (p->curr_char == '>')
-			assign_value(p, T_APPEND, ">>", 1);
-		else
-			assign_value(p, T_REDIR_OUT, ">", 0);
-		p->redir_fd = fd;
-	}
-	else if (p->curr_char == '<')
-	{
-		next_char(p);
-		if (p->curr_char == '<')
-			assign_value(p, T_HEREDOC, "<<", 1);
-		else
-			assign_value(p, T_REDIR_IN, "<", 0);
-	}
-}
-
-/*
 ** Gets the next token from input
 ** @param p Parser structure
 */
@@ -1560,81 +1751,6 @@ void	next_token(t_parse *p)
 #include "minishell.h"
 
 /*
-** Parses command arguments and redirections
-** @param p Parser structure
-** @return Command structure with arguments and redirections
-*/
-t_cmd	*parse_args(t_parse *p)
-{
-	t_list	*args;
-	t_redir	*redirs;
-	t_redir	**redir_tail;
-	t_arg	*arg;
-	t_redir	*redir;
-	t_cmd	*cmd;
-
-	args = NULL;
-	redirs = NULL;
-	redir_tail = &redirs;
-	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
-	{
-		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
-		{
-			arg = malloc(sizeof(t_arg));
-			arg->value = ft_strdup(p->token_value);
-			arg->type = p->token_type;
-			ft_lstadd_back(&args, ft_lstnew(arg));
-		}
-		else if (is_redirection(p->token_type))
-		{
-			redir = malloc(sizeof(t_redir));
-			redir->fd = p->redir_fd;
-			if (!redir)
-			{
-				ft_lstclear(&args, free_arg);
-				return (NULL);
-			}
-			redir->type = p->token_type;
-			next_token(p);
-			if (p->token_type != T_WORD &&
-				p->token_type != T_SINGLE_QUOTED &&
-				p->token_type != T_DOUBLE_QUOTED)
-			{
-				ft_putstr_fd("minishell: syntax error near unexpected token `", STDERR_FILENO);
-				if (p->token_type == T_EOF)
-					ft_putstr_fd("newline", STDERR_FILENO);
-				else if (p->token_value)
-					ft_putstr_fd(p->token_value, STDERR_FILENO);
-				else
-					ft_putstr_fd(" ", STDERR_FILENO);
-				ft_putstr_fd("'\n", STDERR_FILENO);
-				free(redir);
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return (NULL);
-			}
-			p->redir_fd = 0;
-			redir->filename = ft_strdup(p->token_value);
-			redir->next = NULL;
-			*redir_tail = redir;
-			redir_tail = &redir->next;
-		}
-		next_token(p);
-	}
-	cmd = malloc(sizeof(t_cmd));
-	if (!cmd)
-	{
-		ft_lstclear(&args, free_arg);
-		return (NULL);
-	}
-	cmd->args = build_expanded_args(args);
-	cmd->redirections = redirs;
-	cmd->next = NULL;
-	ft_lstclear(&args, free_arg);
-	return (cmd);
-}
-
-/*
 ** Checks if a token type is a redirection
 ** @param type Token type to check
 ** @return 1 if redirection, 0 otherwise
@@ -1643,51 +1759,6 @@ int	is_redirection(t_token type)
 {
 	return (type == T_REDIR_IN || type == T_REDIR_OUT
 		|| type == T_APPEND || type == T_HEREDOC);
-}
-
-/*
-** Parses a pipeline of commands
-** @param p Parser structure
-** @return Linked list of command structures
-*/
-t_cmd	*parse_pipeline(t_parse *p)
-{
-	t_cmd	*head;
-	t_cmd	**curr;
-	t_cmd	*cmd;
-	char	*error_token;
-
-	head = NULL;
-	curr = &head;
-	next_token(p);
-	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
-	{
-		syntax_error(p->token_value);
-		return (NULL);
-	}
-	while (1)
-	{
-		cmd = parse_args(p);
-		if (!cmd)
-			break ;
-		*curr = cmd;
-		curr = &cmd->next;
-		if (p->token_type != T_PIPE)
-			break ;
-		next_token(p);
-		error_token = p->token_value;
-		if (p->token_type == T_EOF)
-			error_token = "newline";
-		else if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
-			error_token = p->token_value;
-		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
-		{
-			syntax_error(error_token);
-			free_cmd(head);
-			return (NULL);
-		}
-	}
-	return (head);
 }
 
 /**
@@ -1719,8 +1790,7 @@ char	**build_expanded_args(t_list *args)
 	return (arr);
 }
 
-
-signals.c:
+signals.c
 
 #include "minishell.h"
 
@@ -1768,8 +1838,7 @@ void	setup_heredoc_signals(void)
 	signal(SIGQUIT, SIG_IGN);
 }
 
-
-utils.c:
+utils.c
 
 #include "minishell.h"
 
@@ -1859,8 +1928,6 @@ char	**list_to_array(t_list *lst)
 	arr[i] = NULL;
 	return (arr);
 }
-
-#include "minishell.h"
 
 /*
 ** Frees a command structure
@@ -1977,8 +2044,6 @@ void	print_export_declarations(void)
 	}
 }
 
-#include "minishell.h"
-
 /*
 ** Safe strlen that returns size_t
 ** @param str String to measure
@@ -2073,8 +2138,6 @@ char	*ft_strjoin_free(char *s1, const char *s2)
 	return (result);
 }
 
-#include "minishell.h"
-
 /**
  * @brief Safely appends a character to a string.
  * @param str Original string (freed after appending).
@@ -2157,8 +2220,6 @@ void	syntax_error(char *token)
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	set_exit_status(SYNTAX_ERROR);
 }
-
-#include "minishell.h"
 
 char	*parse_fd(t_parse *p)
 {

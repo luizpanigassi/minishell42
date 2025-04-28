@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 16:06:54 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 17:28:47 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,10 +209,10 @@ int main(void)
 			if (parser.syntax_error)
 			{
 				// Handle parsing errors (e.g., unmatched quotes)
-
 				syntax_error_flag = 1;
 				set_exit_status(SYNTAX_ERROR);
 				free_pipeline(pipeline);
+				pipeline = NULL;
 				i++;
 				continue;
 			}

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 16:05:50 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/28 17:28:07 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,12 @@ static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 				 STDERR_FILENO);
 	if (p->token_type == T_EOF)
 		ft_putstr_fd("newline", STDERR_FILENO);
-	else if (p->token_value)
-		ft_putstr_fd(p->token_value, STDERR_FILENO);
 	else
-		ft_putstr_fd(" ", STDERR_FILENO);
+		ft_putstr_fd(p->token_value, STDERR_FILENO);
 	ft_putstr_fd("'\n", STDERR_FILENO);
 	ft_lstclear(args, free_arg);
 	free_redirections(redirs);
+	p->syntax_error = 1;
 	return (NULL);
 }
 
@@ -55,7 +54,8 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	redir->fd = p->redir_fd;
 	redir->type = p->token_type;
 	next_token(p);
-	if (p->token_type != T_WORD && p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED)
+	if (!p->token_value || (p->token_type != T_WORD &&
+							p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
 	{
 		free(redir);
 		return (handle_redir_error(p, args, redirs));
