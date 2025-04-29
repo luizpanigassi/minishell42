@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 18:41:21 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 19:24:48 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@
  * @param args Argument list accumulator.
  * @note Handles quoted and unquoted argument types.
  */
-void process_argument(t_parse *p, t_list **args)
+void	process_argument(t_parse *p, t_list **args)
 {
-	t_arg *arg;
+	t_arg	*arg;
 
 	arg = malloc(sizeof(t_arg));
 	arg->value = ft_strdup(p->token_value);
@@ -36,10 +36,10 @@ void process_argument(t_parse *p, t_list **args)
  * @return Always returns NULL.
  * @note Performs full cleanup on syntax error detection.
  */
-t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
+t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `",
-				 STDERR_FILENO);
+		STDERR_FILENO);
 	if (p->token_type == T_EOF)
 		ft_putstr_fd("newline", STDERR_FILENO);
 	else
@@ -59,9 +59,9 @@ t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
  * @return New redirection node or NULL on error.
  * @note Handles syntax validation for redirection targets.
  */
-t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
+t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 {
-	t_redir *redir;
+	t_redir	*redir;
 
 	redir = malloc(sizeof(t_redir));
 	if (!redir)
@@ -73,8 +73,8 @@ t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	redir->fd = p->redir_fd;
 	redir->type = p->token_type;
 	next_token(p);
-	if (!p->token_value || (p->token_type != T_WORD &&
-							p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
+	if (!p->token_value || (p->token_type != T_WORD && p->token_type
+			!= T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
 	{
 		free(redir);
 		return (handle_redir_error(p, args, redirs));
@@ -92,9 +92,9 @@ t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
  * @return Allocated command structure.
  * @note Transforms linked lists into arrays for execution.
  */
-t_cmd *create_command(t_list *args, t_redir *redirs)
+t_cmd	*create_command(t_list *args, t_redir *redirs)
 {
-	t_cmd *cmd;
+	t_cmd	*cmd;
 
 	cmd = malloc(sizeof(t_cmd));
 	if (!cmd)
@@ -110,41 +110,59 @@ t_cmd *create_command(t_list *args, t_redir *redirs)
 	return (cmd);
 }
 
+int	handle_argument_token(t_parse *p, t_list **args, t_redir *redirs)
+{
+	if (!p->token_value)
+	{
+		ft_lstclear(args, free_arg);
+		free_redirections(redirs);
+		return (0);
+	}
+	process_argument(p, args);
+	return (1);
+}
+
+int	handle_redirection_token(t_parse *p, t_list **args,
+	t_redir **redir_tail, t_redir *redirs)
+{
+	t_redir	*new_redir;
+
+	new_redir = process_redirection(p, args, redirs);
+	if (!new_redir)
+		return (0);
+	*redir_tail = new_redir;
+	redir_tail = &new_redir->next;
+	return (1);
+}
+
 /**
  * @brief Core command argument parser.
  * @param p Parser state.
  * @return Complete command structure.
  * @note Handles words, redirections, and syntax error detection.
  */
-t_cmd *parse_args(t_parse *p)
+t_cmd	*parse_args(t_parse *p)
 {
-	t_list *args;
-	t_redir *redirs;
-	t_redir **redir_tail;
-	t_redir *new_redir;
+	t_list	*args;
+	t_redir	*redirs;
+	t_redir	**redir_tail;
 
-	args = NULL;
-	redirs = NULL;
 	redir_tail = &redirs;
-	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
+	redirs = NULL;
+	args = NULL;
+	while (p->token_type != T_EOF && p->token_type != T_PIPE
+		&& p->token_type != T_SEMICOLON)
 	{
-		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
+		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED
+			|| p->token_type == T_DOUBLE_QUOTED)
 		{
-			if (!p->token_value)
-			{
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return NULL;
-			}
-			process_argument(p, &args);
+			if (!handle_argument_token(p, &args, redirs))
+				return (NULL);
 		}
 		else if (is_redirection(p->token_type))
 		{
-			new_redir = process_redirection(p, &args, redirs);
-			if (!new_redir)
+			if (!handle_redirection_token(p, &args, redir_tail, redirs))
 				return (NULL);
-			*redir_tail = new_redir;
-			redir_tail = &new_redir->next;
 		}
 		next_token(p);
 	}

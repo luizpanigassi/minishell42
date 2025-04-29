@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 15:45:26 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 19:25:49 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ int main(void)
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			ft_putstr_fd("exit\n", STDOUT_FILENO);
+			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
 			should_exit = 1;
 			break;
 		}

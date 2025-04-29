@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:19:11 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 19:13:23 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,6 @@ int execute_pipeline(t_cmd *pipeline)
 			free(child_pids);
 			return 1;
 		}
-
 		pid_t pid = fork();
 		if (pid == 0) // Child
 		{
@@ -75,7 +74,6 @@ int execute_pipeline(t_cmd *pipeline)
 				close(next_pipe[0]);
 			if (next_pipe[1] != -1)
 				close(next_pipe[1]);
-
 			if (is_builtin(current->args))
 				exit(exec_builtin(current->args));
 			else
