@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:31:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 15:45:26 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,26 +155,24 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 int main(void)
 {
 	extern char **environ;
-	char **env_copy;
-	char **original_environ;
-	char **initial_env_copy;
+	char **original_environ = environ;
+	char **env_copy = ft_copy_env(environ);
 	char *input;
+	int exit_status = 0;
+	int should_exit = 0;
 
-	original_environ = environ;
-	env_copy = ft_copy_env(environ);
-	initial_env_copy = env_copy;
+	// Use our environment copy
 	environ = env_copy;
 	setup_parent_signals();
-	while (1)
+
+	while (!should_exit)
 	{
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			environ = original_environ;
-			free_env_copy(env_copy);
-			rl_clear_history();
-			write(STDOUT_FILENO, "Exiting minishell, goodbye!\n", 28);
-			return (get_exit_status());
+			ft_putstr_fd("exit\n", STDOUT_FILENO);
+			should_exit = 1;
+			break;
 		}
 
 		if (ft_strlen(input) > 0)
@@ -190,11 +188,9 @@ int main(void)
 		int syntax_error_flag = 0;
 		int i = 0;
 
-		while (commands && commands[i] && !syntax_error_flag)
+		while (commands && commands[i] && !syntax_error_flag && !should_exit)
 		{
 			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
-
-			// Check for empty command (e.g., ";" or " | ")
 			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
 				free(trimmed_cmd);
@@ -209,11 +205,15 @@ int main(void)
 
 			if (parser.syntax_error)
 			{
-				// Handle parsing errors
 				syntax_error_flag = 1;
 				set_exit_status(SYNTAX_ERROR);
 				free_pipeline(pipeline);
-				pipeline = NULL;
+				i++;
+				continue;
+			}
+
+			if (!pipeline)
+			{
 				i++;
 				continue;
 			}
@@ -225,56 +225,54 @@ int main(void)
 				int saved_stdout = dup(STDOUT_FILENO);
 				int saved_stderr = dup(STDERR_FILENO);
 
-				if (handle_redirections(-1, -1, pipeline->redirections) != 0)
-					set_exit_status(1);
-				else
+				if (handle_redirections(-1, -1, pipeline->redirections) == 0)
 				{
 					int result = exec_builtin(pipeline->args);
 					set_exit_status(result);
-					env_copy = environ;
-					dup2(saved_stdin, STDIN_FILENO);
-					dup2(saved_stdout, STDOUT_FILENO);
-					dup2(saved_stderr, STDERR_FILENO);
 				}
+
+				dup2(saved_stdin, STDIN_FILENO);
+				dup2(saved_stdout, STDOUT_FILENO);
+				dup2(saved_stderr, STDERR_FILENO);
 				close(saved_stdin);
 				close(saved_stdout);
 				close(saved_stderr);
-
-				if (ft_strcmp(pipeline->args[0], "exit") == 0 && get_exit_status() != 1)
-				{
-					free_pipeline(pipeline);
-					free_env_copy(env_copy);
-					break; // Terminate shell
-				}
 			}
 			else
 			{
-				execute_pipeline(pipeline);
+				int pipeline_status = execute_pipeline(pipeline);
+				if (pipeline_status == EXIT_CODE_EXIT)
+				{
+					should_exit = 1;
+					exit_status = get_exit_status();
+				}
 			}
 
 			free_pipeline(pipeline);
 			i++;
 		}
+
 		if (commands)
 		{
 			char **ptr = commands;
 			while (*ptr)
-			{
-				free(*ptr);
-				ptr++;
-			}
+				free(*ptr++);
 			free(commands);
 		}
 
 		if (syntax_error_flag)
 			set_exit_status(SYNTAX_ERROR);
-
-		setup_parent_signals();
 	}
-	free_env_copy(env_copy);
-	if (initial_env_copy != env_copy)
-		free_env_copy(initial_env_copy);
-	environ = original_environ;
+
+	// Cleanup sequence
 	rl_clear_history();
-	return (get_exit_status());
+
+	// Restore original environment before exit
+	environ = original_environ;
+
+	// Free our environment copy if it exists
+	if (env_copy)
+		free_env_copy(env_copy);
+
+	return exit_status;
 }

@@ -176,11 +176,12 @@ builtin.c
 
 extern volatile sig_atomic_t g_exit_status;
 
-/*
-** Checks if a command is a builtin
-** @param tokens Array of command tokens
-** @return 1 if builtin, 0 otherwise
-*/
+/**
+ * @brief Checks if a command is a builtin command.
+ * @param tokens Array of command tokens to check.
+ * @return 1 if the command is a builtin, 0 otherwise.
+ * @note Checks against predefined list of builtin commands.
+ */
 int is_builtin(char **tokens)
 {
 	const char *builtins[] = {"echo", "cd", "pwd", "export",
@@ -199,11 +200,12 @@ int is_builtin(char **tokens)
 	return (0);
 }
 
-/*
-** Executes the appropriate builtin function based on command
-** @param args Command arguments
-** @return Exit status of the builtin command
-*/
+/**
+ * @brief Executes the appropriate builtin function.
+ * @param args Command arguments including builtin name.
+ * @return Exit status of the executed builtin.
+ * @note Dispatches to specific builtin implementations based on first argument.
+ */
 int exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
@@ -226,11 +228,12 @@ int exec_builtin(char **args)
 	return (0);
 }
 
-/*
-** Creates a copy of the environment variables array
-** @param original Original environment array
-** @return New allocated copy of the environment
-*/
+/**
+ * @brief Creates a deep copy of the environment variables array.
+ * @param original Original environment array to copy.
+ * @return New allocated copy of environment variables.
+ * @note Caller must free the returned array with free_env_copy().
+ */
 char **ft_copy_env(char **original)
 {
 	char **copy;
@@ -326,11 +329,12 @@ exec_cd.c
 
 #include "minishell.h"
 
-/*
-** Changes the current directory
-** @param args Command arguments (args[1] is the target directory)
-** @return 0 on success, 1 on failure
-*/
+/**
+ * @brief Changes the current working directory.
+ * @param args Command arguments (args[1] is target directory).
+ * @return 0 on success, 1 on failure.
+ * @note Updates PWD and OLDPWD environment variables.
+ */
 int	exec_cd(char **args)
 {
 	char	*oldpwd;
@@ -353,6 +357,14 @@ int	exec_cd(char **args)
 	free(newpwd);
 	return (0);
 }
+
+/**
+ * @brief Handles argument validation and path resolution for cd command.
+ * @param args Command arguments array.
+ * @param oldpwd Current working directory before change.
+ * @return 0 on success, 1 on error.
+ * @note Manages ~, -, and empty argument special cases.
+ */
 
 int	handle_cd_arguments(char **args, char *oldpwd)
 {
@@ -401,11 +413,12 @@ exec_echo.c
 
 #include "minishell.h"
 
-/*
-** Prints arguments to stdout with optional newline suppression
-** @param args Command arguments (-n flag suppresses newline)
-** @return Always returns 0
-*/
+/**
+ * @brief Prints arguments to stdout with newline control.
+ * @param args Arguments to print (supports -n flag).
+ * @return Always returns 0.
+ * @note -n flag suppresses trailing newline.
+ */
 int	exec_echo(char **args)
 {
 	int	i;
@@ -433,11 +446,12 @@ exec_env.c
 
 #include "minishell.h"
 
-/*
-** Prints the current environment variables
-** @param args Ignored
-** @return Always returns 0
-*/
+/**
+ * @brief Prints environment variables to stdout.
+ * @param args Ignored parameter.
+ * @return Always returns 0.
+ * @note Uses extern environ directly.
+ */
 int	exec_env(char **args)
 {
 	extern char	**environ;
@@ -454,11 +468,12 @@ exec_exit.c
 
 #include "minishell.h"
 
-/*
-** Exits the shell with optional status code
-** @param args Command arguments (args[1] is optional exit status)
-** @return Does not return on success, returns 1 if too many arguments
-*/
+/**
+ * @brief Terminates the shell with optional status code.
+ * @param args Command arguments (optional exit code).
+ * @return Special exit code (4242) or error status.
+ * @note Handles numeric validation and cleanup before exit.
+ */
 int	exec_exit(char **args)
 {
 	int	status;
@@ -492,9 +507,10 @@ exec_export.c
 #include "minishell.h"
 
 /**
- * @brief Executes the 'export' builtin to set environment variables.
- * @param args Array of arguments (e.g., ["export", "VAR=value"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
+ * @brief Manages environment variable export operations.
+ * @param args Variables to export in NAME=value format.
+ * @return 0 on success, 1 for invalid variables.
+ * @note Updates or adds variables to environment.
  */
 int	exec_export(char **args)
 {
@@ -514,6 +530,14 @@ int	exec_export(char **args)
 	return (ret);
 }
 
+/**
+ * @brief Validates and handles invalid variable names during export.
+ * @param var_name Variable name to validate.
+ * @param value Associated value (if any).
+ * @param params Export parameters container.
+ * @return 1 if invalid, 0 if valid.
+ * @note Prints error message and cleans up memory on invalidation.
+ */
 int	handle_invalid_identifier(char *var_name, char *value,
 		t_export_params params)
 {
@@ -529,6 +553,14 @@ int	handle_invalid_identifier(char *var_name, char *value,
 	return (1);
 }
 
+/**
+ * @brief Validates and processes individual export arguments.
+ * @param arg Argument string to process.
+ * @param i Pointer to current argument index.
+ * @param ret Pointer to return status accumulator.
+ * @return 1 if invalid identifier, 0 otherwise.
+ * @note Handles both assignment and declaration cases.
+ */
 int	handle_export_argument(char *arg, int *i, int *ret)
 {
 	char			*eq_pos;
@@ -560,11 +592,12 @@ exec_pwd.c
 
 #include "minishell.h"
 
-/*
-** Prints the current working directory
-** @param args Ignored
-** @return 0 on success, 1 on failure
-*/
+/**
+ * @brief Prints current working directory.
+ * @param args Ignored parameter.
+ * @return 0 on success, 1 on error.
+ * @note Uses getcwd() system call.
+ */
 int	exec_pwd(char **args)
 {
 	char	*cwd;
@@ -594,6 +627,12 @@ exec_unset.c
 
 #include "minishell.h"
 
+/**
+ * @brief Validates variable name for unset operation.
+ * @param arg Variable name to check.
+ * @return 1 if invalid, 0 if valid.
+ * @note Prints formatted error message for invalid names.
+ */
 static int	handle_unset_error(char *arg)
 {
 	if (is_valid_var_name(arg))
@@ -604,6 +643,11 @@ static int	handle_unset_error(char *arg)
 	return (1);
 }
 
+/**
+ * @brief Shifts environment array elements after removal.
+ * @param env_ptr Pointer to start position in environment array.
+ * @note Modifies environment array in-place after variable removal.
+ */
 static void	shift_environment(char **env_ptr)
 {
 	char	**ptr;
@@ -615,7 +659,11 @@ static void	shift_environment(char **env_ptr)
 		ptr++;
 	}
 }
-
+/**
+ * @brief Removes environment variable from global environ.
+ * @param var_name Name of variable to remove.
+ * @note Directly modifies the environ array.
+ */
 static void	remove_env_var(const char *var_name)
 {
 	extern char	**environ;
@@ -644,9 +692,10 @@ static void	remove_env_var(const char *var_name)
 }
 
 /**
- * @brief Executes the 'unset' builtin to remove environment variables.
- * @param args Array of arguments (e.g., ["unset", "VAR"]).
- * @return 0 on success, 1 if any invalid variable name is encountered.
+ * @brief Removes environment variables.
+ * @param args Variables to unset.
+ * @return 0 on success, 1 for invalid names.
+ * @note Modifies environ array directly.
  */
 int	exec_unset(char **args)
 {
@@ -673,10 +722,10 @@ create_heredoc.c
 #include <minishell.h>
 
 /**
- * @brief Creates a temporary heredoc file.
+ * @brief Creates temporary file for heredoc input.
  * @param delimiter Heredoc termination string.
- * @return File descriptor of the heredoc temp file.
- * @note Automatically deletes the temp file after opening.
+ * @return Read-end file descriptor of pipe.
+ * @note Automatically handles variable expansion unless quoted.
  */
 int create_heredoc(const char *delimiter)
 {
@@ -742,6 +791,7 @@ int create_heredoc(const char *delimiter)
 	}
 }
 
+
 exit_status.c
 
 #include "minishell.h"
@@ -768,6 +818,13 @@ get_cmd_path.c
 
 #include "minishell.h"
 
+/**
+ * @brief Constructs full command path from directory and command name.
+ * @param dir_path Directory path component.
+ * @param cmd Command name component.
+ * @return Full path string or NULL.
+ * @note Checks execute permissions on constructed path.
+ */
 static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
 	char	*dir_slash;
@@ -786,6 +843,11 @@ static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 	return (NULL);
 }
 
+/**
+ * @brief Extracts PATH directories into array.
+ * @return Null-terminated array of directory strings.
+ * @note Splits PATH environment variable using colon delimiter.
+ */
 static char	**get_path_directories(void)
 {
 	char	*path_env;
@@ -799,7 +861,12 @@ static char	**get_path_directories(void)
 		return (NULL);
 	return (paths);
 }
-
+/**
+ * @brief Checks if command contains direct path specification.
+ * @param cmd Command string to check.
+ * @return Full path if valid direct path, NULL otherwise.
+ * @note Verifies existence and permissions of path.
+ */
 static char	*check_direct_path(char *cmd)
 {
 	if (ft_strchr(cmd, '/') != NULL)
@@ -853,11 +920,12 @@ handle_pipe.c
 
 #include "minishell.h"
 
-/*
-** Executes a pipeline of commands with proper piping
-** @param pipeline Command pipeline to execute
-** @return Exit status of the last command in pipeline
-*/
+/**
+ * @brief Manages pipeline execution with process forking.
+ * @param pipeline Linked list of commands to execute.
+ * @return Exit status of last command in pipeline.
+ * @note Handles input/output redirection between commands.
+ */
 int execute_pipeline(t_cmd *pipeline)
 {
 	int prev_pipe[2] = {-1, -1};
@@ -980,6 +1048,14 @@ handle_special.c
 
 #include "minishell.h"
 
+/**
+ * @brief Assigns token values during parsing.
+ * @param p Parser state.
+ * @param t Token type to assign.
+ * @param v Token value string.
+ * @param n Whether to advance character position.
+ * @note Manages parser state transitions for special tokens.
+ */
 static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 {
 	p->token_type = t;
@@ -988,6 +1064,11 @@ static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 		next_char(p);
 }
 
+/**
+ * @brief Processes file descriptor prefix in redirections.
+ * @param p Parser state.
+ * @note Extracts leading digits for numbered file descriptors.
+ */
 static void	handle_file_descriptor(t_parse *p)
 {
 	int		fd;
@@ -1003,6 +1084,11 @@ static void	handle_file_descriptor(t_parse *p)
 	}
 }
 
+/**
+ * @brief Handles output redirection tokens (> and >>).
+ * @param p Parser state.
+ * @note Determines between truncate (>) and append (>>) modes.
+ */
 static void	handle_output_redirection(t_parse *p)
 {
 	next_char(p);
@@ -1012,6 +1098,11 @@ static void	handle_output_redirection(t_parse *p)
 		assign_value(p, T_REDIR_OUT, ">", 0);
 }
 
+/**
+ * @brief Handles input redirection tokens (< and <<).
+ * @param p Parser state.
+ * @note Distinguishes between regular input and heredoc redirection.
+ */
 static void	handle_input_redirection(t_parse *p)
 {
 	next_char(p);
@@ -1021,6 +1112,11 @@ static void	handle_input_redirection(t_parse *p)
 		assign_value(p, T_REDIR_IN, "<", 0);
 }
 
+/**
+ * @brief Processes redirection tokens during parsing.
+ * @param p Parser state structure.
+ * @note Handles >, >>, <, << operators and file descriptors.
+ */
 void	handle_special(t_parse *p)
 {
 	handle_file_descriptor(p);
@@ -1056,10 +1152,11 @@ input.c
 
 #include "minishell.h"
 
-/*
-** Prints error message and exits
-** @param message Error message to display
-*/
+/**
+ * @brief Global error handler with exit.
+ * @param message Error description to display.
+ * @note Prints to stderr and exits with failure status.
+ */
 void	handle_error(char *message)
 {
 	perror(message);
@@ -1106,6 +1203,12 @@ static char	*expand_variable(const char *input, size_t *i)
 	return (value);
 }
 
+/**
+ * @brief Executes external programs via fork/exec.
+ * @param cmd Command structure with arguments.
+ * @note Uses PATH resolution and reports command errors.
+ */
+
 char	*expand_variables(const char *input)
 {
 	char	*result;
@@ -1134,9 +1237,9 @@ char	*expand_variables(const char *input)
 }
 
 /**
- * @brief Executes an external command in a child process.
- * @param cmd Command structure with arguments and redirections.
- * @note Terminates the process on completion or error.
+ * @brief Executes external programs via fork/exec.
+ * @param cmd Command structure with arguments.
+ * @note Uses PATH resolution and reports command errors.
  */
 void	exec_external_command(t_cmd *cmd)
 {
@@ -1268,13 +1371,14 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 	}
 }
 
-/*
-** Sets up file descriptors for I/O redirection
-** @param pipe_in Input file descriptor
-** @param pipe_out Output file descriptor
-** @param redirections List of redirection specifications
-** @return 0 on success, -1 on error
-*/
+/**
+ * @brief Applies redirection operations for command.
+ * @param pipe_in Input file descriptor.
+ * @param pipe_out Output file descriptor.
+ * @param redirections Redirection specification list.
+ * @return 0 on success, -1 on error.
+ * @note Handles heredoc, truncate, and append modes.
+ */
 int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 {
 	// Handle pipe redirections first
@@ -1326,10 +1430,11 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 	return (0);
 }
 
-/*
-** Main shell loop
-** @return Exit status of shell
-*/
+/**
+ * @brief Main shell entry point.
+ * @note Manages readline loop, signal handling, and cleanup.
+ */
+
 int main(void)
 {
 	extern char **environ;
@@ -1461,7 +1566,12 @@ parse_args.c
 
 #include "minishell.h"
 
-/* Process a single argument and add it to the args list */
+/**
+ * @brief Adds parsed argument to command structure.
+ * @param p Parser state.
+ * @param args Argument list accumulator.
+ * @note Handles quoted and unquoted argument types.
+ */
 static void process_argument(t_parse *p, t_list **args)
 {
 	t_arg *arg;
@@ -1472,7 +1582,14 @@ static void process_argument(t_parse *p, t_list **args)
 	ft_lstadd_back(args, ft_lstnew(arg));
 }
 
-/* Handle redirection errors and return appropriate error message */
+/**
+ * @brief Handles redirection syntax errors.
+ * @param p Parser state.
+ * @param args Argument list to clear.
+ * @param redirs Redirection list to clear.
+ * @return Always returns NULL.
+ * @note Performs full cleanup on syntax error detection.
+ */
 static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `",
@@ -1488,7 +1605,14 @@ static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 	return (NULL);
 }
 
-/* Process a redirection and add it to the redirection list */
+/**
+ * @brief Processes redirection tokens during parsing.
+ * @param p Parser state.
+ * @param args Argument list accumulator.
+ * @param redirs Redirection list accumulator.
+ * @return New redirection node or NULL on error.
+ * @note Handles syntax validation for redirection targets.
+ */
 static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 {
 	t_redir *redir;
@@ -1515,7 +1639,13 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	return (redir);
 }
 
-/* Create the final command structure */
+/**
+ * @brief Constructs final command structure.
+ * @param args List of parsed arguments.
+ * @param redirs List of redirections.
+ * @return Allocated command structure.
+ * @note Transforms linked lists into arrays for execution.
+ */
 static t_cmd *create_command(t_list *args, t_redir *redirs)
 {
 	t_cmd *cmd;
@@ -1534,8 +1664,12 @@ static t_cmd *create_command(t_list *args, t_redir *redirs)
 	return (cmd);
 }
 
-/* Main parse_args function, now using helper functions */
-t_cmd *parse_args(t_parse *p)
+/**
+ * @brief Core command argument parser.
+ * @param p Parser state.
+ * @return Complete command structure.
+ * @note Handles words, redirections, and syntax error detection.
+ */t_cmd *parse_args(t_parse *p)
 {
 	t_list *args;
 	t_redir *redirs;
@@ -1574,6 +1708,12 @@ parse_pipeline.c
 
 #include "minishell.h"
 
+/**
+ * @brief Converts raw input into command structures.
+ * @param p Initialized parser state.
+ * @return Parsed command structure or NULL on error.
+ * @note Handles quotes, redirections, and command chaining.
+ */
 t_cmd *parse_pipeline(t_parse *p)
 {
 	t_cmd *head;
@@ -1636,21 +1776,23 @@ parser.c
 
 #include "minishell.h"
 
-/*
-** Skips whitespace characters in input
-** @param p Parser structure
-*/
+/**
+ * @brief Advances parser past whitespace characters.
+ * @param p Parser state.
+ * @note Modifies parser position and current character.
+ */
 static void	skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
 }
 
-/*
-** Handles quoted strings in input
-** @param p Parser structure
-** @param quote Type of quote (' or ")
-*/
+/**
+ * @brief Processes quoted string tokens.
+ * @param p Parser state.
+ * @param quote Quote character (' or ").
+ * @note Handles escape characters and nested quotes.
+ */
 static void	handle_quotes(t_parse *p, char quote)
 {
 	size_t	start;
@@ -1682,10 +1824,11 @@ static void	handle_quotes(t_parse *p, char quote)
 	next_char(p);
 }
 
-/*
-** Handles regular words in input
-** @param p Parser structure
-*/
+/**
+ * @brief Processes unquoted word tokens.
+ * @param p Parser state.
+ * @note Collects characters until whitespace or special character.
+ */
 static void	handle_word(t_parse *p)
 {
 	size_t	start;
@@ -1703,10 +1846,11 @@ static void	handle_word(t_parse *p)
 	p->token_type = T_WORD;
 }
 
-/*
-** Gets the next token from input
-** @param p Parser structure
-*/
+/**
+ * @brief Main lexical analyzer - gets next token.
+ * @param p Parser state.
+ * @note Updates token type/value and parser position.
+ */
 void	next_token(t_parse *p)
 {
 	skip_whitespace(p);
@@ -1726,11 +1870,15 @@ void	next_token(t_parse *p)
 		handle_word(p);
 }
 
-/*
-** Checks if a token type is a redirection
-** @param type Token type to check
-** @return 1 if redirection, 0 otherwise
-*/
+
+#include "minishell.h"
+
+/**
+ * @brief Checks if token is redirection operator.
+ * @param type Token type to check.
+ * @return 1 if redirection token, 0 otherwise.
+ * @note Covers all redirection types (>, >>, <, <<).
+ */
 int	is_redirection(t_token type)
 {
 	return (type == T_REDIR_IN || type == T_REDIR_OUT
@@ -1766,6 +1914,7 @@ char	**build_expanded_args(t_list *args)
 	return (arr);
 }
 
+
 signals.c
 
 #include "minishell.h"
@@ -1784,9 +1933,10 @@ void	handle_sigint(int sig)
 	rl_redisplay();
 }
 
-/*
-** Sets up signal handlers for parent process (shell)
-*/
+/**
+ * @brief Manages shell signal handling configurations.
+ * @note Sets SIGINT/SIGQUIT handlers for interactive mode.
+ */
 void	setup_parent_signals(void)
 {
 	struct sigaction	sa;
@@ -1808,6 +1958,10 @@ void	setup_child_signals(void)
 	signal(SIGQUIT, SIG_DFL);
 }
 
+/**
+ * @brief Configures signal handling for heredoc.
+ * @note Sets SIGINT to default and ignores SIGQUIT.
+ */
 void	setup_heredoc_signals(void)
 {
 	signal(SIGINT, SIG_DFL);
@@ -1818,10 +1972,11 @@ utils.c
 
 #include "minishell.h"
 
-/*
-** Frees an array of strings
-** @param args Array to free
-*/
+/**
+ * @brief Frees null-terminated string array.
+ * @param array Array to free.
+ * @note Handles NULL input safely.
+ */
 void	ft_free_array(char **args)
 {
 	int	i;
@@ -1834,21 +1989,23 @@ void	ft_free_array(char **args)
 	free(args);
 }
 
-/*
-** Checks if character is whitespace
-** @param c Character to check
-** @return 1 if whitespace, 0 otherwise
-*/
+/**
+ * @brief Checks if character is whitespace.
+ * @param c Character to check.
+ * @return 1 if whitespace, 0 otherwise.
+ * @note Includes all standard whitespace characters.
+ */
 int	ft_isspace(int c)
 {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r'
 		|| c == '\f' || c == '\v');
 }
 
-/*
-** Advances to next character in parser input
-** @param p Parser structure
-*/
+/**
+ * @brief Advances parser to next input character.
+ * @param p Parser state.
+ * @note Handles end-of-input detection.
+ */
 void	next_char(t_parse *p)
 {
 	if (p->input[p->pos])
@@ -1862,21 +2019,23 @@ void	next_char(t_parse *p)
 	}
 }
 
-/*
-** Checks if character is special shell character
-** @param c Character to check
-** @return 1 if special, 0 otherwise
-*/
+/**
+ * @brief Checks if character is shell metacharacter.
+ * @param c Character to check.
+ * @return 1 if special character, 0 otherwise.
+ * @note Includes |, >, <, and ;.
+ */
 int	is_special_char(char c)
 {
 	return (c == '|' || c == '>' || c == '<');
 }
 
-/*
-** Converts a linked list to string array
-** @param lst Linked list to convert
-** @return New allocated string array
-*/
+/**
+ * @brief Converts linked list to string array.
+ * @param lst List of string elements.
+ * @return Null-terminated string array.
+ * @note Performs deep copy of list contents.
+ */
 char	**list_to_array(t_list *lst)
 {
 	char	**arr;
@@ -1905,10 +2064,15 @@ char	**list_to_array(t_list *lst)
 	return (arr);
 }
 
-/*
-** Frees a command structure
-** @param cmd Command to free
-*/
+utils2.c
+
+#include "minishell.h"
+
+/**
+ * @brief Frees command structure and components.
+ * @param cmd Command to free.
+ * @note Recursively frees arguments and redirections.
+ */
 void	free_cmd(t_cmd *cmd)
 {
 	t_redir	*redir;
@@ -1928,12 +2092,13 @@ void	free_cmd(t_cmd *cmd)
 	free(cmd);
 }
 
-/*
-** String comparison
-** @param s1 First string
-** @param s2 Second string
-** @return Difference between first differing characters
-*/
+/**
+ * @brief Compares two strings.
+ * @param s1 First string.
+ * @param s2 Second string.
+ * @return Difference at first mismatch or 0 if equal.
+ * @note Unsafe for NULL inputs.
+ */
 int	ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
@@ -1944,11 +2109,12 @@ int	ft_strcmp(const char *s1, const char *s2)
 	return (*(unsigned char *)s1 - *(unsigned char *)s2);
 }
 
-/*
-** Checks if string is numeric
-** @param str String to check
-** @return 1 if numeric, 0 otherwise
-*/
+/**
+ * @brief Validates numeric string format.
+ * @param str String to check.
+ * @return 1 if valid number, 0 otherwise.
+ * @note Allows optional leading + or - sign.
+ */
 int	ft_isnumber(const char *str)
 {
 	int	i;
@@ -1974,11 +2140,12 @@ int	ft_isnumber(const char *str)
 	}
 }
 
-/*
-** Checks if string is valid variable name
-** @param name String to check
-** @return 1 if valid, 0 otherwise
-*/
+/**
+ * @brief Validates variable name syntax.
+ * @param name String to check.
+ * @return 1 if valid identifier, 0 otherwise.
+ * @note Follows POSIX variable naming rules.
+ */
 int	is_valid_var_name(const char *name)
 {
 	int	i;
@@ -1995,9 +2162,10 @@ int	is_valid_var_name(const char *name)
 	return (1);
 }
 
-/*
-** Prints environment variables in export format
-*/
+/**
+ * @brief Prints environment in export format.
+ * @note Shows variables with declare -x syntax.
+ */
 void	print_export_declarations(void)
 {
 	extern char	**environ;
@@ -2020,11 +2188,15 @@ void	print_export_declarations(void)
 	}
 }
 
-/*
-** Safe strlen that returns size_t
-** @param str String to measure
-** @return Length of string
-*/
+utils3.c
+
+#include "minishell.h"
+
+/**
+ * @brief Safe strlen with NULL handling.
+ * @param s String to measure.
+ * @return String length or 0 for NULL.
+ */
 size_t	ft_strlen_size(const char *str)
 {
 	size_t	len;
@@ -2036,13 +2208,14 @@ size_t	ft_strlen_size(const char *str)
 	return (len);
 }
 
-/*
-** Joins three strings together
-** @param s1 First string
-** @param s2 Second string
-** @param s3 Third string
-** @return New concatenated string
-*/
+/**
+ * @brief Concatenates three strings.
+ * @param s1 First string.
+ * @param s2 Second string.
+ * @param s3 Third string.
+ * @return Combined string.
+ * @note Manages temporary allocations internally.
+ */
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3)
 {
 	char	*tmp;
@@ -2114,6 +2287,10 @@ char	*ft_strjoin_free(char *s1, const char *s2)
 	return (result);
 }
 
+utils4.c
+
+#include "minishell.h"
+
 /**
  * @brief Safely appends a character to a string.
  * @param str Original string (freed after appending).
@@ -2161,6 +2338,11 @@ size_t	ft_cmd_size(t_cmd *pipeline)
 	return (count);
 }
 
+/**
+ * @brief Frees redirection structures.
+ * @param redirs Redirection list head.
+ * @note Iteratively frees all nodes in list.
+ */
 void	free_redirections(t_redir *redirs)
 {
 	t_redir	*tmp;
@@ -2185,6 +2367,11 @@ void	free_env_copy(char **env_copy)
 	ft_free_array(env_copy);
 }
 
+/**
+ * @brief Handles syntax error reporting.
+ * @param token Offending token string.
+ * @note Sets global syntax error flag and exit status.
+ */
 void	syntax_error(char *token)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token '",
@@ -2197,6 +2384,16 @@ void	syntax_error(char *token)
 	set_exit_status(SYNTAX_ERROR);
 }
 
+utils5.c
+
+#include "minishell.h"
+
+/**
+ * @brief Extracts file descriptor number from input.
+ * @param p Parser state.
+ * @return String containing numeric file descriptor.
+ * @note Advances parser position past digits.
+ */
 char	*parse_fd(t_parse *p)
 {
 	int	start;
@@ -2253,6 +2450,13 @@ void	handle_delimiter(const char **str, const char **start,
 	*start = *str + 1;
 }
 
+/**
+ * @brief Splits string while respecting quoted sections.
+ * @param str Input string to split.
+ * @param delim Delimiter character.
+ * @return Array of split tokens.
+ * @note Preserves quoted content including delimiters.
+ */
 char	**split_with_quotes(const char *str, char delim)
 {
 	const char	*start;
