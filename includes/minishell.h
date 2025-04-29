@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/29 18:57:58 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 19:06:43 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,6 +137,8 @@ int		exec_unset(char **args);
 
 // CREATE HEREDOC
 int		create_heredoc(const char *delimiter);
+void	handle_child_process(int write_fd, const char *delimiter);
+int		handle_parent_process(pid_t pid, int read_fd);
 
 // EXIT STATUS
 void	set_exit_status(int status);

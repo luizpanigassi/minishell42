@@ -6,26 +6,74 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:59:44 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:16:51 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 19:10:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <minishell.h>
 
-/**
- * @brief Creates temporary file for heredoc input.
- * @param delimiter Heredoc termination string.
- * @return Read-end file descriptor of pipe.
- * @note Automatically handles variable expansion unless quoted.
- */
-int create_heredoc(const char *delimiter)
+void	write_line_to_pipe(int write_fd, const char *line, int quoted_delimiter)
 {
-	int pipefd[2];
-	pid_t pid;
-	int status;
-	char *line;
-	int quoted_delimiter;
-	char *expanded;
+	char	*expanded;
+
+	if (!quoted_delimiter)
+	{
+		expanded = expand_variables(line);
+		write(write_fd, expanded, strlen(expanded));
+		free(expanded);
+	}
+	else
+		write(write_fd, line, strlen(line));
+	write(write_fd, "\n", 1);
+}
+
+int	is_quoted_delimiter(const char *delimiter)
+{
+	return (delimiter[0] == '\'' || delimiter[0] == '"');
+}
+
+void	handle_child_process(int write_fd, const char *delimiter)
+{
+	char	*line;
+	int		quoted_delimiter;
+
+	quoted_delimiter = is_quoted_delimiter(delimiter);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_IGN);
+	while (1)
+	{
+		line = readline("> ");
+		if (!line)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			break ;
+		}
+		if (strcmp(line, delimiter) == 0)
+			break ;
+		write_line_to_pipe(write_fd, line, quoted_delimiter);
+		free(line);
+	}
+	close(write_fd);
+	exit(0);
+}
+
+int	handle_parent_process(pid_t pid, int read_fd)
+{
+	int	status;
+
+	waitpid(pid, &status, 0);
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+	{
+		close(read_fd);
+		return (-1);
+	}
+	return (read_fd);
+}
+
+int	create_heredoc(const char *delimiter)
+{
+	int		pipefd[2];
+	pid_t	pid;
 
 	if (pipe(pipefd) < 0)
 		return (-1);
@@ -36,48 +84,15 @@ int create_heredoc(const char *delimiter)
 		close(pipefd[1]);
 		return (-1);
 	}
-	if (pid == 0) // Child process
+	if (pid == 0)
 	{
 		close(pipefd[0]);
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_IGN);
-		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
-		while (1)
-		{
-			line = readline("> ");
-			if (!line) // Handle Ctrl+D
-			{
-				write(STDOUT_FILENO, "\n", 1);
-				break;
-			}
-			if (strcmp(line, delimiter) == 0) // End of heredoc
-			{
-				free(line);
-				break;
-			}
-			if (!quoted_delimiter)
-			{
-				expanded = expand_variables(line);
-				write(pipefd[1], expanded, strlen(expanded));
-				free(expanded);
-			}
-			else
-				write(pipefd[1], line, strlen(line));
-			write(pipefd[1], "\n", 1);
-			free(line);
-		}
-		close(pipefd[1]); // Close write end in child
-		exit(0);
+		handle_child_process(pipefd[1], delimiter);
 	}
-	else // Parent process
+	else
 	{
 		close(pipefd[1]);
-		waitpid(pid, &status, 0);
-		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		{
-			close(pipefd[0]);
-			return (-1); // Return error if interrupted
-		}
-		return (pipefd[0]);
+		return (handle_parent_process(pid, pipefd[0]));
 	}
+	return (0);
 }
