@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:51:59 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/29 18:42:00 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:56:19 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ void	shift_environment(char **env_ptr)
 		ptr++;
 	}
 }
+
 /**
  * @brief Removes environment variable from global environ.
  * @param var_name Name of variable to remove.
