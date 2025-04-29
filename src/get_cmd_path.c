@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 14:53:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:41:15 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 16:07:48 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,12 @@ static char	**get_path_directories(void)
 		return (NULL);
 	return (paths);
 }
-
+/**
+ * @brief Checks if command contains direct path specification.
+ * @param cmd Command string to check.
+ * @return Full path if valid direct path, NULL otherwise.
+ * @note Verifies existence and permissions of path.
+ */
 static char	*check_direct_path(char *cmd)
 {
 	if (ft_strchr(cmd, '/') != NULL)

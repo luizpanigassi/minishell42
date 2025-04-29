@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:46:24 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 16:13:16 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,8 @@
  */
 int	is_redirection(t_token type)
 {
-	return (type == T_REDIR_IN || type == T_REDIR_OUT
-		|| type == T_APPEND || type == T_HEREDOC);
+	return (type == T_REDIR_IN || type == T_REDIR_OUT || type == T_APPEND
+		|| type == T_HEREDOC);
 }
 
 /**
@@ -32,10 +32,11 @@ int	is_redirection(t_token type)
  */
 char	**build_expanded_args(t_list *args)
 {
-	char		**arr;
-	t_list		*current;
-	int			i;
-	t_arg		*a;
+	char **arr;
+	t_list *current;
+	int i;
+	t_arg *a;
+	char *processed;
 
 	arr = malloc(sizeof(char *) * (ft_lstsize(args) + 1));
 	current = args;
@@ -46,7 +47,12 @@ char	**build_expanded_args(t_list *args)
 		if (a->type == T_SINGLE_QUOTED)
 			arr[i++] = ft_strdup(a->value);
 		else
-			arr[i++] = expand_variables(a->value);
+		{
+			processed = process_escapes(a->value);
+			char *expanded = expand_variables(processed);
+			arr[i++] = expanded;
+			free(processed);
+		}
 		current = current->next;
 	}
 	arr[i] = NULL;

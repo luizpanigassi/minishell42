@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 18:36:49 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 16:08:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,6 +158,7 @@ char	**split_with_quotes(const char *str, char delim);
 void	update_quote_state(char c, int *in_quote, char *quote_char);
 void	add_substring(char ***result, int *count,
 			const char *start, const char *end);
+char	*process_escapes(char *str);
 
 // Helper functions for parsing
 int		ft_isspace(int c);

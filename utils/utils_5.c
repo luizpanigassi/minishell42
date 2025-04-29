@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:49:45 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 16:11:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@
  * @return String containing numeric file descriptor.
  * @note Advances parser position past digits.
  */
-char	*parse_fd(t_parse *p)
+char *parse_fd(t_parse *p)
 {
-	int	start;
+	int start;
 
 	start = p->pos;
 	while (ft_isdigit(p->curr_char))
@@ -34,7 +34,7 @@ char	*parse_fd(t_parse *p)
  * @param in_quote Pointer to the in_quote flag.
  * @param quote_char Pointer to the current quote character.
  */
-void	update_quote_state(char c, int *in_quote, char *quote_char)
+void update_quote_state(char c, int *in_quote, char *quote_char)
 {
 	if (*in_quote && c == *quote_char)
 		*in_quote = 0;
@@ -52,8 +52,8 @@ void	update_quote_state(char c, int *in_quote, char *quote_char)
  * @param start Pointer to the start of the substring.
  * @param end Pointer to the end of the substring.
  */
-void	add_substring(char ***result, int *count,
-				const char *start, const char *end)
+void add_substring(char ***result, int *count,
+				   const char *start, const char *end)
 {
 	*result = realloc(*result, sizeof(char *) * (*count + 2));
 	(*result)[(*count)++] = ft_substr(start, 0, end - start);
@@ -67,9 +67,11 @@ void	add_substring(char ***result, int *count,
  * @param result Pointer to the result array.
  * @param count Pointer to the current count of elements in the array.
  */
-void	handle_delimiter(const char **str, const char **start,
-	char ***result, int *count)
+void handle_delimiter(const char **str, const char **start,
+					  char ***result, int *count)
 {
+	if ((*str > *start) && (*str)[-1] == '\\')
+		return;
 	add_substring(result, count, *start, *str);
 	*start = *str + 1;
 }
@@ -81,13 +83,13 @@ void	handle_delimiter(const char **str, const char **start,
  * @return Array of split tokens.
  * @note Preserves quoted content including delimiters.
  */
-char	**split_with_quotes(const char *str, char delim)
+char **split_with_quotes(const char *str, char delim)
 {
-	const char	*start;
-	char		**result;
-	int			count;
-	int			in_quote;
-	char		quote_char;
+	const char *start;
+	char **result;
+	int count;
+	int in_quote;
+	char quote_char;
 
 	start = str;
 	result = NULL;
@@ -96,10 +98,17 @@ char	**split_with_quotes(const char *str, char delim)
 	quote_char = '\0';
 	while (*str)
 	{
+		if (!in_quote && *str == '\\' && (str[1] == delim || str[1] == '\\'))
+		{
+			str++; // Skip the escape character
+			str++; // Move past escaped character
+			continue;
+		}
 		if ((*str == '\'' || *str == '"'))
 			update_quote_state(*str, &in_quote, &quote_char);
 		else if (*str == delim && !in_quote)
 			handle_delimiter(&str, &start, &result, &count);
+
 		str++;
 	}
 	if (start != str)
@@ -107,4 +116,30 @@ char	**split_with_quotes(const char *str, char delim)
 	if (result)
 		result[count] = NULL;
 	return (result);
+}
+
+char *process_escapes(char *str)
+{
+	char *result = malloc(ft_strlen(str) + 1);
+	int i = 0;
+	int j = 0;
+
+	while (str[i])
+	{
+		if (str[i] == '\\')
+		{
+			// Skip escape character but preserve next character
+			i++;
+			if (str[i] != '\0')
+			{
+				result[j++] = str[i++];
+			}
+		}
+		else
+		{
+			result[j++] = str[i++];
+		}
+	}
+	result[j] = '\0';
+	return result;
 }
