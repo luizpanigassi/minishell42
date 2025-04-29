@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 16:11:39 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:41:54 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ void update_quote_state(char c, int *in_quote, char *quote_char)
  * @param end Pointer to the end of the substring.
  */
 void add_substring(char ***result, int *count,
-				   const char *start, const char *end)
+				const char *start, const char *end)
 {
 	*result = realloc(*result, sizeof(char *) * (*count + 2));
 	(*result)[(*count)++] = ft_substr(start, 0, end - start);
@@ -68,7 +68,7 @@ void add_substring(char ***result, int *count,
  * @param count Pointer to the current count of elements in the array.
  */
 void handle_delimiter(const char **str, const char **start,
-					  char ***result, int *count)
+					char ***result, int *count)
 {
 	if ((*str > *start) && (*str)[-1] == '\\')
 		return;

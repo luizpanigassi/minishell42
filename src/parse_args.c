@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:44:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:41:21 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
  * @param args Argument list accumulator.
  * @note Handles quoted and unquoted argument types.
  */
-static void process_argument(t_parse *p, t_list **args)
+void process_argument(t_parse *p, t_list **args)
 {
 	t_arg *arg;
 
@@ -36,7 +36,7 @@ static void process_argument(t_parse *p, t_list **args)
  * @return Always returns NULL.
  * @note Performs full cleanup on syntax error detection.
  */
-static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
+t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `",
 				 STDERR_FILENO);
@@ -59,7 +59,7 @@ static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
  * @return New redirection node or NULL on error.
  * @note Handles syntax validation for redirection targets.
  */
-static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
+t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 {
 	t_redir *redir;
 
@@ -92,7 +92,7 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
  * @return Allocated command structure.
  * @note Transforms linked lists into arrays for execution.
  */
-static t_cmd *create_command(t_list *args, t_redir *redirs)
+t_cmd *create_command(t_list *args, t_redir *redirs)
 {
 	t_cmd *cmd;
 
@@ -115,7 +115,8 @@ static t_cmd *create_command(t_list *args, t_redir *redirs)
  * @param p Parser state.
  * @return Complete command structure.
  * @note Handles words, redirections, and syntax error detection.
- */t_cmd *parse_args(t_parse *p)
+ */
+t_cmd *parse_args(t_parse *p)
 {
 	t_list *args;
 	t_redir *redirs;

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:42:34 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:35:13 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ void	handle_error(char *message)
  * - Single-quoted strings suppress expansion.
  * - Double-quoted strings allow `$VAR` and `$?` expansion.
  */
-static char	*expand_variable(const char *input, size_t *i)
+char	*expand_variable(const char *input, size_t *i)
 {
 	char	*value;
 	size_t	start;

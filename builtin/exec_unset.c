@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:51:59 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:40:44 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:42:00 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
  * @return 1 if invalid, 0 if valid.
  * @note Prints formatted error message for invalid names.
  */
-static int	handle_unset_error(char *arg)
+int	handle_unset_error(char *arg)
 {
 	if (is_valid_var_name(arg))
 		return (0);
@@ -33,7 +33,7 @@ static int	handle_unset_error(char *arg)
  * @param env_ptr Pointer to start position in environment array.
  * @note Modifies environment array in-place after variable removal.
  */
-static void	shift_environment(char **env_ptr)
+void	shift_environment(char **env_ptr)
 {
 	char	**ptr;
 
@@ -49,7 +49,7 @@ static void	shift_environment(char **env_ptr)
  * @param var_name Name of variable to remove.
  * @note Directly modifies the environ array.
  */
-static void	remove_env_var(const char *var_name)
+void	remove_env_var(const char *var_name)
 {
 	extern char	**environ;
 	char		**env_ptr;

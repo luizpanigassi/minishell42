@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:43:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:46:05 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:35:11 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
  * @param p Parser state.
  * @note Modifies parser position and current character.
  */
-static void	skip_whitespace(t_parse *p)
+void	skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
@@ -29,7 +29,7 @@ static void	skip_whitespace(t_parse *p)
  * @param quote Quote character (' or ").
  * @note Handles escape characters and nested quotes.
  */
-static void	handle_quotes(t_parse *p, char quote)
+void	handle_quotes(t_parse *p, char quote)
 {
 	size_t	start;
 	char	*content;
@@ -65,7 +65,7 @@ static void	handle_quotes(t_parse *p, char quote)
  * @param p Parser state.
  * @note Collects characters until whitespace or special character.
  */
-static void	handle_word(t_parse *p)
+void	handle_word(t_parse *p)
 {
 	size_t	start;
 	char	*sub;
