@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/29 18:35:13 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 15:13:27 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,11 @@ char	*expand_variables(const char *input)
 			{
 				var_value = expand_variable(input, &i);
 				result = ft_strjoin_free(result, var_value);
+				if (!result)
+				{
+					free(result); // Free if realloc fails
+					return NULL;
+				}
 				free(var_value);
 			}
 		}

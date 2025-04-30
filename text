@@ -89,25 +89,98 @@ typedef struct s_exec_vars {
 */
 extern volatile sig_atomic_t	g_exit_status;
 
-// INPUT
-void	handle_error(char *message);
-char	*get_cmd_path(char *cmd);
-char	*expand_variables(const char *input);
-void	exec_external_command(t_cmd *cmd);
-
 // BUILTIN
-int		is_builtin(char **args);
-int		exec_cd(char **args);
-int		exec_exit(char **args);
-int		exec_echo(char **args);
+int		is_builtin(char **tokens);
 int		exec_builtin(char **args);
-int		exec_env(char **args);
-int		exec_pwd(char **args);
-int		exec_export(char **args);
-int		exec_unset(char **args);
-char	**ft_copy_env(char **env);
+char	**ft_copy_env(char **original);
 void	update_env_var(char *var, char *value);
 void	ensure_var_exported(char *var_name);
+
+// EXEC CD
+int		exec_cd(char **args);
+char	*resolve_cd_path(char **args, char *oldpwd);
+int		handle_cd_arguments(char **args, char *oldpwd);
+
+// EXEC ECHO
+int		exec_echo(char **args);
+
+// EXEC ENV
+int		exec_env(char **args);
+
+// EXEC EXIT
+int		exec_exit(char **args);
+
+// EXEC EXPORT
+int		exec_export(char **args);
+int		handle_invalid_identifier(char *var_name, char *value,
+			t_export_params params);
+int		handle_export_argument(char *arg, int *i, int *ret);
+
+// EXEC PWD
+int		exec_pwd(char **args);
+
+// EXEC UNSET
+int		handle_unset_error(char *arg);
+void	shift_environment(char **env_ptr);
+void	remove_env_var(const char *var_name);
+int		exec_unset(char **args);
+
+// CREATE HEREDOC
+int		create_heredoc(const char *delimiter);
+void	handle_child_process(int write_fd, const char *delimiter);
+int		handle_parent_process(pid_t pid, int read_fd);
+
+// EXIT STATUS
+void	set_exit_status(int status);
+int		get_exit_status(void);
+
+// GET CMD PATH
+char	*check_path_for_cmd(const char *dir_path, const char *cmd);
+char	**get_path_directories(void);
+char	*check_direct_path(char *cmd);
+char	*get_cmd_path(char *cmd);
+
+// HANDLE PIPE
+int		execute_pipeline(t_cmd *pipeline);
+
+// HANDLE SPECIAL
+void	assign_value(t_parse *p, enum e_token t, char *v, int n);
+void	handle_file_descriptor(t_parse *p);
+void	handle_output_redirection(t_parse *p);
+void	handle_input_redirection(t_parse *p);
+void	handle_special(t_parse *p);
+
+// INIT PARSER
+void	init_parser(t_parse *p, char *input);
+
+// INPUT
+void	handle_error(char *message);
+char	*expand_variable(const char *input, size_t *i);
+char	*expand_variables(const char *input);
+void	exec_external_command(t_cmd *cmd);
+int		handle_redirection(t_redir *current, int fd);
+
+// MAIN
+void	free_pipeline(t_cmd *pipeline);
+void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out);
+int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
+
+// PARSE ARGS
+void	process_argument(t_parse *p, t_list **args);
+t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs);
+t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs);
+t_cmd	*create_command(t_list *args, t_redir *redirs);
+t_cmd	*parse_args(t_parse *p);
+
+// PARSE PIPELINE
+t_cmd	*parse_pipeline(t_parse *p);
+
+// PARSERS
+void	skip_whitespace(t_parse *p);
+void	handle_quotes(t_parse *p, char quote);
+void	handle_word(t_parse *p);
+void	next_token(t_parse *p);
+int		is_redirection(t_token type);
 char	**build_expanded_args(t_list *args);
 
 // SIGNALS
@@ -116,26 +189,20 @@ void	setup_parent_signals(void);
 void	setup_child_signals(void);
 void	setup_heredoc_signals(void);
 
-// PARSING
-void	init_parser(t_parse *p, char *input);
-void	next_token(t_parse *p);
-t_cmd	*parse_args(t_parse *p);
-int		create_heredoc(const char *delimiter);
-int		is_redirection(t_token type);
-t_cmd	*parse_pipeline(t_parse *p);
-void	handle_special(t_parse *p);
-
 // UTILS
-void	ft_free_array(char **array);
+void	ft_free_array(char **args);
+int		ft_isspace(int c);
+void	next_char(t_parse *p);
+int		is_special_char(char c);
+char	**list_to_array(t_list *lst);
 void	free_cmd(t_cmd *cmd);
 int		ft_strcmp(const char *s1, const char *s2);
-char	**ft_array_append(char **array, char *new_element);
 int		ft_isnumber(const char *str);
 int		is_valid_var_name(const char *name);
 void	print_export_declarations(void);
-size_t	ft_strlen_size(const char *s);
-char	**ft_array_append(char **array, char *new_element);
+size_t	ft_strlen_size(const char *str);
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3);
+char	**ft_array_append(char **array, char *new_element);
 void	free_arg(void *arg);
 char	*ft_strjoin_free(char *s1, const char *s2);
 char	*ft_strjoin_char(char *str, char c);
@@ -144,29 +211,13 @@ void	free_redirections(t_redir *redirs);
 void	free_env_copy(char **env_copy);
 void	syntax_error(char *token);
 char	*parse_fd(t_parse *p);
-char	**split_with_quotes(const char *str, char delim);
 void	update_quote_state(char c, int *in_quote, char *quote_char);
-void	add_substring(char ***result, int *count,
-			const char *start, const char *end);
-
-// Helper functions for parsing
-int		ft_isspace(int c);
-void	next_char(t_parse *p);
-int		is_special_char(char c);
-char	**list_to_array(t_list *lst);
-int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
-
-//Exit status
-void	set_exit_status(int status);
-int		get_exit_status(void);
-
-int		handle_cd_arguments(char **args, char *oldpwd);
-int		handle_export_argument(char *arg, int *i, int *ret);
-int		handle_invalid_identifier(char *var_name, char *value,
-			t_export_params params);
-
-int		execute_pipeline(t_cmd *pipeline);
-void	free_pipeline(t_cmd *pipeline);
+void	add_substring(char ***result, int *count, const char *start,
+			const char *end);
+void	handle_delimiter(const char **str, const char **start,
+			char ***result, int *count);
+char	**split_with_quotes(const char *str, char delim);
+char	*process_escapes(char *str);
 
 #endif
 
@@ -174,7 +225,7 @@ builtin.c
 
 #include "minishell.h"
 
-extern volatile sig_atomic_t g_exit_status;
+extern volatile sig_atomic_t	g_exit_status;
 
 /**
  * @brief Checks if a command is a builtin command.
@@ -182,11 +233,11 @@ extern volatile sig_atomic_t g_exit_status;
  * @return 1 if the command is a builtin, 0 otherwise.
  * @note Checks against predefined list of builtin commands.
  */
-int is_builtin(char **tokens)
+int	is_builtin(char **tokens)
 {
-	const char *builtins[] = {"echo", "cd", "pwd", "export",
-							  "unset", "env", "exit", NULL};
-	int i;
+	const char	*builtins[] = {"echo", "cd", "pwd", "export",
+		"unset", "env", "exit", NULL};
+	int			i;
 
 	if (!tokens || !tokens[0])
 		return (0);
@@ -206,7 +257,7 @@ int is_builtin(char **tokens)
  * @return Exit status of the executed builtin.
  * @note Dispatches to specific builtin implementations based on first argument.
  */
-int exec_builtin(char **args)
+int	exec_builtin(char **args)
 {
 	if (ft_strcmp(args[0], "echo") == 0)
 		return (exec_echo(args));
@@ -234,35 +285,33 @@ int exec_builtin(char **args)
  * @return New allocated copy of environment variables.
  * @note Caller must free the returned array with free_env_copy().
  */
-char **ft_copy_env(char **original)
+char	**ft_copy_env(char **original)
 {
-	char **copy;
-	int i;
-	int count;
+	char	**copy;
+	int		i;
+	int		count;
 
 	i = 0;
 	if (!original)
-		return NULL;
-
+		return (NULL);
 	count = 0;
 	while (original[count])
 		count++;
-
 	copy = malloc(sizeof(char *) * (count + 1));
 	if (!copy)
-		return NULL;
+		return (NULL);
 	while (i < count)
 	{
 		copy[i] = ft_strdup(original[i]);
 		if (!copy[i])
 		{
 			ft_free_array(copy);
-			return NULL;
+			return (NULL);
 		}
 		i++;
 	}
 	copy[count] = NULL;
-	return copy;
+	return (copy);
 }
 
 /* Environment variable operations */
@@ -271,16 +320,18 @@ char **ft_copy_env(char **original)
  * @param var Variable name (ownership transferred).
  * @param value Variable value (ownership transferred).
  */
-void update_env_var(char *var, char *value)
+void	update_env_var(char *var, char *value)
 {
-	extern char **environ;
-	char *new_entry;
-	char *eq;
-	char **env_ptr;
+	extern char	**environ;
+	char		*new_entry;
+	char		*eq;
+	char		**env_ptr;
 
-	new_entry = value ? ft_strjoin3(var, "=", value) : ft_strjoin(var, "=");
+	if (value != NULL)
+		new_entry = ft_strjoin3(var, "=", value);
+	else
+		new_entry = ft_strjoin(var, "=");
 	env_ptr = environ;
-
 	while (*env_ptr)
 	{
 		eq = ft_strchr(*env_ptr, '=');
@@ -288,11 +339,10 @@ void update_env_var(char *var, char *value)
 		{
 			free(*env_ptr);
 			*env_ptr = new_entry;
-			return;
+			return ;
 		}
 		env_ptr++;
 	}
-
 	environ = ft_array_append(environ, new_entry);
 	free(var);
 	if (value)
@@ -303,12 +353,12 @@ void update_env_var(char *var, char *value)
 ** Ensures a variable exists in the environment (without value if not present)
 ** @param var_name Variable name to check/export
 */
-void ensure_var_exported(char *var_name)
+void	ensure_var_exported(char *var_name)
 {
-	extern char **environ;
-	char **env_ptr;
-	int exists;
-	char *eq;
+	extern char	**environ;
+	char		**env_ptr;
+	int			exists;
+	char		*eq;
 
 	exists = 0;
 	env_ptr = environ;
@@ -358,6 +408,35 @@ int	exec_cd(char **args)
 	return (0);
 }
 
+char	*resolve_cd_path(char **args, char *oldpwd)
+{
+	char	*path;
+
+	if (!args[1] || ft_strcmp(args[1], "~") == 0)
+	{
+		path = getenv("HOME");
+		if (!path)
+		{
+			ft_putstr_fd("minishell: cd: HOME not set\n", STDERR_FILENO);
+			free(oldpwd);
+			return (NULL);
+		}
+	}
+	else if (ft_strcmp(args[1], "-") == 0)
+	{
+		path = getenv("OLDPWD");
+		if (!path)
+		{
+			ft_putstr_fd("minishell: cd: OLDPWD not set\n", STDERR_FILENO);
+			free(oldpwd);
+			return (NULL);
+		}
+	}
+	else
+		path = args[1];
+	return (path);
+}
+
 /**
  * @brief Handles argument validation and path resolution for cd command.
  * @param args Command arguments array.
@@ -377,28 +456,9 @@ int	handle_cd_arguments(char **args, char *oldpwd)
 		set_exit_status(1);
 		return (1);
 	}
-	if (!args[1] || ft_strcmp(args[1], "~") == 0)
-	{
-		path = getenv("HOME");
-		if (!path)
-		{
-			ft_putstr_fd("minishell: cd: HOME not set\n", STDERR_FILENO);
-			free(oldpwd);
-			return (1);
-		}
-	}
-	else if (ft_strcmp(args[1], "-") == 0)
-	{
-		path = getenv("OLDPWD");
-		if (!path)
-		{
-			ft_putstr_fd("minishell: cd: OLDPWD not set\n", STDERR_FILENO);
-			free(oldpwd);
-			return (1);
-		}
-	}
-	else
-		path = args[1];
+	path = resolve_cd_path(args, oldpwd);
+	if (!path)
+		return (1);
 	if (chdir(path) != 0)
 	{
 		perror("cd");
@@ -481,23 +541,19 @@ int	exec_exit(char **args)
 	status = 0;
 	if (args[1] && args[2])
 	{
-		ft_putstr_fd("minishell: exit error: too many arguments\n",
-			STDERR_FILENO);
+		ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
 		set_exit_status(1);
 		return (1);
 	}
-	if (args[1])
+	if (args[1] && !ft_isnumber(args[1]))
 	{
-		if (ft_isnumber(args[1]))
-			status = ft_atoi(args[1]) % 256;
-		else
-		{
-			ft_putstr_fd("minishell: exit error: numeric argument required\n",
-				STDERR_FILENO);
-			return (2);
-		}
+		ft_putstr_fd("minishell: exit: numeric argument required\n",
+			STDERR_FILENO);
+		exit(2);
 	}
-	printf("Exiting minishell, goodbye!\n");
+	if (args[1])
+		status = ft_atoi(args[1]) % 256;
+	ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
 	rl_clear_history();
 	exit(status);
 }
@@ -633,7 +689,7 @@ exec_unset.c
  * @return 1 if invalid, 0 if valid.
  * @note Prints formatted error message for invalid names.
  */
-static int	handle_unset_error(char *arg)
+int	handle_unset_error(char *arg)
 {
 	if (is_valid_var_name(arg))
 		return (0);
@@ -648,7 +704,7 @@ static int	handle_unset_error(char *arg)
  * @param env_ptr Pointer to start position in environment array.
  * @note Modifies environment array in-place after variable removal.
  */
-static void	shift_environment(char **env_ptr)
+void	shift_environment(char **env_ptr)
 {
 	char	**ptr;
 
@@ -659,12 +715,13 @@ static void	shift_environment(char **env_ptr)
 		ptr++;
 	}
 }
+
 /**
  * @brief Removes environment variable from global environ.
  * @param var_name Name of variable to remove.
  * @note Directly modifies the environ array.
  */
-static void	remove_env_var(const char *var_name)
+void	remove_env_var(const char *var_name)
 {
 	extern char	**environ;
 	char		**env_ptr;
@@ -721,20 +778,68 @@ create_heredoc.c
 
 #include <minishell.h>
 
-/**
- * @brief Creates temporary file for heredoc input.
- * @param delimiter Heredoc termination string.
- * @return Read-end file descriptor of pipe.
- * @note Automatically handles variable expansion unless quoted.
- */
-int create_heredoc(const char *delimiter)
+void	write_line_to_pipe(int write_fd, const char *line, int quoted_delimiter)
 {
-	int pipefd[2];
-	pid_t pid;
-	int status;
-	char *line;
-	int quoted_delimiter;
-	char *expanded;
+	char	*expanded;
+
+	if (!quoted_delimiter)
+	{
+		expanded = expand_variables(line);
+		write(write_fd, expanded, strlen(expanded));
+		free(expanded);
+	}
+	else
+		write(write_fd, line, strlen(line));
+	write(write_fd, "\n", 1);
+}
+
+int	is_quoted_delimiter(const char *delimiter)
+{
+	return (delimiter[0] == '\'' || delimiter[0] == '"');
+}
+
+void	handle_child_process(int write_fd, const char *delimiter)
+{
+	char	*line;
+	int		quoted_delimiter;
+
+	quoted_delimiter = is_quoted_delimiter(delimiter);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_IGN);
+	while (1)
+	{
+		line = readline("> ");
+		if (!line)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			break ;
+		}
+		if (strcmp(line, delimiter) == 0)
+			break ;
+		write_line_to_pipe(write_fd, line, quoted_delimiter);
+		free(line);
+	}
+	close(write_fd);
+	exit(0);
+}
+
+int	handle_parent_process(pid_t pid, int read_fd)
+{
+	int	status;
+
+	waitpid(pid, &status, 0);
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+	{
+		close(read_fd);
+		return (-1);
+	}
+	return (read_fd);
+}
+
+int	create_heredoc(const char *delimiter)
+{
+	int		pipefd[2];
+	pid_t	pid;
 
 	if (pipe(pipefd) < 0)
 		return (-1);
@@ -745,52 +850,18 @@ int create_heredoc(const char *delimiter)
 		close(pipefd[1]);
 		return (-1);
 	}
-	if (pid == 0) // Child process
+	if (pid == 0)
 	{
 		close(pipefd[0]);
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_IGN);
-		quoted_delimiter = (delimiter[0] == '\'' || delimiter[0] == '"');
-		while (1)
-		{
-			line = readline("> ");
-			if (!line) // Handle Ctrl+D
-			{
-				write(STDOUT_FILENO, "\n", 1);
-				break;
-			}
-			if (strcmp(line, delimiter) == 0) // End of heredoc
-			{
-				free(line);
-				break;
-			}
-			if (!quoted_delimiter)
-			{
-				expanded = expand_variables(line);
-				write(pipefd[1], expanded, strlen(expanded));
-				free(expanded);
-			}
-			else
-				write(pipefd[1], line, strlen(line));
-			write(pipefd[1], "\n", 1);
-			free(line);
-		}
-		close(pipefd[1]); // Close write end in child
-		exit(0);
+		handle_child_process(pipefd[1], delimiter);
 	}
-	else // Parent process
+	else
 	{
 		close(pipefd[1]);
-		waitpid(pid, &status, 0);
-		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		{
-			close(pipefd[0]);
-			return (-1); // Return error if interrupted
-		}
-		return (pipefd[0]);
+		return (handle_parent_process(pid, pipefd[0]));
 	}
+	return (0);
 }
-
 
 exit_status.c
 
@@ -825,7 +896,7 @@ get_cmd_path.c
  * @return Full path string or NULL.
  * @note Checks execute permissions on constructed path.
  */
-static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
+char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
 	char	*dir_slash;
 	char	*full_path;
@@ -848,7 +919,7 @@ static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
  * @return Null-terminated array of directory strings.
  * @note Splits PATH environment variable using colon delimiter.
  */
-static char	**get_path_directories(void)
+char	**get_path_directories(void)
 {
 	char	*path_env;
 	char	**paths;
@@ -861,13 +932,14 @@ static char	**get_path_directories(void)
 		return (NULL);
 	return (paths);
 }
+
 /**
  * @brief Checks if command contains direct path specification.
  * @param cmd Command string to check.
  * @return Full path if valid direct path, NULL otherwise.
  * @note Verifies existence and permissions of path.
  */
-static char	*check_direct_path(char *cmd)
+char	*check_direct_path(char *cmd)
 {
 	if (ft_strchr(cmd, '/') != NULL)
 	{
@@ -965,7 +1037,6 @@ int execute_pipeline(t_cmd *pipeline)
 			free(child_pids);
 			return 1;
 		}
-
 		pid_t pid = fork();
 		if (pid == 0) // Child
 		{
@@ -983,7 +1054,6 @@ int execute_pipeline(t_cmd *pipeline)
 				close(next_pipe[0]);
 			if (next_pipe[1] != -1)
 				close(next_pipe[1]);
-
 			if (is_builtin(current->args))
 				exit(exec_builtin(current->args));
 			else
@@ -1056,7 +1126,7 @@ handle_special.c
  * @param n Whether to advance character position.
  * @note Manages parser state transitions for special tokens.
  */
-static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
+void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 {
 	p->token_type = t;
 	p->token_value = ft_strdup(v);
@@ -1069,7 +1139,7 @@ static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
  * @param p Parser state.
  * @note Extracts leading digits for numbered file descriptors.
  */
-static void	handle_file_descriptor(t_parse *p)
+void	handle_file_descriptor(t_parse *p)
 {
 	int		fd;
 	char	*fd_str;
@@ -1089,7 +1159,7 @@ static void	handle_file_descriptor(t_parse *p)
  * @param p Parser state.
  * @note Determines between truncate (>) and append (>>) modes.
  */
-static void	handle_output_redirection(t_parse *p)
+void	handle_output_redirection(t_parse *p)
 {
 	next_char(p);
 	if (p->curr_char == '>')
@@ -1103,7 +1173,7 @@ static void	handle_output_redirection(t_parse *p)
  * @param p Parser state.
  * @note Distinguishes between regular input and heredoc redirection.
  */
-static void	handle_input_redirection(t_parse *p)
+void	handle_input_redirection(t_parse *p)
 {
 	next_char(p);
 	if (p->curr_char == '<')
@@ -1175,7 +1245,7 @@ void	handle_error(char *message)
  * - Single-quoted strings suppress expansion.
  * - Double-quoted strings allow `$VAR` and `$?` expansion.
  */
-static char	*expand_variable(const char *input, size_t *i)
+char	*expand_variable(const char *input, size_t *i)
 {
 	char	*value;
 	size_t	start;
@@ -1438,26 +1508,24 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 int main(void)
 {
 	extern char **environ;
-	char **env_copy;
-	char **original_environ;
-	char **initial_env_copy;
+	char **original_environ = environ;
+	char **env_copy = ft_copy_env(environ);
 	char *input;
+	int exit_status = 0;
+	int should_exit = 0;
 
-	original_environ = environ;
-	env_copy = ft_copy_env(environ);
-	initial_env_copy = env_copy;
+	// Use our environment copy
 	environ = env_copy;
 	setup_parent_signals();
-	while (1)
+
+	while (!should_exit)
 	{
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			environ = original_environ;
-			free_env_copy(env_copy);
-			rl_clear_history();
-			write(STDOUT_FILENO, "Exiting minishell, goodbye!\n", 28);
-			return (get_exit_status());
+			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
+			should_exit = 1;
+			break;
 		}
 
 		if (ft_strlen(input) > 0)
@@ -1473,11 +1541,9 @@ int main(void)
 		int syntax_error_flag = 0;
 		int i = 0;
 
-		while (commands && commands[i] && !syntax_error_flag)
+		while (commands && commands[i] && !syntax_error_flag && !should_exit)
 		{
 			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
-
-			// Check for empty command (e.g., ";" or " | ")
 			if (!trimmed_cmd || *trimmed_cmd == '\0')
 			{
 				free(trimmed_cmd);
@@ -1492,11 +1558,15 @@ int main(void)
 
 			if (parser.syntax_error)
 			{
-				// Handle parsing errors
 				syntax_error_flag = 1;
 				set_exit_status(SYNTAX_ERROR);
 				free_pipeline(pipeline);
-				pipeline = NULL;
+				i++;
+				continue;
+			}
+
+			if (!pipeline)
+			{
 				i++;
 				continue;
 			}
@@ -1508,58 +1578,56 @@ int main(void)
 				int saved_stdout = dup(STDOUT_FILENO);
 				int saved_stderr = dup(STDERR_FILENO);
 
-				if (handle_redirections(-1, -1, pipeline->redirections) != 0)
-					set_exit_status(1);
-				else
+				if (handle_redirections(-1, -1, pipeline->redirections) == 0)
 				{
 					int result = exec_builtin(pipeline->args);
 					set_exit_status(result);
-					env_copy = environ;
-					dup2(saved_stdin, STDIN_FILENO);
-					dup2(saved_stdout, STDOUT_FILENO);
-					dup2(saved_stderr, STDERR_FILENO);
 				}
+
+				dup2(saved_stdin, STDIN_FILENO);
+				dup2(saved_stdout, STDOUT_FILENO);
+				dup2(saved_stderr, STDERR_FILENO);
 				close(saved_stdin);
 				close(saved_stdout);
 				close(saved_stderr);
-
-				if (ft_strcmp(pipeline->args[0], "exit") == 0 && get_exit_status() != 1)
-				{
-					free_pipeline(pipeline);
-					free_env_copy(env_copy);
-					break; // Terminate shell
-				}
 			}
 			else
 			{
-				execute_pipeline(pipeline);
+				int pipeline_status = execute_pipeline(pipeline);
+				if (pipeline_status == EXIT_CODE_EXIT)
+				{
+					should_exit = 1;
+					exit_status = get_exit_status();
+				}
 			}
 
 			free_pipeline(pipeline);
 			i++;
 		}
+
 		if (commands)
 		{
 			char **ptr = commands;
 			while (*ptr)
-			{
-				free(*ptr);
-				ptr++;
-			}
+				free(*ptr++);
 			free(commands);
 		}
 
 		if (syntax_error_flag)
 			set_exit_status(SYNTAX_ERROR);
-
-		setup_parent_signals();
 	}
-	free_env_copy(env_copy);
-	if (initial_env_copy != env_copy)
-		free_env_copy(initial_env_copy);
-	environ = original_environ;
+
+	// Cleanup sequence
 	rl_clear_history();
-	return (get_exit_status());
+
+	// Restore original environment before exit
+	environ = original_environ;
+
+	// Free our environment copy if it exists
+	if (env_copy)
+		free_env_copy(env_copy);
+
+	return (exit_status);
 }
 
 parse_args.c
@@ -1572,9 +1640,9 @@ parse_args.c
  * @param args Argument list accumulator.
  * @note Handles quoted and unquoted argument types.
  */
-static void process_argument(t_parse *p, t_list **args)
+void	process_argument(t_parse *p, t_list **args)
 {
-	t_arg *arg;
+	t_arg	*arg;
 
 	arg = malloc(sizeof(t_arg));
 	arg->value = ft_strdup(p->token_value);
@@ -1590,10 +1658,10 @@ static void process_argument(t_parse *p, t_list **args)
  * @return Always returns NULL.
  * @note Performs full cleanup on syntax error detection.
  */
-static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
+t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `",
-				 STDERR_FILENO);
+		STDERR_FILENO);
 	if (p->token_type == T_EOF)
 		ft_putstr_fd("newline", STDERR_FILENO);
 	else
@@ -1613,9 +1681,9 @@ static t_redir *handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
  * @return New redirection node or NULL on error.
  * @note Handles syntax validation for redirection targets.
  */
-static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
+t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 {
-	t_redir *redir;
+	t_redir	*redir;
 
 	redir = malloc(sizeof(t_redir));
 	if (!redir)
@@ -1627,8 +1695,8 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	redir->fd = p->redir_fd;
 	redir->type = p->token_type;
 	next_token(p);
-	if (!p->token_value || (p->token_type != T_WORD &&
-							p->token_type != T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
+	if (!p->token_value || (p->token_type != T_WORD && p->token_type
+			!= T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
 	{
 		free(redir);
 		return (handle_redir_error(p, args, redirs));
@@ -1646,9 +1714,9 @@ static t_redir *process_redirection(t_parse *p, t_list **args, t_redir *redirs)
  * @return Allocated command structure.
  * @note Transforms linked lists into arrays for execution.
  */
-static t_cmd *create_command(t_list *args, t_redir *redirs)
+t_cmd	*create_command(t_list *args, t_redir *redirs)
 {
-	t_cmd *cmd;
+	t_cmd	*cmd;
 
 	cmd = malloc(sizeof(t_cmd));
 	if (!cmd)
@@ -1664,40 +1732,59 @@ static t_cmd *create_command(t_list *args, t_redir *redirs)
 	return (cmd);
 }
 
+int	handle_argument_token(t_parse *p, t_list **args, t_redir *redirs)
+{
+	if (!p->token_value)
+	{
+		ft_lstclear(args, free_arg);
+		free_redirections(redirs);
+		return (0);
+	}
+	process_argument(p, args);
+	return (1);
+}
+
+int	handle_redirection_token(t_parse *p, t_list **args,
+	t_redir **redir_tail, t_redir *redirs)
+{
+	t_redir	*new_redir;
+
+	new_redir = process_redirection(p, args, redirs);
+	if (!new_redir)
+		return (0);
+	*redir_tail = new_redir;
+	redir_tail = &new_redir->next;
+	return (1);
+}
+
 /**
  * @brief Core command argument parser.
  * @param p Parser state.
  * @return Complete command structure.
  * @note Handles words, redirections, and syntax error detection.
- */t_cmd *parse_args(t_parse *p)
+ */
+t_cmd	*parse_args(t_parse *p)
 {
-	t_list *args;
-	t_redir *redirs;
-	t_redir **redir_tail;
-	t_redir *new_redir;
+	t_list	*args;
+	t_redir	*redirs;
+	t_redir	**redir_tail;
 
-	args = NULL;
-	redirs = NULL;
 	redir_tail = &redirs;
-	while (p->token_type != T_EOF && p->token_type != T_PIPE && p->token_type != T_SEMICOLON)
+	redirs = NULL;
+	args = NULL;
+	while (p->token_type != T_EOF && p->token_type != T_PIPE
+		&& p->token_type != T_SEMICOLON)
 	{
-		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED || p->token_type == T_DOUBLE_QUOTED)
+		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED
+			|| p->token_type == T_DOUBLE_QUOTED)
 		{
-			if (!p->token_value)
-			{
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return NULL;
-			}
-			process_argument(p, &args);
+			if (!handle_argument_token(p, &args, redirs))
+				return (NULL);
 		}
 		else if (is_redirection(p->token_type))
 		{
-			new_redir = process_redirection(p, &args, redirs);
-			if (!new_redir)
+			if (!handle_redirection_token(p, &args, redir_tail, redirs))
 				return (NULL);
-			*redir_tail = new_redir;
-			redir_tail = &new_redir->next;
 		}
 		next_token(p);
 	}
@@ -1772,6 +1859,7 @@ t_cmd *parse_pipeline(t_parse *p)
 	return head;
 }
 
+
 parser.c
 
 #include "minishell.h"
@@ -1781,7 +1869,7 @@ parser.c
  * @param p Parser state.
  * @note Modifies parser position and current character.
  */
-static void	skip_whitespace(t_parse *p)
+void	skip_whitespace(t_parse *p)
 {
 	while (ft_isspace(p->curr_char))
 		next_char(p);
@@ -1793,7 +1881,7 @@ static void	skip_whitespace(t_parse *p)
  * @param quote Quote character (' or ").
  * @note Handles escape characters and nested quotes.
  */
-static void	handle_quotes(t_parse *p, char quote)
+void	handle_quotes(t_parse *p, char quote)
 {
 	size_t	start;
 	char	*content;
@@ -1829,7 +1917,7 @@ static void	handle_quotes(t_parse *p, char quote)
  * @param p Parser state.
  * @note Collects characters until whitespace or special character.
  */
-static void	handle_word(t_parse *p)
+void	handle_word(t_parse *p)
 {
 	size_t	start;
 	char	*sub;
@@ -1870,9 +1958,6 @@ void	next_token(t_parse *p)
 		handle_word(p);
 }
 
-
-#include "minishell.h"
-
 /**
  * @brief Checks if token is redirection operator.
  * @param type Token type to check.
@@ -1881,8 +1966,8 @@ void	next_token(t_parse *p)
  */
 int	is_redirection(t_token type)
 {
-	return (type == T_REDIR_IN || type == T_REDIR_OUT
-		|| type == T_APPEND || type == T_HEREDOC);
+	return (type == T_REDIR_IN || type == T_REDIR_OUT || type == T_APPEND
+		|| type == T_HEREDOC);
 }
 
 /**
@@ -1893,10 +1978,11 @@ int	is_redirection(t_token type)
  */
 char	**build_expanded_args(t_list *args)
 {
-	char		**arr;
-	t_list		*current;
-	int			i;
-	t_arg		*a;
+	char **arr;
+	t_list *current;
+	int i;
+	t_arg *a;
+	char *processed;
 
 	arr = malloc(sizeof(char *) * (ft_lstsize(args) + 1));
 	current = args;
@@ -1907,13 +1993,17 @@ char	**build_expanded_args(t_list *args)
 		if (a->type == T_SINGLE_QUOTED)
 			arr[i++] = ft_strdup(a->value);
 		else
-			arr[i++] = expand_variables(a->value);
+		{
+			processed = process_escapes(a->value);
+			char *expanded = expand_variables(processed);
+			arr[i++] = expanded;
+			free(processed);
+		}
 		current = current->next;
 	}
 	arr[i] = NULL;
 	return (arr);
 }
-
 
 signals.c
 
@@ -2064,10 +2154,6 @@ char	**list_to_array(t_list *lst)
 	return (arr);
 }
 
-utils2.c
-
-#include "minishell.h"
-
 /**
  * @brief Frees command structure and components.
  * @param cmd Command to free.
@@ -2188,10 +2274,6 @@ void	print_export_declarations(void)
 	}
 }
 
-utils3.c
-
-#include "minishell.h"
-
 /**
  * @brief Safe strlen with NULL handling.
  * @param s String to measure.
@@ -2287,10 +2369,6 @@ char	*ft_strjoin_free(char *s1, const char *s2)
 	return (result);
 }
 
-utils4.c
-
-#include "minishell.h"
-
 /**
  * @brief Safely appends a character to a string.
  * @param str Original string (freed after appending).
@@ -2362,7 +2440,9 @@ void	free_redirections(t_redir *redirs)
  */
 void	free_env_copy(char **env_copy)
 {
-	if (!env_copy)
+	extern char **environ;
+
+	if (env_copy != NULL && env_copy != environ)
 		return ;
 	ft_free_array(env_copy);
 }
@@ -2384,19 +2464,15 @@ void	syntax_error(char *token)
 	set_exit_status(SYNTAX_ERROR);
 }
 
-utils5.c
-
-#include "minishell.h"
-
 /**
  * @brief Extracts file descriptor number from input.
  * @param p Parser state.
  * @return String containing numeric file descriptor.
  * @note Advances parser position past digits.
  */
-char	*parse_fd(t_parse *p)
+char *parse_fd(t_parse *p)
 {
-	int	start;
+	int start;
 
 	start = p->pos;
 	while (ft_isdigit(p->curr_char))
@@ -2410,7 +2486,7 @@ char	*parse_fd(t_parse *p)
  * @param in_quote Pointer to the in_quote flag.
  * @param quote_char Pointer to the current quote character.
  */
-void	update_quote_state(char c, int *in_quote, char *quote_char)
+void update_quote_state(char c, int *in_quote, char *quote_char)
 {
 	if (*in_quote && c == *quote_char)
 		*in_quote = 0;
@@ -2428,7 +2504,7 @@ void	update_quote_state(char c, int *in_quote, char *quote_char)
  * @param start Pointer to the start of the substring.
  * @param end Pointer to the end of the substring.
  */
-void	add_substring(char ***result, int *count,
+void add_substring(char ***result, int *count,
 				const char *start, const char *end)
 {
 	*result = realloc(*result, sizeof(char *) * (*count + 2));
@@ -2443,9 +2519,11 @@ void	add_substring(char ***result, int *count,
  * @param result Pointer to the result array.
  * @param count Pointer to the current count of elements in the array.
  */
-void	handle_delimiter(const char **str, const char **start,
-	char ***result, int *count)
+void handle_delimiter(const char **str, const char **start,
+					char ***result, int *count)
 {
+	if ((*str > *start) && (*str)[-1] == '\\')
+		return;
 	add_substring(result, count, *start, *str);
 	*start = *str + 1;
 }
@@ -2457,13 +2535,13 @@ void	handle_delimiter(const char **str, const char **start,
  * @return Array of split tokens.
  * @note Preserves quoted content including delimiters.
  */
-char	**split_with_quotes(const char *str, char delim)
+char **split_with_quotes(const char *str, char delim)
 {
-	const char	*start;
-	char		**result;
-	int			count;
-	int			in_quote;
-	char		quote_char;
+	const char *start;
+	char **result;
+	int count;
+	int in_quote;
+	char quote_char;
 
 	start = str;
 	result = NULL;
@@ -2472,10 +2550,17 @@ char	**split_with_quotes(const char *str, char delim)
 	quote_char = '\0';
 	while (*str)
 	{
+		if (!in_quote && *str == '\\' && (str[1] == delim || str[1] == '\\'))
+		{
+			str++; // Skip the escape character
+			str++; // Move past escaped character
+			continue;
+		}
 		if ((*str == '\'' || *str == '"'))
 			update_quote_state(*str, &in_quote, &quote_char);
 		else if (*str == delim && !in_quote)
 			handle_delimiter(&str, &start, &result, &count);
+
 		str++;
 	}
 	if (start != str)
@@ -2483,4 +2568,30 @@ char	**split_with_quotes(const char *str, char delim)
 	if (result)
 		result[count] = NULL;
 	return (result);
+}
+
+char *process_escapes(char *str)
+{
+	char *result = malloc(ft_strlen(str) + 1);
+	int i = 0;
+	int j = 0;
+
+	while (str[i])
+	{
+		if (str[i] == '\\')
+		{
+			// Skip escape character but preserve next character
+			i++;
+			if (str[i] != '\0')
+			{
+				result[j++] = str[i++];
+			}
+		}
+		else
+		{
+			result[j++] = str[i++];
+		}
+	}
+	result[j] = '\0';
+	return result;
 }

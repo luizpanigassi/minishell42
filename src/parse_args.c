@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 19:24:48 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 15:29:29 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,11 +65,7 @@ t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 
 	redir = malloc(sizeof(t_redir));
 	if (!redir)
-	{
-		ft_lstclear(args, free_arg);
-		free_redirections(redirs);
 		return (NULL);
-	}
 	redir->fd = p->redir_fd;
 	redir->type = p->token_type;
 	next_token(p);
@@ -82,6 +78,13 @@ t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	p->redir_fd = 0;
 	redir->filename = ft_strdup(p->token_value);
 	redir->next = NULL;
+	if (p->syntax_error) {
+		free(redir);
+		ft_lstclear(args, free_arg);   // Free args list
+		free_redirections(redirs);     // Free existing redirs
+		p->syntax_error = 1;
+		return NULL;
+	}
 	return (redir);
 }
 
@@ -146,6 +149,7 @@ t_cmd	*parse_args(t_parse *p)
 	t_list	*args;
 	t_redir	*redirs;
 	t_redir	**redir_tail;
+	t_redir	*new_redir;
 
 	redir_tail = &redirs;
 	redirs = NULL;
@@ -157,12 +161,22 @@ t_cmd	*parse_args(t_parse *p)
 			|| p->token_type == T_DOUBLE_QUOTED)
 		{
 			if (!handle_argument_token(p, &args, redirs))
+			{
+				ft_lstclear(&args, free_arg);
+				free_redirections(redirs);
 				return (NULL);
+			}
 		}
 		else if (is_redirection(p->token_type))
 		{
-			if (!handle_redirection_token(p, &args, redir_tail, redirs))
-				return (NULL);
+			new_redir = process_redirection(p, &args, redirs);
+			if (!new_redir) {
+				ft_lstclear(&args, free_arg);
+				free_redirections(redirs);
+				return NULL;
+			}
+			*redir_tail = new_redir;
+			redir_tail = &new_redir->next;
 		}
 		next_token(p);
 	}

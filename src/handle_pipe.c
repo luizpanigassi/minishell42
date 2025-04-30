@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/29 19:13:23 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 15:29:52 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,8 +30,10 @@ int execute_pipeline(t_cmd *pipeline)
 		return 1;
 	child_pids = malloc(sizeof(pid_t) * cmd_count);
 	if (!child_pids)
+	{
+		free(child_pids);
 		return 1;
-
+	}
 	t_cmd *current = pipeline;
 	while (current)
 	{

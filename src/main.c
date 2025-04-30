@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 19:25:49 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 16:00:53 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,6 +171,7 @@ int main(void)
 		if (!input) // Handle Ctrl+D
 		{
 			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
+			free(env_copy);
 			should_exit = 1;
 			break;
 		}
@@ -274,5 +275,5 @@ int main(void)
 	if (env_copy)
 		free_env_copy(env_copy);
 
-	return exit_status;
+	return (exit_status);
 }
