@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/30 16:00:53 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/01 16:57:54 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -267,13 +267,6 @@ int main(void)
 
 	// Cleanup sequence
 	rl_clear_history();
-
-	// Restore original environment before exit
 	environ = original_environ;
-
-	// Free our environment copy if it exists
-	if (env_copy)
-		free_env_copy(env_copy);
-
 	return (exit_status);
 }

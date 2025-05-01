@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:08:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 15:40:10 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 16:45:06 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,11 +83,8 @@ void	free_redirections(t_redir *redirs)
  */
 void	free_env_copy(char **env_copy)
 {
-	extern char **environ;
-
-	if (env_copy != NULL && env_copy != environ)
-		return ;
-	ft_free_array(env_copy);
+	if (env_copy)
+		ft_free_array(env_copy);
 }
 
 /**

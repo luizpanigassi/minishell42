@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/30 15:13:27 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 16:49:32 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,6 +111,11 @@ void	exec_external_command(t_cmd *cmd)
 	extern char	**environ;
 	char		*path;
 
+	if (!cmd->args[0])
+	{
+		ft_putstr_fd("minishell: : command not found\n", STDERR_FILENO);
+		exit(CMD_NOT_FOUND);
+	}
 	path = get_cmd_path(cmd->args[0]);
 	if (!path)
 	{

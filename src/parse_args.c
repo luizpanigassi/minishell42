@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/30 15:29:29 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 16:52:06 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,7 +150,9 @@ t_cmd	*parse_args(t_parse *p)
 	t_redir	*redirs;
 	t_redir	**redir_tail;
 	t_redir	*new_redir;
+	int		has_args;
 
+	has_args = 0;
 	redir_tail = &redirs;
 	redirs = NULL;
 	args = NULL;
@@ -166,6 +168,7 @@ t_cmd	*parse_args(t_parse *p)
 				free_redirections(redirs);
 				return (NULL);
 			}
+			has_args = 1;
 		}
 		else if (is_redirection(p->token_type))
 		{
@@ -179,6 +182,14 @@ t_cmd	*parse_args(t_parse *p)
 			redir_tail = &new_redir->next;
 		}
 		next_token(p);
+	}
+	if (!has_args && redirs)
+	{
+		ft_putstr_fd("minishell: syntax error near unexpected token '>'\n", STDERR_FILENO);
+		p->syntax_error = 1;
+		ft_lstclear(&args, free_arg);
+		free_redirections(redirs);
+		return NULL;
 	}
 	return (create_command(args, redirs));
 }

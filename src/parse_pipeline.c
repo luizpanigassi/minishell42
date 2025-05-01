@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 15:44:42 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:32:49 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/30 16:48:15 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,8 @@ t_cmd *parse_pipeline(t_parse *p)
 	if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON)
 	{
 		syntax_error(p->token_value ? p->token_value : "newline");
+		free(p->token_value);
+		p->token_value = NULL;
 		return NULL;
 	}
 	while (1)
@@ -41,6 +43,8 @@ t_cmd *parse_pipeline(t_parse *p)
 		// parse_args failed
 		if (p->syntax_error)
 		{
+			free(p->token_value);
+			p->token_value = NULL;
 			free_cmd(head);
 			return NULL;
 		}
@@ -63,6 +67,8 @@ t_cmd *parse_pipeline(t_parse *p)
 		if (p->token_type == T_PIPE || p->token_type == T_SEMICOLON || p->token_type == T_EOF)
 		{
 			syntax_error(error_token);
+			free(p->token_value);
+			p->token_value = NULL;
 			free_cmd(head);
 			return NULL;
 		}
@@ -70,6 +76,8 @@ t_cmd *parse_pipeline(t_parse *p)
 	// syntax check after pipeline parsing
 	if (p->syntax_error)
 	{
+		free(p->token_value);
+		p->token_value = NULL;
 		free_cmd(head);
 		return NULL;
 	}
