@@ -1,0 +1,14 @@
+builtin
+includes
+libft
+Makefile
+minishell
+minishell_evalsheet.pdf
+out.txt
+problems.txt
+readline.supp
+README.md
+src
+subject.txt
+text
+utils

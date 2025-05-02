@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_2.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 14:40:41 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/01 19:42:44 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:16:09 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,13 @@
  * @param cmd Command to free.
  * @note Recursively frees arguments and redirections.
  */
-void free_cmd(t_cmd *cmd)
+void	free_cmd(t_cmd *cmd)
 {
-	t_redir *redir;
-	t_redir *tmp;
+	t_redir	*redir;
+	t_redir	*tmp;
 
 	if (!cmd)
-		return;
+		return ;
 	ft_free_array(cmd->args);
 	redir = cmd->redirections;
 	while (redir)
@@ -43,7 +43,7 @@ void free_cmd(t_cmd *cmd)
  * @return Difference at first mismatch or 0 if equal.
  * @note Unsafe for NULL inputs.
  */
-int ft_strcmp(const char *s1, const char *s2)
+int	ft_strcmp(const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2)
 	{
@@ -59,10 +59,11 @@ int ft_strcmp(const char *s1, const char *s2)
  * @return 1 if valid number, 0 otherwise.
  * @note Allows optional leading + or - sign.
  */
-int ft_isnumber(const char *str)
+int	ft_isnumber(const char *str)
 {
-	int i = 0;
+	int	i;
 
+	i = 0;
 	if (!str || !*str)
 		return (0);
 	if (str[i] == '+' || str[i] == '-')
@@ -82,9 +83,9 @@ int ft_isnumber(const char *str)
  * @return 1 if valid identifier, 0 otherwise.
  * @note Follows POSIX variable naming rules.
  */
-int is_valid_var_name(const char *name)
+int	is_valid_var_name(const char *name)
 {
-	int i;
+	int	i;
 
 	if (!name || !name[0] || ft_isdigit(name[0]))
 		return (0);
@@ -102,11 +103,11 @@ int is_valid_var_name(const char *name)
  * @brief Prints environment in export format.
  * @note Shows variables with declare -x syntax.
  */
-void print_export_declarations(void)
+void	print_export_declarations(void)
 {
-	extern char **environ;
-	int i;
-	char *eq;
+	extern char	**environ;
+	int			i;
+	char		*eq;
 
 	i = 0;
 	while (environ[i])

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 18:41:54 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:19:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,17 +118,19 @@ char **split_with_quotes(const char *str, char delim)
 	return (result);
 }
 
-char *process_escapes(char *str)
+char	*process_escapes(char *str)
 {
-	char *result = malloc(ft_strlen(str) + 1);
-	int i = 0;
-	int j = 0;
+	char	*result;
+	int		i;
+	int		j;
 
+	result = malloc(ft_strlen(str) + 1);
+	j = 0;
+	i = 0;
 	while (str[i])
 	{
 		if (str[i] == '\\')
 		{
-			// Skip escape character but preserve next character
 			i++;
 			if (str[i] != '\0')
 			{
@@ -141,5 +143,5 @@ char *process_escapes(char *str)
 		}
 	}
 	result[j] = '\0';
-	return result;
+	return (result);
 }

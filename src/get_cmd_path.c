@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 14:53:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/30 18:49:44 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 16:53:59 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,10 @@
  * @return Full path string or NULL.
  * @note Checks execute permissions on constructed path.
  */
-char *check_path_for_cmd(const char *dir_path, const char *cmd)
+char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
-	char *dir_slash;
-	char *full_path;
+	char	*dir_slash;
+	char	*full_path;
 
 	dir_slash = ft_strjoin(dir_path, "/");
 	if (!dir_slash)
@@ -42,10 +42,10 @@ char *check_path_for_cmd(const char *dir_path, const char *cmd)
  * @return Null-terminated array of directory strings.
  * @note Splits PATH environment variable using colon delimiter.
  */
-char **get_path_directories(void)
+char	**get_path_directories(void)
 {
-	char *path_env;
-	char **paths;
+	char	*path_env;
+	char	**paths;
 
 	path_env = getenv("PATH");
 	if (!path_env)
@@ -62,9 +62,9 @@ char **get_path_directories(void)
  * @return Full path if valid direct path, NULL otherwise.
  * @note Verifies existence and permissions of path.
  */
-char *check_direct_path(char *cmd)
+char	*check_direct_path(char *cmd)
 {
-	struct stat path_stat;
+	struct stat	path_stat;
 
 	if (ft_strchr(cmd, '/') != NULL)
 	{
@@ -91,11 +91,11 @@ char *check_direct_path(char *cmd)
  * @return Allocated full path (e.g., "/bin/ls") or NULL if not found.
  * Caller must free the returned string.
  */
-char *get_cmd_path(char *cmd)
+char	*get_cmd_path(char *cmd)
 {
-	char **paths;
-	char *full_path;
-	int i;
+	char	**paths;
+	char	*full_path;
+	int		i;
 
 	full_path = check_direct_path(cmd);
 	if (full_path)

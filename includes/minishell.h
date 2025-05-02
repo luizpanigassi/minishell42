@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/30 18:48:25 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:37:58 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,14 @@ typedef struct s_exec_vars {
 	t_cmd	*current;
 	int		last_status;
 }	t_exec_vars;
+
+typedef struct s_token_state
+{
+	t_list		**args;
+	t_redir		**redirs;
+	t_redir		***redir_tail;
+	int			*has_args;
+}	t_token_state;
 
 /*
 ** Global variable to store the exit status of commands

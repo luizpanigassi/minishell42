@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/01 20:04:47 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:51:00 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,19 +71,17 @@ t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs)
 	next_token(p);
 	if (!p->token_value || (p->token_type != T_WORD && p->token_type
 			!= T_SINGLE_QUOTED && p->token_type != T_DOUBLE_QUOTED))
-	{
-		free(redir);
-		return (handle_redir_error(p, args, redirs));
-	}
+		return (free(redir), handle_redir_error(p, args, redirs));
 	p->redir_fd = 0;
 	redir->filename = ft_strdup(p->token_value);
 	redir->next = NULL;
-	if (p->syntax_error) {
+	if (p->syntax_error)
+	{
 		free(redir);
-		ft_lstclear(args, free_arg);   // Free args list
-		free_redirections(redirs);     // Free existing redirs
+		ft_lstclear(args, free_arg);
+		free_redirections(redirs);
 		p->syntax_error = 1;
-		return NULL;
+		return (NULL);
 	}
 	return (redir);
 }
@@ -125,7 +123,7 @@ int	handle_argument_token(t_parse *p, t_list **args, t_redir *redirs)
 	return (1);
 }
 
-int	handle_redirection_token(t_parse *p, t_list **args,
+int handle_redirection_token(t_parse *p, t_list **args,
 	t_redir **redir_tail, t_redir *redirs)
 {
 	t_redir	*new_redir;
@@ -139,6 +137,62 @@ int	handle_redirection_token(t_parse *p, t_list **args,
 }
 
 /**
+ * @brief Struct to encapsulate token processing state.
+ */
+
+/**
+ * @brief Processes tokens to build arguments and redirections.
+ * @param p Parser state.
+ * @param state Token processing state (encapsulates args, redirs, etc.).
+ * @return 1 on success, 0 on error.
+ */
+int	process_tokens(t_parse *p, t_token_state *state)
+{
+	t_redir	*new_redir;
+
+	while (p->token_type != T_EOF && p->token_type
+		!= T_PIPE && p->token_type != T_SEMICOLON)
+	{
+		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED
+			|| p->token_type == T_DOUBLE_QUOTED)
+		{
+			if (!handle_argument_token(p, state->args, *(state->redirs)))
+				return (0);
+			*(state->has_args) = 1;
+		}
+		else if (is_redirection(p->token_type))
+		{
+			new_redir = process_redirection(p, state->args, *(state->redirs));
+			if (!new_redir)
+				return (0);
+			**(state->redir_tail) = new_redir;
+			*(state->redir_tail) = &new_redir->next;
+		}
+		next_token(p);
+	}
+	return (1);
+}
+
+/**
+ * @brief Handles syntax errors and performs cleanup.
+ * @param p Parser state.
+ * @param args Argument list to clear.
+ * @param redirs Redirection list to clear.
+ * @param error_message Error message to display.
+ * @return Always returns NULL.
+ */
+t_cmd *handle_syntax_error(t_parse *p, t_list *args, t_redir *redirs,
+	char *error_message)
+{
+	if (error_message)
+		ft_putstr_fd(error_message, STDERR_FILENO);
+	p->syntax_error = 1;
+	ft_lstclear(&args, free_arg);
+	free_redirections(redirs);
+	return (NULL);
+}
+
+/**
  * @brief Core command argument parser.
  * @param p Parser state.
  * @return Complete command structure.
@@ -146,50 +200,24 @@ int	handle_redirection_token(t_parse *p, t_list **args,
  */
 t_cmd	*parse_args(t_parse *p)
 {
-	t_list	*args;
-	t_redir	*redirs;
-	t_redir	**redir_tail;
-	t_redir	*new_redir;
-	int		has_args;
+	t_list			*args;
+	t_redir			*redirs;
+	t_redir			**redir_tail;
+	int				has_args;
+	t_token_state	state;
 
 	has_args = 0;
 	redir_tail = &redirs;
 	redirs = NULL;
 	args = NULL;
-	while (p->token_type != T_EOF && p->token_type != T_PIPE
-		&& p->token_type != T_SEMICOLON)
-	{
-		if (p->token_type == T_WORD || p->token_type == T_SINGLE_QUOTED
-			|| p->token_type == T_DOUBLE_QUOTED)
-		{
-			if (!handle_argument_token(p, &args, redirs))
-			{
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return (NULL);
-			}
-			has_args = 1;
-		}
-		else if (is_redirection(p->token_type))
-		{
-			new_redir = process_redirection(p, &args, redirs);
-			if (!new_redir) {
-				ft_lstclear(&args, free_arg);
-				free_redirections(redirs);
-				return NULL;
-			}
-			*redir_tail = new_redir;
-			redir_tail = &new_redir->next;
-		}
-		next_token(p);
-	}
+	state.args = &args;
+	state.redirs = &redirs;
+	state.redir_tail = &redir_tail;
+	state.has_args = &has_args;
+	if (!process_tokens(p, &state))
+		return (handle_syntax_error(p, args, redirs, NULL));
 	if (!has_args && redirs)
-	{
-		ft_putstr_fd("minishell: syntax error near unexpected token '>'\n", STDERR_FILENO);
-		p->syntax_error = 1;
-		ft_lstclear(&args, free_arg);
-		free_redirections(redirs);
-		return NULL;
-	}
+		return (handle_syntax_error(p, args, redirs,
+				"minishell: syntax error near unexpected token '>'\n"));
 	return (create_command(args, redirs));
 }

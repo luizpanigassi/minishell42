@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/02 15:58:32 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:55:46 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,12 +170,11 @@ int main(void)
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			// ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
-			free(env_copy);
+			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
 			should_exit = 1;
+			free(env_copy);
 			break;
 		}
-
 		if (ft_strlen(input) > 0)
 			add_history(input);
 		else
@@ -183,12 +182,10 @@ int main(void)
 			free(input);
 			continue;
 		}
-
 		char **commands = split_with_quotes(input, ';');
 		free(input);
 		int syntax_error_flag = 0;
 		int i = 0;
-
 		while (commands && commands[i] && !syntax_error_flag && !should_exit)
 		{
 			char *trimmed_cmd = ft_strtrim(commands[i], " \t\n");
@@ -198,12 +195,10 @@ int main(void)
 				i++;
 				continue;
 			}
-
 			t_parse parser;
 			init_parser(&parser, trimmed_cmd);
 			t_cmd *pipeline = parse_pipeline(&parser);
 			free(trimmed_cmd);
-
 			if (parser.syntax_error)
 			{
 				syntax_error_flag = 1;
@@ -212,13 +207,11 @@ int main(void)
 				i++;
 				continue;
 			}
-
 			if (!pipeline)
 			{
 				i++;
 				continue;
 			}
-
 			// Handle builtins in parent
 			if (!pipeline->next && is_builtin(pipeline->args))
 			{
@@ -265,8 +258,7 @@ int main(void)
 		if (syntax_error_flag)
 			set_exit_status(SYNTAX_ERROR);
 	}
-
-	// Cleanup sequence
+	// Cleanup
 	rl_clear_history();
 	environ = original_environ;
 	return (exit_status);
