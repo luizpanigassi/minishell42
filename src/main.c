@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/01 16:57:54 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 15:58:32 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ int main(void)
 		input = readline("minishell> ");
 		if (!input) // Handle Ctrl+D
 		{
-			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
+			// ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
 			free(env_copy);
 			should_exit = 1;
 			break;
@@ -228,8 +228,9 @@ int main(void)
 
 				if (handle_redirections(-1, -1, pipeline->redirections) == 0)
 				{
-					int result = exec_builtin(pipeline->args);
-					set_exit_status(result);
+					int exit_code = exec_builtin(pipeline->args);
+					if (exit_code != 4242) // Special exit code for shell termination
+						g_exit_status = exit_code; // Update global exit status
 				}
 
 				dup2(saved_stdin, STDIN_FILENO);

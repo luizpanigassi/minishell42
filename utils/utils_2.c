@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_2.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 14:40:41 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/30 18:40:41 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/01 19:42:44 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ int ft_isnumber(const char *str)
 			return (0);
 		i++;
 	}
-	return (i > 0); // Allow single '+' or '-' (though exit may handle this)
+	return (i > 0);
 }
 
 /**
@@ -89,7 +89,7 @@ int is_valid_var_name(const char *name)
 	if (!name || !name[0] || ft_isdigit(name[0]))
 		return (0);
 	i = 0;
-	while (name[i])
+	while (name[i] && name[i] != '=')
 	{
 		if (!ft_isalnum(name[i]) && name[i] != '_')
 			return (0);

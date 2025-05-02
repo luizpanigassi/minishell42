@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:51:59 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/30 16:01:21 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 16:51:40 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
  * @return 1 if invalid, 0 if valid.
  * @note Prints formatted error message for invalid names.
  */
-int handle_unset_error(char *arg)
+int	handle_unset_error(char *arg)
 {
 	if (is_valid_var_name(arg))
 		return (0);
@@ -33,9 +33,9 @@ int handle_unset_error(char *arg)
  * @param env_ptr Pointer to start position in environment array.
  * @note Modifies environment array in-place after variable removal.
  */
-void shift_environment(char **env_ptr)
+void	shift_environment(char **env_ptr)
 {
-	char **ptr;
+	char	**ptr;
 
 	ptr = env_ptr;
 	while (*ptr)
@@ -46,42 +46,48 @@ void shift_environment(char **env_ptr)
 }
 
 /**
+ * @brief Finds and frees the target environment variable.
+ * @param var_name Name of the variable to remove.
+ * @param env_ptr Pointer to the environment array.
+ * @return Pointer to the position of the removed variable, or NULL if not found.
+ */
+char	**find_and_free_env_var(const char *var_name, char **env_ptr)
+{
+	char	*eq;
+	size_t	name_len;
+	size_t	var_len;
+
+	name_len = ft_strlen(var_name);
+	while (*env_ptr)
+	{
+		eq = ft_strchr(*env_ptr, '=');
+		if (eq)
+			var_len = (size_t)(eq - *env_ptr);
+		else
+			var_len = ft_strlen(*env_ptr);
+		if (var_len == name_len && ft_strncmp(*env_ptr, var_name, var_len) == 0)
+		{
+			free(*env_ptr);
+			return (env_ptr);
+		}
+		env_ptr++;
+	}
+	return (NULL);
+}
+
+/**
  * @brief Removes environment variable from global environ.
  * @param var_name Name of variable to remove.
  * @note Directly modifies the environ array.
  */
-void remove_env_var(const char *var_name)
+void	remove_env_var(const char *var_name)
 {
-	extern char **environ;
-	char **env_ptr = environ;
-	char *eq;
-	size_t name_len = ft_strlen(var_name);
-	int found = 0;
+	extern char	**environ;
+	char		**env_ptr;
 
-	while (*env_ptr)
-	{
-		eq = ft_strchr(*env_ptr, '=');
-		size_t var_len = eq ? (size_t)(eq - *env_ptr) : ft_strlen(*env_ptr);
-
-		if (var_len == name_len && ft_strncmp(*env_ptr, var_name, var_len) == 0)
-		{
-			free(*env_ptr); // Free the environment variable string
-			found = 1;
-			break;
-		}
-		env_ptr++;
-	}
-
-	// Shift remaining entries left to fill the gap
-	if (found)
-	{
-		char **ptr = env_ptr;
-		while (*ptr)
-		{
-			*ptr = *(ptr + 1);
-			ptr++;
-		}
-	}
+	env_ptr = find_and_free_env_var(var_name, environ);
+	if (env_ptr)
+		shift_environment(env_ptr);
 }
 
 /**
@@ -90,10 +96,10 @@ void remove_env_var(const char *var_name)
  * @return 0 on success, 1 for invalid names.
  * @note Modifies environ array directly.
  */
-int exec_unset(char **args)
+int	exec_unset(char **args)
 {
-	int ret;
-	int i;
+	int	ret;
+	int	i;
 
 	if (!args[1])
 		return (0);

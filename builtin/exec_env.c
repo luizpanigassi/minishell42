@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:46:59 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:14:40 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 16:52:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,13 @@ int	exec_env(char **args)
 	int			i;
 
 	(void)args;
-	i = -1;
-	while (environ[++i])
-		printf("%s\n", environ[i]);
+	i = 0;
+	while (environ[i])
+	{
+		if (ft_strncmp(environ[i], "COLUMNS=", 8) != 0
+			&& ft_strncmp(environ[i], "LINES=", 6) != 0)
+			printf("%s\n", environ[i]);
+		i++;
+	}
 	return (0);
 }

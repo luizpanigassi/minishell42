@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:43:27 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/30 17:40:38 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 16:43:28 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,13 +26,14 @@ int	exec_exit(char **args)
 	if (args[1] && args[2])
 	{
 		ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
-		set_exit_status(1);
+		set_exit_status(2);
 		return (1);
 	}
 	if (args[1] && !ft_isnumber(args[1]))
 	{
 		ft_putstr_fd("minishell: exit: numeric argument required\n",
 			STDERR_FILENO);
+		set_exit_status(2);
 		exit(2);
 	}
 	if (args[1])
