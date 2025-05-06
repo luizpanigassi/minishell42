@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/02 17:55:46 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/06 15:44:39 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,31 @@ void free_pipeline(t_cmd *pipeline)
 			free(tmp_redir->filename);
 			free(tmp_redir);
 		}
-
 		free(current);
 	}
+}
+
+/**
+ * @brief Executes a non-builtin command.
+ * @param cmd Command structure to execute.
+ * @param environ Environment variables.
+ */
+void execute_non_builtin(t_cmd *cmd, char **environ)
+{
+	char *cmd_path;
+
+	cmd_path = get_cmd_path(cmd->args[0]);
+	if (!cmd_path)
+	{
+		ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
+		ft_putstr_fd(cmd->args[0], STDERR_FILENO);
+		ft_putstr_fd("\n", STDERR_FILENO);
+		exit(CMD_NOT_FOUND);
+	}
+	execve(cmd_path, cmd->args, environ);
+	perror("minishell");
+	free(cmd_path);
+	exit(EXIT_FAILURE);
 }
 
 /**
@@ -53,14 +75,12 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 {
 	pid_t pid;
 	extern char **environ;
-	char *cmd_path;
 
 	pid = fork();
 	if (pid == 0)
 	{
 		setup_child_signals();
 		handle_redirections(pipe_in, pipe_out, cmd->redirections);
-
 		if (is_builtin(cmd->args))
 		{
 			exec_builtin(cmd->args);
@@ -68,18 +88,7 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 		}
 		else
 		{
-			cmd_path = get_cmd_path(cmd->args[0]);
-			if (!cmd_path)
-			{
-				ft_putstr_fd("minishell: command not found: ", STDERR_FILENO);
-				ft_putstr_fd(cmd->args[0], STDERR_FILENO);
-				ft_putstr_fd("\n", STDERR_FILENO);
-				exit(CMD_NOT_FOUND);
-			}
-			execve(cmd_path, cmd->args, environ);
-			perror("minishell");
-			free(cmd_path);
-			exit(EXIT_FAILURE);
+			execute_non_builtin(cmd, environ);
 		}
 	}
 	else if (pid < 0)
@@ -124,7 +133,6 @@ int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
 			fd = open(current->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		else if (current->type == T_APPEND)
 			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-
 		if (fd == -1)
 		{
 			perror("minishell");
@@ -171,8 +179,8 @@ int main(void)
 		if (!input) // Handle Ctrl+D
 		{
 			ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
+			free_env_copy(env_copy);
 			should_exit = 1;
-			free(env_copy);
 			break;
 		}
 		if (ft_strlen(input) > 0)
@@ -222,7 +230,7 @@ int main(void)
 				if (handle_redirections(-1, -1, pipeline->redirections) == 0)
 				{
 					int exit_code = exec_builtin(pipeline->args);
-					if (exit_code != 4242) // Special exit code for shell termination
+					if (exit_code != 4242)		   // Special exit code for shell termination
 						g_exit_status = exit_code; // Update global exit status
 				}
 

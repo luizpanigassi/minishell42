@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/26 18:05:42 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/30 16:11:43 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/06 15:58:41 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,6 @@ void	update_env_var(char *var, char *value)
 		eq = ft_strchr(*env_ptr, '=');
 		if (eq && ft_strncmp(*env_ptr, var, eq - *env_ptr) == 0)
 		{
-			free(*env_ptr);
 			*env_ptr = new_entry;
 			return ;
 		}
@@ -136,9 +135,9 @@ void	update_env_var(char *var, char *value)
 		free(value);
 }
 
-/*
-** Ensures a variable exists in the environment (without value if not present)
-** @param var_name Variable name to check/export
+/**
+ * Ensures a variable exists in the environment (without value if not present)
+ * @param var_name Variable name to check/export
 */
 void	ensure_var_exported(char *var_name)
 {
