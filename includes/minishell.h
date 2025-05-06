@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/02 17:37:58 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/06 17:00:08 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,16 @@ typedef struct s_token_state
 	int			*has_args;
 }	t_token_state;
 
+typedef struct s_pipeline_context
+{
+	int		prev_pipe[2];
+	int		next_pipe[2];
+	pid_t	*child_pids;
+	t_cmd	*current;
+	int		last_status;
+	int		index;
+}	t_pipeline_context;
+
 /*
 ** Global variable to store the exit status of commands
 ** volatile sig_atomic_t ensures safe access in signal handlers
@@ -160,6 +170,22 @@ char	*check_direct_path(char *cmd);
 char	*get_cmd_path(char *cmd);
 
 // HANDLE PIPE
+int		wait_for_children(pid_t *child_pids, int cmd_count);
+void	close_and_update_pipes(int prev_pipe[2], int next_pipe[2]);
+void	close_remaining_pipes(int prev_pipe[2]);
+int		handle_heredoc_redirections(t_redir *redirections);
+void	handle_last_command(t_cmd *pipeline, int last_status,
+			pid_t *child_pids);
+
+// EXECUTE PIPE
+void	execute_child_process(int prev_pipe[2],
+			int next_pipe[2], t_cmd *current);
+int		create_pipe(int next_pipe[2], pid_t *child_pids);
+int		fork_and_execute(int prev_pipe[2], int next_pipe[2],
+			t_cmd *current, pid_t *child_pids, int *i);
+int		cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code);
+int		initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
+			int next_pipe[2], pid_t **child_pids);
 int		execute_pipeline(t_cmd *pipeline);
 
 // HANDLE SPECIAL

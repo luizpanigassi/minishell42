@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
+#    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/23 15:45:51 by jcologne         ###   ########.fr        #
+#    Updated: 2025/05/06 17:01:03 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,6 +38,7 @@ SRCS		  = $(addprefix $(SRC_PATH), \
 				  handle_special.c \
 				  parse_args.c \
 				  parse_pipeline.c \
+				  execute_pipe.c \
 				  )
 
 UTILS_PATH  = utils/
