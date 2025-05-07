@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:47:09 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:55:32 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:14:44 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,4 +57,35 @@ void	handle_error(char *message)
 {
 	perror(message);
 	exit(EXIT_FAILURE);
+}
+
+/**
+ * @brief Reads user input and splits it into commands.
+ * @param env_copy Copy of the environment variables.
+ * @param should_exit Pointer to the exit flag.
+ * @return Array of command strings or NULL if the shell should exit.
+ */
+char	**read_and_split_input(char **env_copy, int *should_exit)
+{
+	char	*input;
+	char	**commands;
+
+	input = readline("minishell> ");
+	if (!input)
+	{
+		ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
+		free_env_copy(env_copy);
+		*should_exit = 1;
+		return (NULL);
+	}
+	if (ft_strlen(input) > 0)
+		add_history(input);
+	else
+	{
+		free(input);
+		return (NULL);
+	}
+	commands = split_with_quotes(input, ';');
+	free(input);
+	return (commands);
 }

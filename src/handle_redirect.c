@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 17:12:52 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 17:19:51 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 17:22:09 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ int	handle_single_redirection(t_redir *redir)
 		set_exit_status(1);
 		exit(EXIT_FAILURE);
 	}
-
 	if (redir->type == T_REDIR_IN || redir->type == T_HEREDOC)
 	{
 		if (duplicate_fd(fd, STDIN_FILENO) == -1)

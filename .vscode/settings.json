@@ -9,6 +9,7 @@
 		"libft.h": "c",
 		"history.h": "c",
 		"wait.h": "c",
-		"type_traits": "c"
+		"type_traits": "c",
+		"types.h": "c"
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 17:19:31 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:14:40 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,7 +179,6 @@ int			handle_parent_process(pid_t pid, int read_fd);
 void		handle_child_process(int write_fd, const char *delimiter);
 int			create_heredoc(const char *delimiter);
 
-
 // EXECUTE PIPE
 void		execute_child_process(int prev_pipe[2],
 				int next_pipe[2], t_cmd *current);
@@ -199,6 +198,13 @@ char		*check_path_for_cmd(const char *dir_path, const char *cmd);
 char		**get_path_directories(void);
 char		*check_direct_path(char *cmd);
 char		*get_cmd_path(char *cmd);
+
+// HANDLE COMMANDS
+void		execute_non_builtin(t_cmd *cmd, char **environ);
+void		execute_command(t_cmd *cmd, int pipe_in, int pipe_out);
+void		handle_builtin_in_parent(t_cmd *pipeline);
+int			handle_command_pipeline(char *command, int *should_exit);
+void		free_commands(char **commands);
 
 // HANDLE PARSE ARGS
 t_redir		*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs);
@@ -257,8 +263,8 @@ void		exec_external_command(t_cmd *cmd);
 int			handle_redirection(t_redir *current, int fd);
 
 // MAIN
+t_cmd		*parse_and_validate_pipeline(char *command, t_parse *parser);
 void		free_pipeline(t_cmd *pipeline);
-void		execute_non_builtin(t_cmd *cmd, char **environ);
 void		execute_command(t_cmd *cmd, int pipe_in, int pipe_out);
 
 // PARSE ARGS
@@ -298,30 +304,25 @@ int			ft_isspace(int c);
 void		next_char(t_parse *p);
 int			is_special_char(char c);
 char		**list_to_array(t_list *lst);
-
 void		free_cmd(t_cmd *cmd);
 int			ft_strcmp(const char *s1, const char *s2);
 int			ft_isnumber(const char *str);
 int			is_valid_var_name(const char *name);
 void		print_export_declarations(void);
-
 size_t		ft_strlen_size(const char *str);
 char		*ft_strjoin3(const char *s1, const char *s2, const char *s3);
 char		**ft_array_append(char **array, char *new_element);
 void		free_arg(void *arg);
 char		*ft_strjoin_free(char *s1, const char *s2);
-
 char		*ft_strjoin_char(char *str, char c);
 size_t		ft_cmd_size(t_cmd *pipeline);
 void		free_redirections(t_redir *redirs);
 void		free_env_copy(char **env_copy);
 void		syntax_error(char *token);
-
 char		*parse_fd(t_parse *p);
 void		update_quote_state(char c, int *in_quote, char *quote_char);
 void		process_quote_state(const char *str, int *in_quote,
 				char *quote_char);
-
 void		add_substring(char ***result, int *count, const char *start,
 				const char *end);
 void		handle_delimiter(const char **str, const char **start,
@@ -334,5 +335,6 @@ char		*process_escapes(char *str);
 int			is_redirection(t_token type);
 void		skip_whitespace(t_parse *p);
 void		handle_error(char *message);
+char		**read_and_split_input(char **env_copy, int *should_exit);
 
 #endif
