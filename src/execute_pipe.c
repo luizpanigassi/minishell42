@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute_pipe.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/06 16:56:22 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 18:55:36 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:06:30 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,17 +92,20 @@ int	fork_and_execute(int *pipes[2], t_cmd *current, pid_t *child_pids, int *i)
 }
 
 /**
- * @brief Cleans up resources and handles errors during pipeline execution.
- * @param child_pids Array of child process IDs.
- * @param pipeline Linked list of commands to execute.
- * @param exit_code Exit code to return after cleanup.
- * @return The provided exit code.
+ * @brief Processes a single command in the pipeline.
+ * @param ctx Pipeline context containing state and resources.
+ * @param pipes Array of previous and next pipes.
+ * @return 0 on success, non-zero exit code on failure.
  */
-int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
+int	process_pipeline_command(t_pipeline_context *ctx, int *pipes[2])
 {
-	free(child_pids);
-	free_pipeline(pipeline);
-	return (exit_code);
+	if (handle_heredoc_redirections(ctx->current->redirections) == 130)
+		return (cleanup_on_failure(ctx->child_pids, ctx->current, 130));
+	if (ctx->current->next && create_pipe(ctx->next_pipe, ctx->child_pids))
+		return (cleanup_on_failure(ctx->child_pids, ctx->current, 1));
+	if (fork_and_execute(pipes, ctx->current, ctx->child_pids, &ctx->index))
+		return (cleanup_on_failure(ctx->child_pids, ctx->current, 1));
+	return (0);
 }
 
 /**
@@ -114,8 +117,10 @@ int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
 int	execute_pipeline(t_cmd *pipeline)
 {
 	t_pipeline_context	ctx;
-	int	*pipes[2] = { ctx.prev_pipe, ctx.next_pipe };
+	int					*pipes[2];
 
+	pipes[0] = ctx.prev_pipe;
+	pipes[1] = ctx.next_pipe;
 	if (initialize_pipeline_resources(pipeline, ctx.prev_pipe,
 			ctx.next_pipe, &ctx.child_pids))
 		return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
@@ -123,12 +128,7 @@ int	execute_pipeline(t_cmd *pipeline)
 	ctx.current = pipeline;
 	while (ctx.current)
 	{
-		if (handle_heredoc_redirections(ctx.current->redirections) == 130)
-			return (cleanup_on_failure(ctx.child_pids, pipeline, 130));
-		if (ctx.current->next && create_pipe(ctx.next_pipe, ctx.child_pids))
-			return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
-		if (fork_and_execute(pipes, ctx.current,
-				ctx.child_pids, &ctx.index))
+		if (process_pipeline_command(&ctx, pipes))
 			return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
 		ctx.current = ctx.current->next;
 	}

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 18:47:27 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:06:51 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,9 +183,9 @@ int			create_heredoc(const char *delimiter);
 void		execute_child_process(int prev_pipe[2],
 				int next_pipe[2], t_cmd *current);
 int			create_pipe(int next_pipe[2], pid_t *child_pids);
-int			fork_and_execute(int *pipes[2], t_cmd *current, pid_t *child_pids, int *i);
-int			cleanup_on_failure(pid_t *child_pids,
-				t_cmd *pipeline, int exit_code);
+int			fork_and_execute(int *pipes[2], t_cmd *current,
+				pid_t *child_pids, int *i);
+int			process_pipeline_command(t_pipeline_context *ctx, int *pipes[2]);
 int			execute_pipeline(t_cmd *pipeline);
 
 // EXIT STATUS
@@ -335,5 +335,7 @@ int			is_redirection(t_token type);
 void		skip_whitespace(t_parse *p);
 void		handle_error(char *message);
 char		**read_and_split_input(char **env_copy, int *should_exit);
+int			cleanup_on_failure(pid_t *child_pids,
+				t_cmd *pipeline, int exit_code);
 
 #endif
