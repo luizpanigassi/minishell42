@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:30:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:47:32 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:37:36 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ void	skip_whitespace(t_parse *p)
  * @param str Pointer to the current position in the string.
  * @param delim Delimiter character.
  * @return Updated pointer to the string after skipping.
+ * @note Handles escaped delimiters and backslashes.
  */
 const char	*skip_escaped(const char *str, char delim)
 {
@@ -82,6 +83,7 @@ const char	*skip_escaped(const char *str, char delim)
  * @param str Pointer to the end of the string.
  * @param result Pointer to the result array.
  * @param count Pointer to the current count of elements in the array.
+ * @note Ensures the last segment is added to the result array.
  */
 void	finalize_split(const char *start, const char *str,
 	char ***result, int *count)

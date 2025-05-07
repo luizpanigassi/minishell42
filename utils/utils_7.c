@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:47:09 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 18:14:44 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:19:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,4 +88,18 @@ char	**read_and_split_input(char **env_copy, int *should_exit)
 	commands = split_with_quotes(input, ';');
 	free(input);
 	return (commands);
+}
+
+/**
+ * @brief Cleans up resources and handles errors during pipeline execution.
+ * @param child_pids Array of child process IDs.
+ * @param pipeline Linked list of commands to execute.
+ * @param exit_code Exit code to return after cleanup.
+ * @return The provided exit code.
+ */
+int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
+{
+	free(child_pids);
+	free_pipeline(pipeline);
+	return (exit_code);
 }

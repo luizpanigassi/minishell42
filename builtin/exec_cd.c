@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:38:13 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 18:25:41 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:38:46 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,14 @@ int	exec_cd(char **args)
 	return (0);
 }
 
+/**
+ * @brief Resolves the target path for the cd command.
+ * @param args Command arguments (args[1] is the target directory).
+ * @param oldpwd Current working directory before the change.
+ * @return Resolved path as a string, or NULL on error.
+ * @note Handles special cases for ~ (HOME), - (OLDPWD), and empty arguments.
+ *       Prints an error message if HOME or OLDPWD is not set.
+ */
 char	*resolve_cd_path(char **args, char *oldpwd)
 {
 	char	*path;

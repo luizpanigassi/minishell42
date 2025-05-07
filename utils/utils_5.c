@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:46:49 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:36:57 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ void	update_quote_state(char c, int *in_quote, char *quote_char)
  * @param str Pointer to the current position in the string.
  * @param in_quote Pointer to the in_quote flag.
  * @param quote_char Pointer to the current quote character.
+ * @note Updates the quote state based on the character encountered.
  */
 void	process_quote_state(const char *str, int *in_quote, char *quote_char)
 {

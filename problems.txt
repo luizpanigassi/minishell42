@@ -1,0 +1,77 @@
+Test 146: ❌ README.md
+mini exit code = 126
+bash exit code = 127
+mini error = ()
+bash error = ( command not found)
+
+Test 140: ❌ test_files
+mini exit code = 126
+bash exit code = 127
+mini error = ()
+bash error = ( command not found)
+
+Test 135: ❌ $EMPTY echo hi
+mini output = ()
+bash output = (hi)
+mini exit code = 1
+bash exit code = 0
+mini error = ( Permission denied)
+bash error = ()
+
+Test 134: ❌ $EMPTY
+mini exit code = 1
+bash exit code = 0
+mini error = ( Permission denied)
+bash error = ()
+
+Test  87: ❌ ls >"./outfiles/outfile""1""2""3""4""5"
+Only in ./mini_outfiles: outfile
+Only in ./bash_outfiles: outfile12345
+mini outfiles:
+bash outfiles:
+README.md
+bash.supp
+bash_outfiles
+bonus
+bonus_bonus
+builtins
+extras
+local.supp
+loop.out
+manual_tests
+mini_outfiles
+os_specific
+outfiles
+pipes
+redirects
+syntax
+test_files
+tester
+wildcards
+mini exit code = 2
+bash exit code = 0
+mini error = ( No such file or directory No such file or directory No such file or directory No such file or directory No such file or directory)
+bash error = ()
+
+Test  55: ❌ cat minishell.h | grep ");"$
+mini exit code = 2
+bash exit code = 1
+mini error = ( No such file or directory No such file or directory)
+bash error = ( No such file or directory)
+
+Test  51: ❌ exit 42 world
+mini exit code = 2
+bash exit code = 1
+
+Test  28: ❌ export HELLO="123 A-"
+mini exit code = 1
+bash exit code = 0
+mini error = ( not a valid identifier)
+bash error = ()
+
+Test  36: ✅⚠️  unset HOME
+mini error = ( double free detected in tcache 2)
+bash error = ()
+Test  37: ✅⚠️  unset PATH
+mini error = ( double free detected in tcache 2)
+bash error = ()

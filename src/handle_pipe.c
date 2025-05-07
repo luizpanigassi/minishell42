@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/06 17:00:36 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:35:24 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,8 @@ int	wait_for_children(pid_t *child_pids, int cmd_count)
  * @brief Closes the previous pipe and updates the pipe arrays.
  * @param prev_pipe Array representing the previous pipe.
  * @param next_pipe Array representing the next pipe.
+ * @note Ensures proper cleanup and preparation for the next command
+ * in the pipeline.
  */
 void	close_and_update_pipes(int prev_pipe[2], int next_pipe[2])
 {
@@ -58,6 +60,7 @@ void	close_and_update_pipes(int prev_pipe[2], int next_pipe[2])
 /**
  * @brief Closes any remaining open pipes.
  * @param prev_pipe Array representing the previous pipe.
+ * @note Prevents resource leaks by closing unused file descriptors.
  */
 void	close_remaining_pipes(int prev_pipe[2])
 {
