@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser_2.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/29 16:13:16 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 13:45:04 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,11 +32,11 @@ int	is_redirection(t_token type)
  */
 char	**build_expanded_args(t_list *args)
 {
-	char **arr;
-	t_list *current;
-	int i;
-	t_arg *a;
-	char *processed;
+	char	**arr;
+	t_list	*current;
+	int		i;
+	t_arg	*a;
+	char	*processed;
 
 	arr = malloc(sizeof(char *) * (ft_lstsize(args) + 1));
 	current = args;
@@ -49,8 +49,7 @@ char	**build_expanded_args(t_list *args)
 		else
 		{
 			processed = process_escapes(a->value);
-			char *expanded = expand_variables(processed);
-			arr[i++] = expanded;
+			arr[i++] = expand_variables(processed);
 			free(processed);
 		}
 		current = current->next;
