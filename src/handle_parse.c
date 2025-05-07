@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 15:59:37 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:02:03 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:26:03 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ char	*handle_end_of_quote(t_parse *p, char *value,
  * @param segment_start Start position of the segment.
  * @return Updated token value.
  */
-char *handle_unquoted_segment(t_parse *p, char *value, size_t *segment_start)
+char	*handle_unquoted_segment(t_parse *p, char *value, size_t *segment_start)
 {
 	value = add_segment(value, p->input, *segment_start, p->pos);
 	next_char(p);

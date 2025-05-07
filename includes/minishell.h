@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:24:10 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:29:33 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,6 +201,14 @@ char	**get_path_directories(void);
 char	*check_direct_path(char *cmd);
 char	*get_cmd_path(char *cmd);
 
+// HANDLE PARSE ARGS
+t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs);
+int		handle_argument_token(t_parse *p, t_list **args, t_redir *redirs);
+int		handle_redirection_token(t_parse *p, t_list **args,
+			t_redir **redir_tail, t_redir *redirs);
+t_cmd	*handle_syntax_error(t_parse *p, t_list *args, t_redir *redirs,
+			char *error_message);
+
 // HANDLE PARSE
 void	handle_unmatched_quote(t_parse *p);
 void	handle_quotes(t_parse *p, char quote);
@@ -247,15 +255,9 @@ int		handle_redirections(int pipe_in, int pipe_out, t_redir *redirections);
 
 // PARSE ARGS
 void	process_argument(t_parse *p, t_list **args);
-t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs);
 t_redir	*process_redirection(t_parse *p, t_list **args, t_redir *redirs);
 t_cmd	*create_command(t_list *args, t_redir *redirs);
-int		handle_argument_token(t_parse *p, t_list **args, t_redir *redirs);
-int		handle_redirection_token(t_parse *p, t_list **args,
-			t_redir **redir_tail, t_redir *redirs);
 int		process_tokens(t_parse *p, t_token_state *state);
-t_cmd	*handle_syntax_error(t_parse *p, t_list *args, t_redir *redirs,
-			char *error_message);
 t_cmd	*parse_args(t_parse *p);
 
 // PARSE PIPELINE

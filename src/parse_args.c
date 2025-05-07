@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:36:26 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/02 17:51:00 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:27:50 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,29 +26,6 @@ void	process_argument(t_parse *p, t_list **args)
 	arg->value = ft_strdup(p->token_value);
 	arg->type = p->token_type;
 	ft_lstadd_back(args, ft_lstnew(arg));
-}
-
-/**
- * @brief Handles redirection syntax errors.
- * @param p Parser state.
- * @param args Argument list to clear.
- * @param redirs Redirection list to clear.
- * @return Always returns NULL.
- * @note Performs full cleanup on syntax error detection.
- */
-t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
-{
-	ft_putstr_fd("minishell: syntax error near unexpected token `",
-		STDERR_FILENO);
-	if (p->token_type == T_EOF)
-		ft_putstr_fd("newline", STDERR_FILENO);
-	else
-		ft_putstr_fd(p->token_value, STDERR_FILENO);
-	ft_putstr_fd("'\n", STDERR_FILENO);
-	ft_lstclear(args, free_arg);
-	free_redirections(redirs);
-	p->syntax_error = 1;
-	return (NULL);
 }
 
 /**
@@ -111,31 +88,6 @@ t_cmd	*create_command(t_list *args, t_redir *redirs)
 	return (cmd);
 }
 
-int	handle_argument_token(t_parse *p, t_list **args, t_redir *redirs)
-{
-	if (!p->token_value)
-	{
-		ft_lstclear(args, free_arg);
-		free_redirections(redirs);
-		return (0);
-	}
-	process_argument(p, args);
-	return (1);
-}
-
-int handle_redirection_token(t_parse *p, t_list **args,
-	t_redir **redir_tail, t_redir *redirs)
-{
-	t_redir	*new_redir;
-
-	new_redir = process_redirection(p, args, redirs);
-	if (!new_redir)
-		return (0);
-	*redir_tail = new_redir;
-	redir_tail = &new_redir->next;
-	return (1);
-}
-
 /**
  * @brief Struct to encapsulate token processing state.
  */
@@ -171,25 +123,6 @@ int	process_tokens(t_parse *p, t_token_state *state)
 		next_token(p);
 	}
 	return (1);
-}
-
-/**
- * @brief Handles syntax errors and performs cleanup.
- * @param p Parser state.
- * @param args Argument list to clear.
- * @param redirs Redirection list to clear.
- * @param error_message Error message to display.
- * @return Always returns NULL.
- */
-t_cmd *handle_syntax_error(t_parse *p, t_list *args, t_redir *redirs,
-	char *error_message)
-{
-	if (error_message)
-		ft_putstr_fd(error_message, STDERR_FILENO);
-	p->syntax_error = 1;
-	ft_lstclear(&args, free_arg);
-	free_redirections(redirs);
-	return (NULL);
 }
 
 /**
