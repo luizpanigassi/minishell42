@@ -6,7 +6,7 @@
 #    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/05/07 16:30:53 by luinasci         ###   ########.fr        #
+#    Updated: 2025/05/07 16:47:44 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -51,6 +51,7 @@ UTILS_SRCS  = $(addprefix $(UTILS_PATH), \
 				  utils_4.c \
 				  utils_5.c \
 				  utils_6.c \
+				  utils_7.c \
 				  )
 
 BUILTIN_PATH = builtin/

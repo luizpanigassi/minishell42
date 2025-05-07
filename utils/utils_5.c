@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:30:28 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:46:49 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,18 @@ void	update_quote_state(char c, int *in_quote, char *quote_char)
 }
 
 /**
+ * @brief Processes the quote state for the current character.
+ * @param str Pointer to the current position in the string.
+ * @param in_quote Pointer to the in_quote flag.
+ * @param quote_char Pointer to the current quote character.
+ */
+void	process_quote_state(const char *str, int *in_quote, char *quote_char)
+{
+	if (*str == '\'' || *str == '"')
+		update_quote_state(*str, in_quote, quote_char);
+}
+
+/**
  * @brief Adds a substring to the result array.
  * @param result Pointer to the result array.
  * @param count Pointer to the current count of elements in the array.
@@ -53,7 +65,7 @@ void	update_quote_state(char c, int *in_quote, char *quote_char)
  * @param end Pointer to the end of the substring.
  */
 void	add_substring(char ***result, int *count,
-				const char *start, const char *end)
+	const char *start, const char *end)
 {
 	*result = realloc(*result, sizeof(char *) * (*count + 2));
 	(*result)[(*count)++] = ft_substr(start, 0, end - start);
@@ -68,50 +80,10 @@ void	add_substring(char ***result, int *count,
  * @param count Pointer to the current count of elements in the array.
  */
 void	handle_delimiter(const char **str, const char **start,
-					char ***result, int *count)
+	char ***result, int *count)
 {
 	if ((*str > *start) && (*str)[-1] == '\\')
 		return ;
 	add_substring(result, count, *start, *str);
 	*start = *str + 1;
-}
-
-/**
- * @brief Splits string while respecting quoted sections.
- * @param str Input string to split.
- * @param delim Delimiter character.
- * @return Array of split tokens.
- * @note Preserves quoted content including delimiters.
- */
-char	**split_with_quotes(const char *str, char delim)
-{
-	const char	*start;
-	char		**result;
-	int			count;
-	int			in_quote;
-	char		quote_char;
-
-	start = str;
-	result = NULL;
-	count = 0;
-	in_quote = 0;
-	quote_char = '\0';
-	while (*str)
-	{
-		if (!in_quote && *str == '\\' && (str[1] == delim || str[1] == '\\'))
-		{
-			str += 2;
-			continue ;
-		}
-		if ((*str == '\'' || *str == '"'))
-			update_quote_state(*str, &in_quote, &quote_char);
-		else if (*str == delim && !in_quote)
-			handle_delimiter(&str, &start, &result, &count);
-		str++;
-	}
-	if (start != str)
-		add_substring(&result, &count, start, str);
-	if (result)
-		result[count] = NULL;
-	return (result);
 }
