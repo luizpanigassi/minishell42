@@ -6,13 +6,11 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:46:38 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:19:14 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:50:14 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-
 
 /**
  * @brief Converts a list of t_arg structs to an array of expanded strings.

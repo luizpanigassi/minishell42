@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:46:22 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:54:01 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,8 +188,6 @@ int			fork_and_execute(int prev_pipe[2], int next_pipe[2],
 				t_cmd *current, pid_t *child_pids, int *i);
 int			cleanup_on_failure(pid_t *child_pids,
 				t_cmd *pipeline, int exit_code);
-int			initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
-				int next_pipe[2], pid_t **child_pids);
 int			execute_pipeline(t_cmd *pipeline);
 
 // EXIT STATUS
@@ -235,10 +233,12 @@ void		handle_output_redirection(t_parse *p);
 void		handle_input_redirection(t_parse *p);
 void		handle_special(t_parse *p);
 
-// INIT PARSER
+// INIT
 void		init_parser(t_parse *p, char *input);
 void		init_word_and_quote_states(t_parse *p,
 				t_word_state *word_state, t_quote_state *quote_state);
+int			initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
+				int next_pipe[2], pid_t **child_pids);
 
 // INPUT
 void		handle_error(char *message);

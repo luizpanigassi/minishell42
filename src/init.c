@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:53:29 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:08:24 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:53:04 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,4 +45,30 @@ word_state->value = ft_strdup("");
 quote_state->segment_start = &word_state->segment_start;
 quote_state->in_quote = &word_state->in_quote;
 quote_state->quote_char = &word_state->quote_char;
+}
+
+/**
+ * @brief Initializes pipeline resources such as pipes and child process array.
+ * @param pipeline Linked list of commands to execute.
+ * @param prev_pipe Array representing the previous pipe.
+ * @param next_pipe Array representing the next pipe.
+ * @param child_pids Pointer to the array of child process IDs.
+ * @return 0 on success, 1 on failure.
+ */
+int	initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
+	int next_pipe[2], pid_t **child_pids)
+{
+	int	cmd_count;
+
+	prev_pipe[0] = -1;
+	prev_pipe[1] = -1;
+	next_pipe[0] = -1;
+	next_pipe[1] = -1;
+	cmd_count = ft_cmd_size(pipeline);
+	if (cmd_count == 0)
+		return (1);
+	*child_pids = malloc(sizeof(pid_t) * cmd_count);
+	if (!*child_pids)
+		return (1);
+	return (0);
 }

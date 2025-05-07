@@ -6,7 +6,7 @@
 #    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/05/07 16:47:44 by luinasci         ###   ########.fr        #
+#    Updated: 2025/05/07 16:53:20 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,7 +32,7 @@ SRCS		  = $(addprefix $(SRC_PATH), \
 				  create_heredoc.c \
 				  parser_1.c \
 				  parser_2.c \
-				  init_parser.c \
+				  init.c \
 				  signals.c \
 				  handle_pipe.c \
 				  handle_special.c \

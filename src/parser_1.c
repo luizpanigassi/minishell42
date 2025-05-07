@@ -56,7 +56,7 @@ char	*add_segment(char *value, const char *input, size_t start, size_t end)
  * @param quote_state State of the quote handling.
  * @return Updated token value.
  */
-char *process_quoted_segment(t_parse *p,
+char	*process_quoted_segment(t_parse *p,
 		char *value, t_quote_state *quote_state)
 {
 	value = add_segment(value, p->input, *(quote_state->segment_start), p->pos);
@@ -72,7 +72,7 @@ char *process_quoted_segment(t_parse *p,
  * @param p Parser state.
  * @note Updates token type/value and parser position.
  */
-void next_token(t_parse *p)
+void	next_token(t_parse *p)
 {
 	skip_whitespace(p);
 	free(p->token_value);
