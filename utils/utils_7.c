@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:47:09 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:47:28 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:55:32 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,4 +46,15 @@ char	**split_with_quotes(const char *str, char delim)
 	if (result)
 		result[count] = NULL;
 	return (result);
+}
+
+/**
+ * @brief Global error handler with exit.
+ * @param message Error description to display.
+ * @note Prints to stderr and exits with failure status.
+ */
+void	handle_error(char *message)
+{
+	perror(message);
+	exit(EXIT_FAILURE);
 }

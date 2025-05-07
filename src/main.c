@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:43:31 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/06 15:44:39 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 17:13:24 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,8 @@ void free_pipeline(t_cmd *pipeline)
 		free(current);
 	}
 }
+
+
 
 /**
  * @brief Executes a non-builtin command.
@@ -97,63 +99,7 @@ void execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
 	}
 }
 
-/**
- * @brief Applies redirection operations for command.
- * @param pipe_in Input file descriptor.
- * @param pipe_out Output file descriptor.
- * @param redirections Redirection specification list.
- * @return 0 on success, -1 on error.
- * @note Handles heredoc, truncate, and append modes.
- */
-int handle_redirections(int pipe_in, int pipe_out, t_redir *redirections)
-{
-	// Handle pipe redirections first
-	if (pipe_in != -1)
-	{
-		if (dup2(pipe_in, STDIN_FILENO) == -1)
-			return (perror("minishell"), -1);
-		close(pipe_in);
-	}
-	if (pipe_out != -1)
-	{
-		if (dup2(pipe_out, STDOUT_FILENO) == -1)
-			return (perror("minishell"), -1);
-		close(pipe_out);
-	}
-	// Handle file redirections
-	t_redir *current = redirections;
-	while (current)
-	{
-		int fd = -1;
-		if (current->type == T_HEREDOC)
-			fd = current->fd;
-		else if (current->type == T_REDIR_IN)
-			fd = open(current->filename, O_RDONLY);
-		else if (current->type == T_REDIR_OUT)
-			fd = open(current->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-		else if (current->type == T_APPEND)
-			fd = open(current->filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-		if (fd == -1)
-		{
-			perror("minishell");
-			set_exit_status(1);
-			exit(EXIT_FAILURE);
-		}
-		if (current->type == T_REDIR_IN || current->type == T_HEREDOC)
-		{
-			if (dup2(fd, STDIN_FILENO) == -1)
-				return (close(fd), perror("minishell"), -1);
-		}
-		else
-		{
-			if (dup2(fd, STDOUT_FILENO) == -1)
-				return (close(fd), perror("minishell"), -1);
-		}
-		close(fd);
-		current = current->next;
-	}
-	return (0);
-}
+
 
 /**
  * @brief Main shell entry point.

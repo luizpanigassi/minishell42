@@ -6,22 +6,11 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 18:13:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/02 16:58:53 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:55:27 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-/**
- * @brief Global error handler with exit.
- * @param message Error description to display.
- * @note Prints to stderr and exits with failure status.
- */
-void	handle_error(char *message)
-{
-	perror(message);
-	exit(EXIT_FAILURE);
-}
 
 /**
  * @brief Expands environment variables and `$?` in a string.

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:54:01 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 17:19:31 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,6 +226,14 @@ int			handle_heredoc_redirections(t_redir *redirections);
 void		handle_last_command(t_cmd *pipeline, int last_status,
 				pid_t *child_pids);
 
+// HANDLE REDIRECT
+int			open_redirection_fd(t_redir *redir);
+int			duplicate_fd(int fd, int target);
+int			handle_file_redirections(t_redir *redirections);
+int			handle_single_redirection(t_redir *redir);
+int			handle_redirections(int pipe_in,
+				int pipe_out, t_redir *redirections);
+
 // HANDLE SPECIAL
 void		assign_value(t_parse *p, enum e_token t, char *v, int n);
 void		handle_file_descriptor(t_parse *p);
@@ -241,7 +249,6 @@ int			initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
 				int next_pipe[2], pid_t **child_pids);
 
 // INPUT
-void		handle_error(char *message);
 char		*expand_variable(const char *input, size_t *i);
 char		*expand_and_append_variable(const char *input,
 				size_t *i, char *result);
@@ -253,8 +260,6 @@ int			handle_redirection(t_redir *current, int fd);
 void		free_pipeline(t_cmd *pipeline);
 void		execute_non_builtin(t_cmd *cmd, char **environ);
 void		execute_command(t_cmd *cmd, int pipe_in, int pipe_out);
-int			handle_redirections(int pipe_in, int pipe_out,
-				t_redir *redirections);
 
 // PARSE ARGS
 void		process_argument(t_parse *p, t_list **args);
@@ -328,5 +333,6 @@ char		**split_with_quotes(const char *str, char delim);
 char		*process_escapes(char *str);
 int			is_redirection(t_token type);
 void		skip_whitespace(t_parse *p);
+void		handle_error(char *message);
 
 #endif

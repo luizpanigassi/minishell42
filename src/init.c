@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   init_parser.c                                      :+:      :+:    :+:   */
+/*   init.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:53:29 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:53:04 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:56:25 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,6 @@ word_state->segment_start = p->pos;
 word_state->in_quote = 0;
 word_state->quote_char = 0;
 word_state->value = ft_strdup("");
-
 quote_state->segment_start = &word_state->segment_start;
 quote_state->in_quote = &word_state->in_quote;
 quote_state->quote_char = &word_state->quote_char;
