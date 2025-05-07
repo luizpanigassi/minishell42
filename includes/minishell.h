@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 18:14:40 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:47:27 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,8 +183,7 @@ int			create_heredoc(const char *delimiter);
 void		execute_child_process(int prev_pipe[2],
 				int next_pipe[2], t_cmd *current);
 int			create_pipe(int next_pipe[2], pid_t *child_pids);
-int			fork_and_execute(int prev_pipe[2], int next_pipe[2],
-				t_cmd *current, pid_t *child_pids, int *i);
+int			fork_and_execute(int *pipes[2], t_cmd *current, pid_t *child_pids, int *i);
 int			cleanup_on_failure(pid_t *child_pids,
 				t_cmd *pipeline, int exit_code);
 int			execute_pipeline(t_cmd *pipeline);

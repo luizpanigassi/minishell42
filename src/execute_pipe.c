@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute_pipe.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/06 16:56:22 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 16:52:57 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:55:36 by jcologne         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,18 +68,19 @@ int	create_pipe(int next_pipe[2], pid_t *child_pids)
  * @param i Index for storing the child PID.
  * @return 0 on success, 1 on failure.
  */
-int	fork_and_execute(int prev_pipe[2], int next_pipe[2],
-	t_cmd *current, pid_t *child_pids, int *i)
+int	fork_and_execute(int *pipes[2], t_cmd *current, pid_t *child_pids, int *i)
 {
 	pid_t	pid;
 
 	pid = fork();
 	if (pid == 0)
-		execute_child_process(prev_pipe, next_pipe, current);
+	{
+		execute_child_process(pipes[0], pipes[1], current);
+	}
 	else if (pid > 0)
 	{
 		child_pids[(*i)++] = pid;
-		close_and_update_pipes(prev_pipe, next_pipe);
+		close_and_update_pipes(pipes[0], pipes[1]);
 	}
 	else
 	{
@@ -113,6 +114,7 @@ int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
 int	execute_pipeline(t_cmd *pipeline)
 {
 	t_pipeline_context	ctx;
+	int	*pipes[2] = { ctx.prev_pipe, ctx.next_pipe };
 
 	if (initialize_pipeline_resources(pipeline, ctx.prev_pipe,
 			ctx.next_pipe, &ctx.child_pids))
@@ -125,7 +127,7 @@ int	execute_pipeline(t_cmd *pipeline)
 			return (cleanup_on_failure(ctx.child_pids, pipeline, 130));
 		if (ctx.current->next && create_pipe(ctx.next_pipe, ctx.child_pids))
 			return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
-		if (fork_and_execute(ctx.prev_pipe, ctx.next_pipe, ctx.current,
+		if (fork_and_execute(pipes, ctx.current,
 				ctx.child_pids, &ctx.index))
 			return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
 		ctx.current = ctx.current->next;
