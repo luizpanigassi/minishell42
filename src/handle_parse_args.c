@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:26:48 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 19:42:38 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:44:02 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,8 @@ t_redir	*handle_redir_error(t_parse *p, t_list **args, t_redir *redirs)
  * @param redirs Pointer to the list of redirections for cleanup in
  * case of error.
  * @return 1 on success, 0 on failure.
- * @note Adds the argument to the list or performs cleanup if the token is invalid.
+ * @note Adds the argument to the list or performs cleanup if the token
+ * is invalid.
  */
 int	handle_argument_token(t_parse *p, t_list **args, t_redir *redirs)
 {

@@ -6,12 +6,18 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:30:01 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 19:37:36 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:47:53 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+/**
+ * @brief Processes escape sequences in a string.
+ * @param str Input string containing escape sequences.
+ * @return A new string with escape sequences resolved.
+ * @note Allocates memory for the result, which must be freed by the caller.
+ */
 char	*process_escapes(char *str)
 {
 	char	*result;
