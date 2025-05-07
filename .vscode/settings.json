@@ -8,6 +8,7 @@
 		"limits.h": "c",
 		"libft.h": "c",
 		"history.h": "c",
-		"wait.h": "c"
+		"wait.h": "c",
+		"type_traits": "c"
 	}
 }

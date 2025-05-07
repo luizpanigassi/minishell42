@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_5.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jcologne <jcologne@student.42.fr>          +#+  +:+       +#+        */
+/*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:13:15 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 13:55:16 by jcologne         ###   ########.fr       */
+/*   Updated: 2025/05/07 16:18:59 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,4 +142,27 @@ char	*process_escapes(char *str)
 	}
 	result[j] = '\0';
 	return (result);
+}
+
+/**
+ * @brief Checks if token is redirection operator.
+ * @param type Token type to check.
+ * @return 1 if redirection token, 0 otherwise.
+ * @note Covers all redirection types (>, >>, <, <<).
+ */
+int	is_redirection(t_token type)
+{
+	return (type == T_REDIR_IN || type == T_REDIR_OUT || type == T_APPEND
+		|| type == T_HEREDOC);
+}
+
+/**
+ * @brief Advances parser past whitespace characters.
+ * @param p Parser state.
+ * @note Modifies parser position and current character.
+ */
+void skip_whitespace(t_parse *p)
+{
+	while (ft_isspace(p->curr_char))
+		next_char(p);
 }
