@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 17:41:53 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 18:13:19 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:48:11 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,34 +36,52 @@ void	execute_non_builtin(t_cmd *cmd, char **environ)
 }
 
 /**
- * @brief Executes a single command with I/O redirection.
+ * @brief Restores the SIGINT handler and handles the child process's
+ * exit status.
+ * @param pid Process ID of the child.
+ * @param old_sa Previous SIGINT signal action to restore.
+ */
+void	handle_child_exit(pid_t pid, struct sigaction *old_sa)
+{
+	int	status;
+	int	was_signaled;
+
+	was_signaled = 0;
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status))
+		set_exit_status(WEXITSTATUS(status));
+	else if (WIFSIGNALED(status))
+	{
+		set_exit_status(128 + WTERMSIG(status));
+		if (WTERMSIG(status) == SIGINT)
+			was_signaled = 1;
+	}
+	if (was_signaled)
+		write(STDOUT_FILENO, "\n", 1);
+	if (sigaction(SIGINT, old_sa, NULL) == -1)
+		perror("minishell: sigaction");
+}
+
+/**
+ * @brief Sets up the child process for execution.
  * @param cmd Command structure to execute.
  * @param pipe_in Input file descriptor (or -1).
  * @param pipe_out Output file descriptor (or -1).
  */
-void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+void	setup_and_execute_child(t_cmd *cmd, int pipe_in, int pipe_out)
 {
-	pid_t		pid;
 	extern char	**environ;
 
-	pid = fork();
-	if (pid == 0)
+	setup_child_signals();
+	handle_redirections(pipe_in, pipe_out, cmd->redirections);
+	if (is_builtin(cmd->args))
 	{
-		setup_child_signals();
-		handle_redirections(pipe_in, pipe_out, cmd->redirections);
-		if (is_builtin(cmd->args))
-		{
-			exec_builtin(cmd->args);
-			exit(g_exit_status);
-		}
-		else
-		{
-			execute_non_builtin(cmd, environ);
-		}
+		exec_builtin(cmd->args);
+		exit(g_exit_status);
 	}
-	else if (pid < 0)
+	else
 	{
-		perror("fork");
+		execute_non_builtin(cmd, environ);
 	}
 }
 
@@ -129,20 +147,4 @@ int	handle_command_pipeline(char *command, int *should_exit)
 	}
 	free_pipeline(pipeline);
 	return (0);
-}
-
-/**
- * @brief Frees an array of command strings.
- * @param commands Array of command strings to free.
- */
-void	free_commands(char **commands)
-{
-	char	**ptr;
-
-	ptr = commands;
-	if (!commands)
-		return ;
-	while (*ptr)
-		free(*ptr++);
-	free(commands);
 }

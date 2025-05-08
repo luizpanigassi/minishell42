@@ -6,96 +6,61 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:59:44 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 19:41:59 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:44:09 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <minishell.h>
 
 /**
- * @brief Writes a line to the pipe, expanding variables if necessary.
- * @param write_fd File descriptor for the write end of the pipe.
- * @param line The line to write to the pipe.
- * @param quoted_delimiter Flag indicating if the delimiter is quoted.
- * @note If the delimiter is not quoted, variables in the line are expanded.
+ * @brief Sets up and restores signal handling for heredoc creation.
+ * @param sa Pointer to the new sigaction structure.
+ * @param old_sa Pointer to the old sigaction structure to restore later.
+ * @return 0 on success, -1 on failure.
  */
-void	write_line_to_pipe(int write_fd, const char *line, int quoted_delimiter)
+int	setup_and_restore_signals(struct sigaction *sa, struct sigaction *old_sa)
 {
-	char	*expanded;
+	sa->sa_handler = SIG_IGN;
+	sa->sa_flags = SA_RESTART;
+	sigemptyset(&sa->sa_mask);
+	if (sigaction(SIGINT, sa, old_sa) == -1)
+		return (-1);
+	return (0);
+}
 
-	if (!quoted_delimiter)
+/**
+ * @brief Sets up a pipe and forks a child process.
+ * @param pipefd Array to store the pipe file descriptors.
+ * @param old_sa Pointer to the old sigaction structure to restore later.
+ * @return The PID of the child process on success, -1 on failure.
+ */
+pid_t	setup_pipe_and_fork(int pipefd[2], struct sigaction *old_sa)
+{
+	pid_t	pid;
+
+	if (pipe(pipefd) < 0)
+		return (-1);
+	pid = fork();
+	if (pid == -1)
 	{
-		expanded = expand_variables(line);
-		write(write_fd, expanded, strlen(expanded));
-		free(expanded);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		sigaction(SIGINT, old_sa, NULL);
 	}
-	else
-		write(write_fd, line, strlen(line));
-	write(write_fd, "\n", 1);
+	return (pid);
 }
 
 /**
- * @brief Checks if the given delimiter is quoted.
- * @param delimiter The delimiter string to check.
- * @return 1 if the delimiter is quoted, 0 otherwise.
- * @note A delimiter is considered quoted if it starts with a single
- * or double quote.
- */
-int	is_quoted_delimiter(const char *delimiter)
-{
-	return (delimiter[0] == '\'' || delimiter[0] == '"');
-}
-
-/**
- * @brief Handles the child process for the heredoc creation.
+ * @brief Handles the child process setup for heredoc creation.
  * @param write_fd File descriptor for the write end of the pipe.
  * @param delimiter The delimiter string to terminate the heredoc.
- * @note Reads lines from the user until the delimiter is encountered.
- *       Expands variables unless the delimiter is quoted.
+ * @note Sets up signals and invokes the child process logic.
  */
-void	handle_child_process(int write_fd, const char *delimiter)
+void	setup_child_process(int write_fd, const char *delimiter)
 {
-	char	*line;
-	int		quoted_delimiter;
-
-	quoted_delimiter = is_quoted_delimiter(delimiter);
-	signal(SIGINT, SIG_DFL);
-	signal(SIGQUIT, SIG_IGN);
-	while (1)
-	{
-		line = readline("> ");
-		if (!line)
-		{
-			write(STDOUT_FILENO, "\n", 1);
-			break ;
-		}
-		if (strcmp(line, delimiter) == 0)
-			break ;
-		write_line_to_pipe(write_fd, line, quoted_delimiter);
-		free(line);
-	}
-	close(write_fd);
-	exit(0);
-}
-
-/**
- * @brief Handles the parent process after forking for heredoc.
- * @param pid The process ID of the child process.
- * @param read_fd File descriptor for the read end of the pipe.
- * @return The read file descriptor on success, -1 if interrupted by SIGINT.
- * @note Waits for the child process to finish and checks for signals.
- */
-int	handle_parent_process(pid_t pid, int read_fd)
-{
-	int	status;
-
-	waitpid(pid, &status, 0);
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-	{
-		close(read_fd);
-		return (-1);
-	}
-	return (read_fd);
+	close(write_fd - 1);
+	setup_heredoc_signals();
+	handle_child_process(write_fd, delimiter);
 }
 
 /**
@@ -108,27 +73,27 @@ int	handle_parent_process(pid_t pid, int read_fd)
  */
 int	create_heredoc(const char *delimiter)
 {
-	int		pipefd[2];
-	pid_t	pid;
+	t_heredoc_context	ctx;
+	pid_t				pid;
+	int					result;
 
-	if (pipe(pipefd) < 0)
+	if (setup_and_restore_signals(&ctx.sa, &ctx.old_sa) == -1)
 		return (-1);
-	pid = fork();
+	pid = setup_pipe_and_fork(ctx.pipefd, &ctx.old_sa);
 	if (pid == -1)
-	{
-		close(pipefd[0]);
-		close(pipefd[1]);
 		return (-1);
-	}
 	if (pid == 0)
 	{
-		close(pipefd[0]);
-		handle_child_process(pipefd[1], delimiter);
+		setup_child_process(ctx.pipefd[1], delimiter);
 	}
 	else
 	{
-		close(pipefd[1]);
-		return (handle_parent_process(pid, pipefd[0]));
+		close(ctx.pipefd[1]);
+		result = handle_parent_process(pid, ctx.pipefd[0], &ctx.was_signaled);
+		if (ctx.was_signaled)
+			write(STDOUT_FILENO, "\n", 1);
+		sigaction(SIGINT, &ctx.old_sa, NULL);
+		return (result);
 	}
 	return (0);
 }

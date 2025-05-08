@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 14:53:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/02 16:53:59 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:47:50 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,4 +116,35 @@ char	*get_cmd_path(char *cmd)
 	}
 	ft_free_array(paths);
 	return (NULL);
+}
+
+/**
+ * @brief Executes a single command with I/O redirection.
+ * @param cmd Command structure to execute.
+ * @param pipe_in Input file descriptor (or -1).
+ * @param pipe_out Output file descriptor (or -1).
+ */
+void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+{
+	pid_t				pid;
+	struct sigaction	sa;
+	struct sigaction	old_sa;
+
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = SA_RESTART;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, &old_sa) == -1)
+	{
+		perror("minishell: sigaction");
+		return ;
+	}
+	pid = fork();
+	if (pid == 0)
+	{
+		setup_and_execute_child(cmd, pipe_in, pipe_out);
+	}
+	else if (pid < 0)
+		perror("fork");
+	else
+		handle_child_exit(pid, &old_sa);
 }

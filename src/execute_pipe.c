@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/06 16:56:22 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 19:06:30 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:31:16 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,23 +40,6 @@ void	execute_child_process(int prev_pipe[2],
 		exit(exec_builtin(current->args));
 	else
 		exec_external_command(current);
-}
-
-/**
- * @brief Creates a pipe and handles errors.
- * @param next_pipe Array representing the next pipe.
- * @param child_pids Array of child process IDs to free in case of error.
- * @return 0 on success, 1 on failure.
- */
-int	create_pipe(int next_pipe[2], pid_t *child_pids)
-{
-	if (pipe(next_pipe) < 0)
-	{
-		perror("minishell: pipe");
-		free(child_pids);
-		return (1);
-	}
-	return (0);
 }
 
 /**
@@ -109,6 +92,28 @@ int	process_pipeline_command(t_pipeline_context *ctx, int *pipes[2])
 }
 
 /**
+ * @brief Processes all commands in the pipeline.
+ * @param ctx Pipeline context containing state and resources.
+ * @param pipes Array of previous and next pipes.
+ * @param old_sa Pointer to the old sigaction structure to restore later.
+ * @return 0 on success, 1 on failure.
+ */
+int	process_all_pipeline_commands(t_pipeline_context *ctx,
+	int *pipes[2], struct sigaction *old_sa)
+{
+	while (ctx->current)
+	{
+		if (process_pipeline_command(ctx, pipes))
+		{
+			sigaction(SIGINT, old_sa, NULL);
+			return (1);
+		}
+		ctx->current = ctx->current->next;
+	}
+	return (0);
+}
+
+/**
  * @brief Manages pipeline execution with process forking.
  * @param pipeline Linked list of commands to execute.
  * @return Exit status of last command in pipeline.
@@ -118,24 +123,25 @@ int	execute_pipeline(t_cmd *pipeline)
 {
 	t_pipeline_context	ctx;
 	int					*pipes[2];
+	struct sigaction	sa;
+	struct sigaction	old_sa;
+	int					was_signaled;
 
+	if (setup_signal_handling(&sa, &old_sa))
+		return (cleanup_on_failure(NULL, pipeline, 1));
 	pipes[0] = ctx.prev_pipe;
 	pipes[1] = ctx.next_pipe;
-	if (initialize_pipeline_resources(pipeline, ctx.prev_pipe,
-			ctx.next_pipe, &ctx.child_pids))
+	if (initialize_pipeline(pipeline, &ctx, &old_sa))
 		return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
-	ctx.index = 0;
-	ctx.current = pipeline;
-	while (ctx.current)
-	{
-		if (process_pipeline_command(&ctx, pipes))
-			return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
-		ctx.current = ctx.current->next;
-	}
+	if (process_all_pipeline_commands(&ctx, pipes, &old_sa))
+		return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
 	close_remaining_pipes(ctx.prev_pipe);
-	ctx.last_status = wait_for_children(ctx.child_pids, ft_cmd_size(pipeline));
+	ctx.last_status = wait_for_children(ctx.child_pids,
+			ft_cmd_size(pipeline), &was_signaled);
 	handle_last_command(pipeline, ctx.last_status, ctx.child_pids);
 	free(ctx.child_pids);
+	if (manage_signal_handling(&old_sa, was_signaled))
+		return (1);
 	set_exit_status(ctx.last_status);
 	return (ctx.last_status);
 }

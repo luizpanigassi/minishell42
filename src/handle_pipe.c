@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 19:35:24 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:41:10 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
  * @param cmd_count Number of commands (child processes).
  * @return Exit status of the last command.
  */
-int	wait_for_children(pid_t *child_pids, int cmd_count)
+int	wait_for_children(pid_t *child_pids, int cmd_count, int *was_signaled)
 {
 	int	last_status;
 	int	child_count;
@@ -26,13 +26,18 @@ int	wait_for_children(pid_t *child_pids, int cmd_count)
 
 	child_count = 0;
 	last_status = 0;
+	*was_signaled = 0;
 	while (child_count < cmd_count)
 	{
 		waitpid(child_pids[child_count], &status, 0);
 		if (WIFEXITED(status))
 			last_status = WEXITSTATUS(status);
 		else if (WIFSIGNALED(status))
+		{
 			last_status = 128 + WTERMSIG(status);
+			if (WTERMSIG(status) == SIGINT)
+				*was_signaled = 1;
+		}
 		child_count++;
 	}
 	return (last_status);

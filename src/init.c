@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 09:53:29 by jcologne          #+#    #+#             */
-/*   Updated: 2025/05/07 16:56:25 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:30:40 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,5 +69,26 @@ int	initialize_pipeline_resources(t_cmd *pipeline, int prev_pipe[2],
 	*child_pids = malloc(sizeof(pid_t) * cmd_count);
 	if (!*child_pids)
 		return (1);
+	return (0);
+}
+
+/**
+ * @brief Initializes the pipeline context and resources.
+ * @param pipeline Linked list of commands to execute.
+ * @param ctx Pointer to the pipeline context to initialize.
+ * @param old_sa Pointer to the old sigaction structure to restore later.
+ * @return 0 on success, 1 on failure.
+ */
+int	initialize_pipeline(t_cmd *pipeline,
+	t_pipeline_context *ctx, struct sigaction *old_sa)
+{
+	if (initialize_pipeline_resources(pipeline, ctx->prev_pipe,
+			ctx->next_pipe, &ctx->child_pids))
+	{
+		sigaction(SIGINT, old_sa, NULL);
+		return (1);
+	}
+	ctx->index = 0;
+	ctx->current = pipeline;
 	return (0);
 }

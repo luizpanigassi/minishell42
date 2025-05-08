@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:47:09 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/07 19:19:02 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:45:20 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,4 +102,20 @@ int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
 	free(child_pids);
 	free_pipeline(pipeline);
 	return (exit_code);
+}
+
+/**
+ * @brief Frees an array of command strings.
+ * @param commands Array of command strings to free.
+ */
+void	free_commands(char **commands)
+{
+	char	**ptr;
+
+	ptr = commands;
+	if (!commands)
+		return ;
+	while (*ptr)
+		free(*ptr++);
+	free(commands);
 }
