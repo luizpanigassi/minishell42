@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 16:47:09 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/08 16:45:20 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/13 15:24:41 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,10 +97,13 @@ char	**read_and_split_input(char **env_copy, int *should_exit)
  * @param exit_code Exit code to return after cleanup.
  * @return The provided exit code.
  */
-int	cleanup_on_failure(pid_t *child_pids, t_cmd *pipeline, int exit_code)
+int	cleanup_on_failure(pid_t **child_pids_ptr, int exit_code)
 {
-	free(child_pids);
-	free_pipeline(pipeline);
+	if (*child_pids_ptr)
+	{
+		free(*child_pids_ptr);
+		*child_pids_ptr = NULL;
+	}
 	return (exit_code);
 }
 

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 16:14:25 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/08 16:41:10 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/13 15:25:56 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@ int	wait_for_children(pid_t *child_pids, int cmd_count, int *was_signaled)
 	int	child_count;
 	int	status;
 
+	if (!child_pids)
+		return (0);
 	child_count = 0;
 	last_status = 0;
 	*was_signaled = 0;

@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/03 18:15:03 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/08 17:05:35 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/13 15:24:36 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -584,8 +584,7 @@ int			is_redirection(t_token type);
 void		skip_whitespace(t_parse *p);
 void		handle_error(char *message);
 char		**read_and_split_input(char **env_copy, int *should_exit);
-int			cleanup_on_failure(pid_t *child_pids,
-				t_cmd *pipeline, int exit_code);
+int			cleanup_on_failure(pid_t **child_pids, int exit_code);
 void		free_commands(char **commands);
 
 #endif

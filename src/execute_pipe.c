@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/06 16:56:22 by luinasci          #+#    #+#             */
-/*   Updated: 2025/05/08 16:31:16 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/13 15:27:08 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,11 +83,11 @@ int	fork_and_execute(int *pipes[2], t_cmd *current, pid_t *child_pids, int *i)
 int	process_pipeline_command(t_pipeline_context *ctx, int *pipes[2])
 {
 	if (handle_heredoc_redirections(ctx->current->redirections) == 130)
-		return (cleanup_on_failure(ctx->child_pids, ctx->current, 130));
+		return (cleanup_on_failure(&ctx->child_pids, 130));
 	if (ctx->current->next && create_pipe(ctx->next_pipe, ctx->child_pids))
-		return (cleanup_on_failure(ctx->child_pids, ctx->current, 1));
+		return (cleanup_on_failure(&ctx->child_pids, 1));
 	if (fork_and_execute(pipes, ctx->current, ctx->child_pids, &ctx->index))
-		return (cleanup_on_failure(ctx->child_pids, ctx->current, 1));
+		return (cleanup_on_failure(&ctx->child_pids, 1));
 	return (0);
 }
 
@@ -128,13 +128,13 @@ int	execute_pipeline(t_cmd *pipeline)
 	int					was_signaled;
 
 	if (setup_signal_handling(&sa, &old_sa))
-		return (cleanup_on_failure(NULL, pipeline, 1));
+		return (cleanup_on_failure(NULL, 1));
 	pipes[0] = ctx.prev_pipe;
 	pipes[1] = ctx.next_pipe;
 	if (initialize_pipeline(pipeline, &ctx, &old_sa))
-		return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
+		return (cleanup_on_failure(&ctx.child_pids, 1));
 	if (process_all_pipeline_commands(&ctx, pipes, &old_sa))
-		return (cleanup_on_failure(ctx.child_pids, pipeline, 1));
+		return (cleanup_on_failure(&ctx.child_pids, 1));
 	close_remaining_pipes(ctx.prev_pipe);
 	ctx.last_status = wait_for_children(ctx.child_pids,
 			ft_cmd_size(pipeline), &was_signaled);
