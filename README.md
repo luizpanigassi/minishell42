@@ -56,3 +56,12 @@ Just run make, and let it compile. Then, just run ./minishell, and enjoy!
 ### Dependencies
 ```bash
 sudo apt-get install libreadline-dev  # For Debian/Ubuntu
+
+## Authors 👩💻👨💻
+
+**Core Contributors**  
+[Luiz Panigassi](https://github.com/luizpanigassi) - Parsing, structure, signal handling 
+[João Cologne](https://github.com/jocologne) - Builtin implementation, refactoring, garbage collection
+
+**Special Thanks**  
+[42 School](https://www.42.fr/) - Project guidelines and inspiration
