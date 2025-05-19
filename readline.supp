@@ -1,7 +1,0 @@
-{
-	readline_suppressions
-	Memcheck:Leak
-	...
-	obj:*libreadline.so*
-	...
-}

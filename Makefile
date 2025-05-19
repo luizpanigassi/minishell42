@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jcologne <jcologne@student.42sp.org.br>    +#+  +:+       +#+         #
+#    By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/31 16:25:32 by luinasci          #+#    #+#              #
-#    Updated: 2025/04/23 15:45:51 by jcologne         ###   ########.fr        #
+#    Updated: 2025/05/08 17:05:00 by luinasci         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,19 +25,26 @@ LIBFT_LIB	= $(LIBFT_DIR)/libft.a
 
 SRC_PATH	 = src/
 SRCS		  = $(addprefix $(SRC_PATH), \
-				  exit_status.c \
-				  input.c \
-				  get_cmd_path.c \
-				  main.c \
 				  create_heredoc.c \
-				  parser_1.c \
-				  parser_2.c \
-				  init_parser.c \
-				  signals.c \
+				  execute_pipe.c \
+				  exit_status.c \
+				  get_cmd_path.c \
+				  handle_commands.c \
+				  handle_heredoc.c \
+				  handle_parse_args.c \
+				  handle_parse.c \
 				  handle_pipe.c \
+				  handle_redirect.c \
 				  handle_special.c \
+				  init.c \
+				  input.c \
+				  main.c \
 				  parse_args.c \
 				  parse_pipeline.c \
+				  parser_1.c \
+				  parser_2.c \
+				  pipe_signals.c \
+				  signals.c \
 				  )
 
 UTILS_PATH  = utils/
@@ -47,6 +54,8 @@ UTILS_SRCS  = $(addprefix $(UTILS_PATH), \
 				  utils_3.c \
 				  utils_4.c \
 				  utils_5.c \
+				  utils_6.c \
+				  utils_7.c \
 				  )
 
 BUILTIN_PATH = builtin/

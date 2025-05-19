@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/12 17:24:30 by luinasci          #+#    #+#             */
-/*   Updated: 2024/11/18 16:52:46 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:01:17 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 # include <fcntl.h>
 # include <limits.h>
 
-char	*ft_strjoin(char const *s1, char const *s2);
+char		*ft_strjoin(char const *s1, char const *s2);
 char		*get_next_line(int fd);
 char		*ft_strchr(const char *s, int c);
 void		*ft_calloc(size_t number, size_t size);

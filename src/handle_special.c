@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:06:27 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:42:15 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/04/29 18:35:14 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
  * @param n Whether to advance character position.
  * @note Manages parser state transitions for special tokens.
  */
-static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
+void	assign_value(t_parse *p, enum e_token t, char *v, int n)
 {
 	p->token_type = t;
 	p->token_value = ft_strdup(v);
@@ -33,7 +33,7 @@ static void	assign_value(t_parse *p, enum e_token t, char *v, int n)
  * @param p Parser state.
  * @note Extracts leading digits for numbered file descriptors.
  */
-static void	handle_file_descriptor(t_parse *p)
+void	handle_file_descriptor(t_parse *p)
 {
 	int		fd;
 	char	*fd_str;
@@ -53,7 +53,7 @@ static void	handle_file_descriptor(t_parse *p)
  * @param p Parser state.
  * @note Determines between truncate (>) and append (>>) modes.
  */
-static void	handle_output_redirection(t_parse *p)
+void	handle_output_redirection(t_parse *p)
 {
 	next_char(p);
 	if (p->curr_char == '>')
@@ -67,7 +67,7 @@ static void	handle_output_redirection(t_parse *p)
  * @param p Parser state.
  * @note Distinguishes between regular input and heredoc redirection.
  */
-static void	handle_input_redirection(t_parse *p)
+void	handle_input_redirection(t_parse *p)
 {
 	next_char(p);
 	if (p->curr_char == '<')

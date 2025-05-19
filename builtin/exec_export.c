@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/21 14:50:18 by luinasci          #+#    #+#             */
-/*   Updated: 2025/04/28 19:40:08 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/05 17:40:18 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,9 @@ int	handle_export_argument(char *arg, int *i, int *ret)
 	else
 		var_name = ft_strdup(arg);
 	if (handle_invalid_identifier(var_name, value, params))
+	{
 		return (1);
+	}
 	if (eq_pos)
 		update_env_var(var_name, value);
 	else

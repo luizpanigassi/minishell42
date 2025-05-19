@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:08:11 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:49:36 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/07 19:36:34 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,10 +40,8 @@ char	*ft_strjoin_char(char *str, char c)
 
 /**
  * @brief Counts the number of commands in a pipeline.
- *
  * @param pipeline Head of the command pipeline (linked list of t_cmd).
- * @return size_t Number of commands in the pipeline.
- * Returns 0 if pipeline is NULL.
+ * @return Number of commands in the pipeline.
  * @note Traverses the linked list of commands until reaching NULL.
  */
 size_t	ft_cmd_size(t_cmd *pipeline)
@@ -80,18 +78,18 @@ void	free_redirections(t_redir *redirs)
 /**
  * @brief Frees a copy of the environment variables.
  * @param env_copy The environment copy to free.
+ * @note Safely frees the array of strings.
  */
 void	free_env_copy(char **env_copy)
 {
-	if (!env_copy)
-		return ;
-	ft_free_array(env_copy);
+	if (env_copy)
+		ft_free_array(env_copy);
 }
 
 /**
  * @brief Handles syntax error reporting.
  * @param token Offending token string.
- * @note Sets global syntax error flag and exit status.
+ * @note Prints an error message and sets the global syntax error flag.
  */
 void	syntax_error(char *token)
 {

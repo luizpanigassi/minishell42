@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 14:40:41 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:48:40 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/02 17:16:09 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,9 @@ int	ft_isnumber(const char *str)
 {
 	int	i;
 
+	i = 0;
 	if (!str || !*str)
 		return (0);
-	i = 0;
 	if (str[i] == '+' || str[i] == '-')
 		i++;
 	while (str[i])
@@ -74,14 +74,7 @@ int	ft_isnumber(const char *str)
 			return (0);
 		i++;
 	}
-	if (i > 0 && (str[0] == '+' || str[0] == '-'))
-	{
-		return (i > 1);
-	}
-	else
-	{
-		return (i > 0);
-	}
+	return (i > 0);
 }
 
 /**
@@ -97,7 +90,7 @@ int	is_valid_var_name(const char *name)
 	if (!name || !name[0] || ft_isdigit(name[0]))
 		return (0);
 	i = 0;
-	while (name[i])
+	while (name[i] && name[i] != '=')
 	{
 		if (!ft_isalnum(name[i]) && name[i] != '_')
 			return (0);

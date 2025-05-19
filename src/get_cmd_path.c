@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 14:53:18 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:41:15 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 16:47:50 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
  * @return Full path string or NULL.
  * @note Checks execute permissions on constructed path.
  */
-static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
+char	*check_path_for_cmd(const char *dir_path, const char *cmd)
 {
 	char	*dir_slash;
 	char	*full_path;
@@ -42,7 +42,7 @@ static char	*check_path_for_cmd(const char *dir_path, const char *cmd)
  * @return Null-terminated array of directory strings.
  * @note Splits PATH environment variable using colon delimiter.
  */
-static char	**get_path_directories(void)
+char	**get_path_directories(void)
 {
 	char	*path_env;
 	char	**paths;
@@ -56,12 +56,25 @@ static char	**get_path_directories(void)
 	return (paths);
 }
 
-static char	*check_direct_path(char *cmd)
+/**
+ * @brief Checks if command contains direct path specification.
+ * @param cmd Command string to check.
+ * @return Full path if valid direct path, NULL otherwise.
+ * @note Verifies existence and permissions of path.
+ */
+char	*check_direct_path(char *cmd)
 {
+	struct stat	path_stat;
+
 	if (ft_strchr(cmd, '/') != NULL)
 	{
 		if (access(cmd, F_OK) == -1)
 			return (NULL);
+		if (stat(cmd, &path_stat) == -1 || !S_ISREG(path_stat.st_mode))
+		{
+			g_exit_status = PERM_DENIED;
+			return (NULL);
+		}
 		if (access(cmd, X_OK) == -1)
 		{
 			g_exit_status = PERM_DENIED;
@@ -103,4 +116,35 @@ char	*get_cmd_path(char *cmd)
 	}
 	ft_free_array(paths);
 	return (NULL);
+}
+
+/**
+ * @brief Executes a single command with I/O redirection.
+ * @param cmd Command structure to execute.
+ * @param pipe_in Input file descriptor (or -1).
+ * @param pipe_out Output file descriptor (or -1).
+ */
+void	execute_command(t_cmd *cmd, int pipe_in, int pipe_out)
+{
+	pid_t				pid;
+	struct sigaction	sa;
+	struct sigaction	old_sa;
+
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = SA_RESTART;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, &old_sa) == -1)
+	{
+		perror("minishell: sigaction");
+		return ;
+	}
+	pid = fork();
+	if (pid == 0)
+	{
+		setup_and_execute_child(cmd, pipe_in, pipe_out);
+	}
+	else if (pid < 0)
+		perror("fork");
+	else
+		handle_child_exit(pid, &old_sa);
 }

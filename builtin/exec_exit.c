@@ -6,7 +6,7 @@
 /*   By: luinasci <luinasci@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/17 10:43:27 by jcologne          #+#    #+#             */
-/*   Updated: 2025/04/28 19:14:54 by luinasci         ###   ########.fr       */
+/*   Updated: 2025/05/08 17:19:43 by luinasci         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,23 +25,20 @@ int	exec_exit(char **args)
 	status = 0;
 	if (args[1] && args[2])
 	{
-		ft_putstr_fd("minishell: exit error: too many arguments\n",
-			STDERR_FILENO);
-		set_exit_status(1);
+		ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
+		set_exit_status(2);
 		return (1);
 	}
-	if (args[1])
+	if (args[1] && !ft_isnumber(args[1]))
 	{
-		if (ft_isnumber(args[1]))
-			status = ft_atoi(args[1]) % 256;
-		else
-		{
-			ft_putstr_fd("minishell: exit error: numeric argument required\n",
-				STDERR_FILENO);
-			return (2);
-		}
+		ft_putstr_fd("minishell: exit: numeric argument required\n",
+			STDERR_FILENO);
+		set_exit_status(2);
+		exit(2);
 	}
-	printf("Exiting minishell, goodbye!\n");
+	if (args[1])
+		status = ft_atoi(args[1]) % 256;
+	ft_putstr_fd("Exiting minishell, goodbye!\n", STDOUT_FILENO);
 	rl_clear_history();
 	exit(status);
 }
