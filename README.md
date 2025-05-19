@@ -71,9 +71,9 @@ sudo apt-get install libreadline-dev  # For Debian/Ubuntu
 
 **Core Contributors**  
 
-[Luiz Panigassi](https://github.com/luizpanigassi) - Parsing, structure, signal handling 
+[Luiz Panigassi](https://github.com/luizpanigassi) - Parsing, structure, signal handling, pipe handling
 
-[João Cologne](https://github.com/jocologne) - Builtin implementation, refactoring, garbage collection
+[João Cologne](https://github.com/jocologne) - Builtin implementation, refactoring, garbage collection, rolling nat 1s, emotional support, partnership and brotherhood
 
 **Special Thanks**  
 [42 School](https://www.42.fr/) - Project guidelines and inspiration
