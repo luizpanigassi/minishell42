@@ -1,6 +1,17 @@
 # Minishell 🔧
 
-A minimalist UNIX command-line interpreter written in C, implementing a subset of bash-like features.
+A minimalist UNIX command-line interpreter written in C, implementing a subset of bash-like features. This
+is the short version. The long version is the craziest, biggest project in Ecole 42. It is a veritable monster
+for us mortals with zero experience in coding. Pipes, redirects, heredoc? WHAT IN THE HELL IS THAT? Those were the
+questions I had to answer before diving into it. It is not exactly a difficult project, but it is HUGE. It was
+interesting to see it take shape bit by bit, and live this journey.
+
+Learn your built-ins. Learn what you must do. Learn the libraries, the options you have in your hands, study bash,
+create garbage collectors, check every single malloc you make, move slowly. Don't rush it. Otherwise you'll end up
+like me, with functions having over 100 lines, refactoring like crazy, and breaking the code.
+
+If you are a student of 42 around the world, please, take a look at my code if you must, but don't copy it. Learn
+how to work stuff. My code is not perfect, I'm pretty sure I still have some kinks to work out. Good luck, friend.
 
 ## Features 🚀
 
