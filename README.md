@@ -51,7 +51,17 @@ how to work stuff. My code is not perfect, I'm pretty sure I still have some kin
 
 ## Installation 📦
 
-Just run make, and let it compile. Then, just run ./minishell, and enjoy!
+```
+make
+
+./minishell
+```
+# Example session
+```
+minishell> ls -l | grep .c | wc -l
+minishell> echo "Hello $USER" > greeting.txt
+minishell> < input.txt grep error | tail -n5 >> output.txt
+```
 
 ### Dependencies
 ```bash
@@ -60,7 +70,9 @@ sudo apt-get install libreadline-dev  # For Debian/Ubuntu
 ## Authors 👩💻👨💻
 
 **Core Contributors**  
+
 [Luiz Panigassi](https://github.com/luizpanigassi) - Parsing, structure, signal handling 
+
 [João Cologne](https://github.com/jocologne) - Builtin implementation, refactoring, garbage collection
 
 **Special Thanks**  
